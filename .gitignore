@@ -1,0 +1,7 @@
+# Zoo Code QRant db
+.qdrant-initialized
+storage/
+snapshots/
+
+# Qdrant Local Isolated Database
+.qdrant_storage/

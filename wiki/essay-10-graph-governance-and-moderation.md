@@ -138,3 +138,5 @@ This essay is **Proposed**. Three threads are flagged for future debate rather t
 - Whether cycle detection specifically should hard-block a merge outright, or soft-flag it the way
   Wikidata's constraint-report system flags contradictory statements for human attention without
   blocking the edit — these have different editing-friction trade-offs and have not been decided.
+- A revert/recovery scenario not covered by Section 6: a well-sourced historical-attestation claim that later evidence (e.g., a declassification, as in public-key cryptography's GCHQ precedent) shows was incomplete all along, through no fault of the original editor and no available citation at the time. This is neither vandalism, honest error, nor a contested consensus call, and the existing recovery model doesn't clearly say how to handle it.
+- A stress case for Section 7's dispute-resolution process: CRISPR's Broad Institute vs. UC Berkeley priority dispute has been litigated externally, with a binding legal outcome. Whether this wiki's own consensus process defers to that ruling, runs independently of it, or explicitly discloses a divergence from it is undecided.

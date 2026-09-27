@@ -144,5 +144,6 @@ rather than resolved:
 - The relationship-kind vocabulary itself (material necessity, conceptual enablement, combination,
   mere influence) is inherited from the original index draft and has not been stress-tested under
   this three-field schema specifically. It may need revision once real edges are run through it.
+  - Two of the four relationship-kind values got their first concrete worked examples during Essay 3's stress-testing: combination, via cryptocurrency (synthesizing public-key cryptography, Hashcash proof-of-work, Byzantine fault tolerance theory, and prior unbuilt digital-cash proposals into one node with no single stage-chain of its own); and mere influence, via a candidate case connecting Athenian democracy to modern representative democracy, pending Essay 8's resolution of how that relationship is actually modeled.
 - Whether a relationship-kind value can ever be split into finer sub-kinds, or whether four is the
   right number, is left open for a future debate rather than decided here.

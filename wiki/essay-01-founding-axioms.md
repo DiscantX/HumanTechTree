@@ -230,6 +230,7 @@ Threads flagged rather than resolved here:
 - **Essay 7** must treat the floor itself, not just the historical order built on it, as
   potentially contingent on which species is building the tree.
 - **Essay 8** inherits the faculty/instantiation split surfaced by the language-acquisition case.
+- Democracy, surfaced during Essay 3's stress-testing, strains the non-transmissibility diagnostic in a way none of the essay's existing edge cases do: it is not continuously practiced (ruling out "endowment"), but its ~2,000-year gap between Athenian practice and modern reinvention is neither the lost-and-reteaught-by-contact channel nor the gene-flow/medical-restoration channel this essay already names — it is forgotten as a practiced institution and reconstructed independently from historical record rather than transmitted. Whether this counts as a third transmissibility channel, or as evidence that Athenian and modern democracy are simply two separate nodes connected by influence rather than one continuous subject, is left to Essay 8.
 - **A new essay — Notability / Inclusion Threshold** is needed to handle candidates that clear both
   axioms but are too trivial or narrow to warrant a node, likely entangled with Essay 9's sourcing
   standards and Essay 2's granularity logic. Logged in the index as a new Tier 4 item.

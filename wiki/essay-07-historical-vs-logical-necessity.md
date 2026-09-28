@@ -1,113 +1,147 @@
-# Essay 7 — Historical Attestation vs. Logical Necessity (the Alien Civilization Question)
+# Historical Attestation vs. Logical Necessity
 
 **Status:** Proposed
 
-**Depends on:** Essay 1 (Founding Axioms), Essay 6 (Edge Schema — this essay assigns values to the
-*basis* field that essay defines)
+Every [edge](essay-00-about-the-project.md#glossary) on the graph makes one of two kinds of claim,
+called its *basis*.
 
-**Gates:** Essay 2 (interacts with the node-splitting decision for independently-discovered
-technologies), Essay 9, and
-loosens the constraint the original index placed on Essay 8
+- **Historical attestation** is a dated, regionally located claim that one thing preceded and enabled
+  another in the actual historical record.
+- **Logical necessity** is a timeless claim that one thing cannot exist, for any civilization, human or
+  not, unless the other has been achieved first.
 
-## 1. The problem
+Neither implies the other. Where both apply to a pair of nodes, the pair carries two edges. Where
+neither applies, there is no edge. A technology that arose independently in several places is one node,
+with one historical-attestation edge for each origin and at most one logical-necessity edge. In this
+way the graph can record both what actually happened and what had to be so, without merging the two
+into a single claim.
 
-The index originally posed this as a single either/or question: does the graph track actual human
-history, or timeless logical necessity independent of how humanity happened to discover things?
-Both readings, taken alone, fail differently.
+## Why the graph needs both
 
-Pure historical tracking is easy to source — it is simply "what happened, in what order, per the
-record" — but it is an account of accident, not necessity, and it cannot distinguish "X happened
-before Y" from "Y truly required X." It also handles independent discovery awkwardly: if agriculture
-arose seven times, a purely historical graph either has to pick one lineage arbitrarily or represent
-seven separate claims with no clean way to say they are the same underlying technology.
+The question can be put as an either/or: does the graph track actual human history, or the timeless
+logic of what depends on what, regardless of how humanity happened to discover things? Taken alone,
+each answer fails in its own way.
 
-Pure logical tracking — "any civilization would need X before Y, regardless of when either was
-achieved" — is closer to what a tech-tree audience actually wants to know, but it is largely
-uncitable by construction. Nobody has published a paper proving fire is logically necessary before
-smelting; that is an inference this wiki itself would be making, dressed up as if it were reported
-fact.
+Tracking only history is easy to source, since it is simply what happened, in what order, per the
+record. But it describes accident and not necessity. It cannot tell "X happened before Y" from "Y truly
+required X." It also handles independent discovery awkwardly. If agriculture arose several times, a
+purely historical graph must either pick one lineage arbitrarily or hold several separate claims with
+no clean way to say they are the same underlying technology.
 
-## 2. The resolution: single-valued basis and the two-edge treatment of "both"
+Tracking only logic is closer to what a tech-tree reader most wants to know, which is what any
+civilization would need before what. But it is largely uncitable by construction. Nobody has published
+a paper proving that fire is logically necessary before smelting. That inference would be the wiki's
+own, dressed up as if it were reported fact.
 
-> **An edge's basis is single-valued, taking either historical-attestation or logical-necessity as its value. Where both claims apply between a node pair, they are represented by two independent edges — one historical-attestation edge and one logical-necessity edge (Essay 9), true or false independently of each other.**
+The resolution is to keep both, as separate claims about the same pair.
 
-**Historical-attestation** is a specific, dated, regionally-located claim that X preceded and
-enabled Y in the actual causal record, evidenced by ordinary historical sourcing. It carries an origin attribute to distinguish multiple independent historical origins (Section 4). It can be false in one region and true in another for the same node pair, and it can appear more than once per pair.
+## Two bases, one claim each
 
-**Logical-necessity** is a general, timeless proposition that Y cannot exist — for any civilization,
-human or not — without X having been achieved first, independent of the order in which any actual
-civilization discovered them. It does not multiply; there is exactly one such claim per node pair,
-contested and revised in place rather than duplicated (Essay 6, Section 4).
+> **An edge's basis is single-valued: either historical attestation or logical necessity. Where both
+> claims apply between a pair of nodes, they are two independent edges, each true or false on its own.**
 
-Neither implies the other, and their presence is modeled purely through independent edges:
-- **Both present:** Represented by two separate edges between the pair (one historical-attestation, one logical-necessity), capturing both actual temporal sequence and necessary dependency.
-- **Historical-attestation only:** An accident of sequence: it happened in this order, but no necessary constraint prevented a different order in principle.
-- **Logical-necessity only:** A physical or logical constraint argued on its own terms, where fine-grained dating evidence for the actual historical sequence does not exist or has not been added yet.
-- **Neither:** No edge present.
+**Historical attestation** is a specific claim, backed by ordinary historical sourcing, that X preceded
+and enabled Y in the real causal record. It can be false in one region and true in another for the same
+pair of nodes, and it can appear more than once per pair. To keep several apart, each historical edge
+carries an *origin* attribute naming its region or instance.
 
-## 3. The citability asymmetry between the two bases
+**Logical necessity** is a general proposition that Y cannot exist without X having been achieved
+first, whatever order any actual civilization discovered them in. It does not multiply. There is
+exactly one such claim per pair, contested and revised in place and never duplicated, as set out in the
+[Edge Schema](essay-06-edge-schema.md).
 
-Historical-attestation claims are usually directly citable: dating and sequencing is what
-archaeology and history routinely produce. Logical-necessity claims range across a spectrum —
-some are directly citable physical facts (smelting copper requires sustained temperatures achievable
-only through controlled combustion or an equivalent heat source, which is a checkable metallurgical
-claim), while others are much larger inferential leaps this wiki has no citation for at all (the
-fully general "any conceivable civilization would need this" version of the claim). Essay 9 will
-need to reflect this spectrum rather than treating all logical-necessity
-claims uniformly — this essay only establishes that the spectrum exists and that the wiki
-must disclose, not obscure, where a given claim sits on it.
+The combinations are expressed entirely by which edges exist.
 
-## 4. Multiple independent discovery, resolved without new machinery
+- **Both edges.** The pair records the actual sequence and the necessary dependency. This is the
+  strongest case.
+- **Historical attestation only.** An accident of sequence: it happened in this order, but nothing
+  prevented a different order in principle.
+- **Logical necessity only.** A physical or logical constraint argued on its own terms, where fine-grained
+  dating evidence does not exist or has not been added yet.
+- **Neither.** There is no edge.
 
-This is the same move Essay 1 already made for language: the general faculty is one thing even
-though specific instances are many. Applied here — a technology with several independent origins
-is **one node**, carrying **one logical-necessity edge** (if any) to a given prerequisite, and
-**one historical-attestation edge per independently-attested origin**.
+"Neither" means that no claim of either kind is being made. It is different from an edge whose basis is
+left unspecified, which the Edge Schema allows: that is a claim that one node was a prerequisite of
+another without saying on which basis.
 
-- **Agriculture**: one node. Historical-attestation edges from wild-cereal exploitation to
-  agriculture exist separately for the Fertile Crescent, China, Mesoamerica, New Guinea, and
-  sub-Saharan Africa, each dated and sourced to its own region and carrying an origin attribute that distinguishes it (Essay 9). A single logical-necessity edge
-  ("agriculture requires a domesticable plant or animal population and settled observation of its
-  cycle") can sit alongside all of them without needing to pick one region as *the* true origin.
-- **Writing**: one node, with independent historical-attestation edges from cuneiform,
-  Chinese script, and Mesoamerican glyphs. Where a specific lineage has enough distinct
-  sub-history to be worth decomposing on its own terms — oracle-bone script's evolution genuinely
-  differs from cuneiform's — that decomposition is a job for Essay 2's granularity checklist,
-  triggered by the sub-history itself, not by the fact of independent origin.
+## The two bases are sourced differently
 
-This also resolves what earlier discussion called "islands": a node whose only edges are
-historical-attestation edges with no connection to another region's parallel development is not a
+Historical-attestation claims are usually directly citable, since dating and sequencing is what
+archaeology and history routinely produce. Logical-necessity claims range across a spectrum. Some are
+directly citable physical facts. That smelting copper requires sustained temperatures achievable only
+through controlled combustion or an equivalent heat source is a checkable metallurgical claim. Others
+are much larger inferential leaps for which the wiki has no citation at all, such as the fully general
+"any conceivable civilization would need this" version of a claim.
+
+The wiki must show where a given claim sits on that spectrum and not hide it. The sourcing policy does
+this by allowing a claim to rest on an argument whose premises are each sourced, and by displaying
+exactly which premises lack support. That policy also treats the two bases differently in one respect:
+a logical-necessity claim resting only on an argument is normal, while a historical-attestation claim
+resting only on an argument is flagged as suspect, since history is an external fact the wiki should
+not be inventing. See [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+Disputes follow the same split: historical claims lean on ordinary verifiability, and necessity claims
+lean on argued soundness, as described in
+[Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+
+## Independent discovery without new machinery
+
+The general capacity is one thing even where its instances are many. This is the same move
+[Founding Axioms](essay-01-founding-axioms.md) and
+[The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) make for language and
+other institutions. A technology with several independent origins is **one node**, with **one
+logical-necessity edge** to a given prerequisite, if any, and **one historical-attestation edge per
+independently attested origin**.
+
+- **Agriculture** is one node. Historical-attestation edges from wild-cereal exploitation to
+  agriculture exist separately for the Fertile Crescent, China, Mesoamerica, New Guinea, and sub-Saharan
+  Africa, each dated, sourced, and given its own origin attribute. One logical-necessity edge, that
+  agriculture requires a domesticable plant or animal population and settled observation of its cycle,
+  sits beside all of them without having to pick one region as *the* true origin.
+- **Writing** is one node, with independent historical-attestation edges from cuneiform, Chinese
+  script, and Mesoamerican glyphs.
+
+This also resolves what earlier discussion called *islands*. A node whose only edges are
+historical-attestation edges, with no connection to another region's parallel development, is not a
 defect to be patched by inventing a causal link that never existed. It is the graph correctly
-representing convergent invention, and it may remain permanently disconnected from a parallel
-lineage if no contact or diffusion ever occurred.
+representing convergent invention. Mesoamerican technology before contact with the Old World may remain
+permanently disconnected from a parallel lineage if no contact or diffusion ever occurred.
 
-## 5. What decides a node split instead of an added attestation
+## When to split a node instead
 
-Deferred entirely to Essay 2. This essay's only claim is that independent origin, by itself, is
-never sufficient reason to split a node — it is sufficient reason to add a historical-attestation
-edge. A split additionally requires the kind of decomposable, culturally-variable sub-history Essay
-2 already looks for in any candidate node.
+Independent origin alone is never a reason to split a node. It is a reason to add a
+historical-attestation edge. A split requires the further conditions in
+[Node Granularity](essay-02-node-granularity.md): that the mechanisms themselves differ, and that each
+side has decomposable history of its own. Where a specific lineage does have such history, the
+subdivision is triggered by that history and not by the fact of independent origin. Oracle-bone
+script's evolution genuinely differs from cuneiform's, for example. The Culture / Social-Systems Layer
+applies the same test to democracy and concludes that Athenian and modern democracy are two separate
+subjects.
 
-## 6. What this essay is not
+## Claims that later prove incomplete
 
-This essay defines the two basis values and how they combine. It deliberately does not:
+Because historical-attestation claims describe the record as sources report it, a well-sourced claim
+can later be shown incomplete through no fault of anyone. The classic case is public-key cryptography,
+where the work of Ellis and Cocks at GCHQ in the early 1970s was classified and declassified only in
+1997, decades after Diffie-Hellman and RSA were publicly credited. The governance policy handles this
+as an ordinary correction, not as an emergency.
 
-- define the relationship-kind vocabulary (Essay 6),
-- set citation standards for either basis value (Essay 9),
-- decide who may create or dispute a logical-necessity claim, or how that dispute resolves (Essay
-  10).
+## What this policy does not decide
 
-## 7. Status and open threads
+- The vocabulary of relationship-kinds, which belongs to the Edge Schema.
+- The citation standard for either basis, which belongs to the sourcing policy.
+- Who may create or dispute a logical-necessity claim, or how a dispute resolves, which belongs to the
+  governance policy.
 
-This essay is **Proposed**. Two threads are flagged rather than resolved here:
+## Open questions
 
-- The "any civilization, human or not" phrasing in the logical-necessity definition is
-  deliberately general, per the original alien-civilization framing in the index. It interacts with
-  Essay 1, Section 5's point that the floor itself is contingent on which species is building the
-  tree — if a future biological change altered what counts as an endowment, some logical-necessity
-  claims made today might need to be revisited, not just historical ones. This interaction is
-  noted, not resolved.
-- This resolution has so far only been stress-tested against fire/smelting, agriculture, and
-  writing. Further debate against additional concrete edge pairs is expected before ratification.
-- Essay 3's stress-testing surfaced a possible tension with Section 4's multi-origin handling: if a subject like money or agriculture is also stage-decomposed (Essay 3), it is unresolved whether each independently-attested regional origin needs its own stage chain, or whether multi-origin subjects are better left undecomposed. Left open until the graph is actually populated and the interaction can be observed.
-- A new failure mode distinct from ordinary citation-updating: public-key cryptography's GCHQ precedent (Ellis 1970, Cocks 1973) was classified and only declassified in 1997, decades after Diffie-Hellman/RSA were publicly credited. This is a historical-attestation claim that was true all along and became verifiably incomplete only through declassification, not through new discovery or editorial error — a case Essay 9 and Essay 10's revert model should both be aware of.
+- **"Any civilization, human or not."** The phrasing is deliberately general. It interacts with the
+  point in Founding Axioms that part of the floor may depend on which species is building the tree. If
+  that dependence is real, some logical-necessity claims made today would need revisiting, and the
+  question of whether the floor should be recorded in two layers bears directly on how those claims are
+  phrased.
+- **Few tested cases.** The two-basis model has mostly been tried on fire and smelting, agriculture,
+  writing, and democracy. More concrete edge pairs are needed.
+- **Multiple origins and stages.** If a subject such as money or agriculture is also divided into stages
+  (see [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md)), does each
+  independently attested origin need its own stage chain, or should multi-origin subjects be left
+  undivided? This is left open until the graph is populated.

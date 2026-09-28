@@ -1,147 +1,134 @@
-# Essay 8 — The Culture / Social-Systems Layer
+# The Culture / Social-Systems Layer
 
 **Status:** Proposed
 
-**Depends on:** Essay 1 (Founding Axioms — the faculty/instantiation split this essay inherits and
-extends), Essay 6 (Edge Schema — this essay applies existing relationship-kinds rather than
-proposing new ones), Essay 7 (basis distinction — applied here without modification)
+Writing, law, money, and democracy are not physical technologies, but they belong on the graph. This
+policy explains how they fit and rests on four points.
 
-**Gates:** interacts with Essay 2 (granularity checklist decides several split-vs-attest calls
-below), Essay 3 (iterative abstraction was found here first, as a byproduct of that essay's
-stress-testing), Essay 9 (no new grounding type needed, but this domain's claims lean harder on argument-type grounding than most physical-tech claims will; Essay 9, Section 14 also proposes that grounding may carry the mere-influence distinction, but this domain's sourcing leans harder
-on argued consensus than most physical-tech nodes will)
+1. **Separate the capacity from the form.** For each abstract system, the general human capacity behind
+   it is a natural feature on the floor, and each specific institutional form is eligible for a node.
+   Symbolic representation is a capacity, and cuneiform is a form. The tendency toward reciprocal
+   exchange is a capacity, and a particular money system is a form.
+2. **No new machinery is needed.** Once the split is made, the existing rules for granularity, edges,
+   and basis already model what remains. This policy adds no new relationship-kind, basis value, or
+   grounding type.
+3. **The default shape is iterative abstraction.** These systems usually improve by successive
+   generalization, each step usable at once, and not by mastering a phenomenon that was already there.
+4. **Writing changes the rules for everything after it.** Once a technique can be recorded, it can be
+   lost by every practitioner and still be recovered, so writing silently upgrades the
+   non-transmissibility test for every later node.
 
-## 1. The problem
+## The question
 
-Do abstract systems — writing, law, money, democracy — belong in a "technology" tree at all, and if
-so, under what edge semantics? The concern driving this essay's Open status for so long was that
-these subjects might need a parallel schema: physical technologies have phenomena to observe and
-mechanisms to explain, but a legal code or a currency doesn't sit in nature waiting to be noticed.
+Do abstract systems belong in a technology tree at all, and if so, under what edge semantics? The worry
+was that they might need a parallel schema. A physical technology has a phenomenon to observe and a
+mechanism to explain, but a legal code or a currency does not sit in nature waiting to be noticed.
 
-Essay 1 already anticipated the shape of the answer with the language-acquisition case: the
-underlying faculty for syntax is endowment (excluded), while any specific language is an action-built
-artifact (eligible). The question this essay actually had to answer was narrower than it first
-looked: does that split generalize past language to writing, money, and democracy — and if so, does
-anything about *these* subjects require new machinery, or does the existing schema already cover
-them once the split is made?
+The answer turned out to be narrower than the worry. [Founding Axioms](essay-01-founding-axioms.md)
+already splits language into a natural faculty for syntax, which is on the floor, and any specific
+language, which someone built and is eligible. The question was whether that split generalizes past
+language, and whether anything about these subjects then requires new machinery.
 
-## 2. The resolution: the faculty/instantiation split generalizes, and needs no new edge semantics
+## The split generalizes
 
-> **For every subject in this layer, separate the general human capacity (endowment, excluded) from
-> the specific institutional form (action-built, eligible). Once that separation is made, Essays 2,
-> 6, and 7 already have everything needed to model what remains — this essay adds no new
-> relationship-kind, no new basis value, and no new grounding type.**
+> **For every subject in this layer, separate the general human capacity, which is a natural feature and
+> sits on the floor, from the specific institutional form, which is action-built and eligible. Once that
+> separation is made, the existing policies cover what remains.**
 
-Concretely:
+- **Symbolic representation and record-keeping.** The general human ability to use arbitrary symbols to
+  carry meaning is a natural capacity, like syntax. No human population lacks it, and it does not
+  decompose into a taught technique the way any actual script does. **Writing itself** (cuneiform,
+  Chinese script, Mesoamerican glyphs) is eligible, exactly as modeled in
+  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md): one node,
+  with an independent historical-attestation edge for each origin.
+- **Exchange and reciprocity.** The general tendency toward reciprocal exchange, documented in
+  primates, is the natural layer. **Money**, meaning any specific system of representing and
+  transferring value, is the eligible form.
+- **Coordination and coalition behavior.** This is documented well below the level of any specific
+  political system, arguably below the species line. **Democracy**, as a specific institutional form,
+  is eligible, and so is monarchy or any other specific system of rule. The scope of this policy is not
+  limited to democracy, though democracy was the test case.
 
-- **Symbolic representation / record-keeping capacity** — the general human ability to use arbitrary
-  symbols to represent meaning — is endowment, the same as syntax. No human population lacks the
-  cognitive capacity for symbolic reference; it doesn't decompose into a taught technique the way
-  any actual script does. **Writing itself** — cuneiform, Chinese script, Mesoamerican glyphs — is
-  eligible, exactly as Essay 7 already modeled it (Essay 7, Section 4): one node, multiple
-  historical-attestation edges for independent origins.
-- **Exchange and reciprocity** — the general human and indeed pre-human tendency toward reciprocal
-  exchange (documented in primates) is the endowment layer here. **Money** — any specific system of
-  representing and transferring value — is the eligible, action-built instantiation.
-- **Coordination and coalition behavior** — again documented well below the level of any specific
-  political system, arguably below the species line entirely — is the endowment layer. **Democracy**,
-  as a specific institutional form, is the eligible instantiation. So is monarchy, so is any other
-  specific system of rule; this essay's scope is not limited to democracy, though that was the
-  stress-test case.
+Nothing beyond Founding Axioms' existing origin rule is needed. This is a confirming result for that
+policy, not a revision of it.
 
-No new floor-exclusion category is needed beyond applying Essay 1's existing axiom to three new
-domains. This is a confirming result for Essay 1, not a revision of it.
+## Iterative abstraction as the default shape
 
-## 3. Iterative abstraction as this layer's default shape
+While testing its own stage vocabulary, [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md)
+found that writing and money have no meaningful observation or explanation stage in the sense of
+mastering a phenomenon. Neither has a natural phenomenon underneath it to be noticed or explained.
+Instead each progresses by *iterative abstraction*. Each refinement, whether tally marks to logograms to
+alphabet, or barter to commodity money to coinage to fiat currency, is usable the moment it exists,
+because there is no separate mechanism behind the technique beyond the technique itself.
 
-Essay 3, while stress-testing its own stage vocabulary, found that writing and money both lack a
-meaningful Observation or Explanation stage in the phenomenon-mastery sense — there is no natural
-phenomenon underlying either one to be noticed or explained. Instead both progress by **iterative
-abstraction**: each refinement (tally marks → logograms → alphabet; barter → commodity → coinage →
-fiat) is immediately usable the moment it exists, with no lag for understanding a mechanism, because
-there is no separate mechanism behind the technique beyond the technique itself.
+This policy adopts iterative abstraction as the expected default shape for the layer. A subject can carry
+a second shape on top of it. Money is iterative abstraction with empirical lag layered over it, since
+coherent monetary theory explaining why fiat currency holds value arrives centuries after fiat currency
+is already in wide use. Law and democracy should be expected to show a similar layering, in which a
+practice generalizes over time and a *theory* of why it works, such as social contract theory or
+jurisprudence, arrives as a separate and often much later thread. They should not be assumed to be
+purely iterative abstraction.
 
-This essay adopts iterative abstraction as the expected default shape for subjects in this layer,
-while noting — as Essay 3 already found with money — that a subject can carry a second shape layered
-on top. Money is iterative-abstraction and empirical-lag simultaneously: coherent monetary theory
-explaining why fiat currency holds value without commodity backing arrives centuries after fiat
-currency was already in wide use. Law and democracy should be expected to show a similar layering
-(a practice or institution generalizing over time, with a *theory* of why it works — social contract
-theory, jurisprudence — arriving as a separate, often much later, thread) rather than assumed to be
-purely iterative-abstraction by default.
-
-## 4. Democracy: a live test of "mere influence," and a genuine node-split decision
+## Democracy: mere influence and a node split
 
 Athenian democracy (Cleisthenes' reforms, 508 BCE) and modern representative democracy are connected,
-but not the way most edges in this graph are connected. The American and French founders read Athens;
-they did not inherit a continuously-practiced technique from it. Applying Essay 2's granularity
-checklist directly — the same test already invoked for money's regional mechanism differences (see
-the Essay 2 handoff) — these are **two separate Subjects, not one Subject with two
-historical-attestation edges**: Athenian democracy is direct democracy with its own decomposable
-lead-up (tribal councils, earlier assemblies); modern representative democracy has its own separate
-decomposable lead-up (Magna Carta and the slow constraining of monarchical power, parliamentary
-evolution, Enlightenment social-contract theory). The actual mechanisms differ enough — direct
-participation versus elected representation — that this fails the same "same mechanism, different
-region" test agriculture passes and money likely fails.
+but not in the way most edges in this graph are. Later political thinkers read about Athens, often
+critically, and they did not inherit a continuously practiced technique from it. The checklist in
+[Node Granularity](essay-02-node-granularity.md) gives a clear verdict. These are **two separate
+subjects, not one subject with two historical-attestation edges.** Athenian democracy is direct
+democracy with its own decomposable lead-up in tribal councils and earlier assemblies. Modern
+representative democracy has its own separate lead-up in Magna Carta and the slow constraining of
+monarchical power, parliamentary evolution, and Enlightenment social-contract theory. The mechanisms
+differ enough, direct participation against elected representation, that the pair fails the "same
+mechanism, different region" test that agriculture passes.
 
-The edge connecting them is Essay 6's **mere influence** relationship-kind, getting its first fully
-worked example: the founders could, in principle, have arrived at representative government without
-ever reading about Athens, the same way agriculture arose independently in five places without
-contact. Influence, not necessity, is the honest claim.
+The connection between them is the [Edge Schema](essay-06-edge-schema.md)'s *mere influence*
+relationship-kind, which democracy is the first fully worked case of. Modern democracy could in
+principle have arisen without anyone reading about Athens, just as agriculture arose independently in
+several places without contact. Influence, not necessity, is the honest claim.
 
-## 5. A gap in Essay 1's non-transmissibility diagnostic, and what closes it
+## Writing upgrades the non-transmissibility test
 
-Democracy's history doesn't fit either of Essay 1's existing transmissibility channels (direct
-contact reteaching a lost craft; gene flow propagating a biological endowment). It was forgotten as a
-*practiced* institution for roughly two millennia and reconstructed independently from **historical
-record**, not from living contact with anyone who still practiced it.
+Democracy does not fit either channel that Founding Axioms considers when deciding whether something is
+a technique that can be lost. It was not a natural capacity present in everyone, and it was not lost and
+reintroduced by direct contact with people who still practiced it. It was forgotten as a *practiced*
+institution for roughly two thousand years and reconstructed independently from the historical record.
 
-This points to a finding worth stating plainly rather than only patching into Essay 1's diagnostic
-list: **once writing exists as a technology, it changes the transmissibility rules for every
-subsequent technology in the graph.** Before writing, a lost technique could only be recovered by
-re-invention or contact with a population that still held it. After writing, a technique can be lost
-by every living practitioner and still be recoverable by a population with no contact at all with the
-original practitioners, purely through the durability of the record. This is not a defect in Essay
-1's diagnostic — it is evidence that **writing is itself a prerequisite that silently upgrades the
-non-transmissibility test for everything downstream of it**, and probably deserves a one-line note on
-writing's own node to that effect, rather than a rewritten diagnostic on Essay 1 itself. Democracy is
-simply the first case where this mattered enough to notice.
+This is worth stating plainly and not only patching into a diagnostic list. **Once writing exists as a
+technology, it changes the transmissibility rules for every subsequent technology.** Before writing, a
+lost technique could be recovered only by reinvention or by contact with a population that still held
+it. After writing, a technique can be lost by every living practitioner and still be recovered by a
+population with no contact at all with the original practitioners, purely because the record lasts.
 
-## 6. What this essay is not
+This is not a defect in the non-transmissibility diagnostic. It is evidence that writing is itself a
+prerequisite that silently upgrades that test for everything downstream. It probably deserves a
+one-line note on writing's own node to that effect, and not a rewrite of the diagnostic. Democracy is
+simply the first case where it mattered enough to notice.
 
-This essay decides that abstract social systems belong in the graph, on what floor-exclusion terms,
-under what default shape, and resolves one live node-split/relationship-kind case (democracy) as a
-worked example. It deliberately does not:
+## What this policy does not decide
 
-- catalog every abstract system that belongs in this layer — law, specific economic systems, and
-  other institutional forms are analogous to democracy's treatment here but not individually worked
-  through,
-- revise Essay 1's diagnostic list itself; it proposes the revision live on writing's own node
-  instead (Section 5),
-- resolve whether "mere influence" needs sub-values (a founder who demonstrably read Cleisthenes
-  versus ambient, undocumented cultural diffusion feel like different strengths of the same
-  relationship-kind) — flagged for Essay 6. Essay 9, Section 14 proposes that the distinction may be carried by the claim's grounding rather than by sub-values: documented direct influence is citation-grounded, and ambient influence can only be argued. Proposed, not decided.
-- resolve money's own split-vs-attest question, which belongs to Essay 2 directly and is only
-  referenced here for the parallel reasoning.
+- **The full catalog of abstract systems.** Law, specific economic systems, and other institutional
+  forms are analogous to democracy's treatment here but are not individually worked through.
+- **Changes to Founding Axioms.** The writing point is proposed as a note on writing's own node, not as
+  a revision of that policy's diagnostics.
+- **Whether money is one node or several.** That is a granularity question, taken up in Node
+  Granularity.
+- **Sub-kinds of mere influence.** Whether a founder who demonstrably read Cleisthenes and ambient,
+  undocumented cultural diffusion need different relationship-kind values is a question for the Edge
+  Schema. The sourcing policy proposes that the grounding can carry the distinction, since documented
+  direct influence is citation-grounded and ambient influence can only be argued. That is proposed and
+  not decided. Claims in this domain lean harder on argued consensus than most physical-technology
+  claims will, but they need no new grounding type. See
+  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
 
-## 7. Status and open threads
+## Open questions
 
-This essay is **Proposed**, tested against three subjects (writing, money, democracy) rather than
-the broader class of abstract systems it claims to cover.
-
-- **Writing-as-transmissibility-upgrade** is the most consequential finding here and is not yet
-  reflected anywhere in Essay 1's actual text — only flagged in this essay and in Essay 1's own
-  open-threads addition. Whether it becomes a formal annotation convention (a flag on any node that,
-  once it exists, changes the transmissibility diagnostic for downstream nodes) or stays a
-  documented one-off observation is undecided.
-- **Mere influence sub-values.** Left to Essay 6 to decide whether "documented direct influence" and
-  "ambient/undocumented diffusion" need to be distinguished, or whether one relationship-kind value
-  is doing acceptable work for both.
-- **Law and other institutional forms** are asserted by analogy to democracy but not individually
-  stress-tested. Before ratification, at least one additional case (a specific legal tradition, or a
-  specific economic system beyond money itself) should be run through Sections 2–4's reasoning to
-  confirm it generalizes rather than being an artifact of democracy's specific history.
-- **Endowment layer under-specified.** "Coordination and coalition behavior" and "exchange and
-  reciprocity" are named here as the endowment layer by analogy to language's syntax faculty, but
-  neither has been stress-tested the way Essay 1 tested puberty, color vision, and thumbs. A future
-  pass should confirm these hold up as cleanly as language did before this essay is ratified.
+- **Writing as a transmissibility flag.** Whether the upgrade note becomes a formal annotation
+  convention, meaning a flag on any node that, once it exists, changes the transmissibility test for
+  downstream nodes, or stays a documented one-off.
+- **Law and other forms.** They are asserted by analogy to democracy. At least one more case, such as a
+  specific legal tradition or an economic system beyond money, should be worked through the same
+  reasoning to confirm that it generalizes and is not an artifact of democracy's history.
+- **The natural layer is under-specified.** "Coordination and coalition behavior" and "exchange and
+  reciprocity" are named by analogy to the syntax faculty, but neither has been tested as thoroughly as
+  language, puberty, or color vision were. They need confirming.

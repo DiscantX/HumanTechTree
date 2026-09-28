@@ -49,7 +49,7 @@ is a genuine, separate human action, and each step is a genuine prerequisite of 
 means this is not a new kind of structure at all. It is an ordinary chain of edges under Essay 6's
 existing schema (material necessity or conceptual enablement, decided per step), and once the
 decomposition happens, there is no independent thing left for the compound label to *be* other
-than that chain.
+than that chain. Each link in the chain is a claim, grounded and reviewed like any other edge (Essay 9).
 
 **Compositional decomposition** applies to topics assembled from multiple independently-developed
 lines that converge — an automobile from engine, chassis, wheels, and drivetrain; plausibly AI's
@@ -163,6 +163,11 @@ rendering absorbs that cost, so it can stay a direct application of axioms alrea
 than growing a parallel, harder-to-justify set of rules.
 
 ## 8. What this essay is not
+
+- **Redirects and reviewed claims.** Section 3 resolves a dissolved compound label by redirecting
+  generic edges to the terminal node. Under Essay 9 an edge is a claim with its own groundings and
+  reviews, and re-pointing it changes what the claim says. Whether a redirect-induced endpoint
+  change resets reviews is [D2 outcome].
 
 This essay fixes how decomposition is structurally represented and how open-ended macro-topics are
 handled at render time. It deliberately does not:

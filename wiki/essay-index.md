@@ -73,15 +73,15 @@ Status:
 
 ## Tier 1 — Taxonomy (what a thing *is*)
 
-### 3. What Constitutes a Discovery? (chicken-and-egg)
+### 3. What Constitutes a Discovery? Stages, Shapes, and the Chicken-and-Egg Problem
 
-- **Thesis (draft):** practical exploitation of a phenomenon routinely precedes its theoretical explanation (fire used long before combustion was understood) — "discovery" needs to be split into distinct transition types rather than treated as one event.
+- **Thesis (draft):** a node has a required Subject and an optional Stage, drawn from a small closed vocabulary, with four non-exhaustive shapes (empirical-lag, theory-first, interleaved, iterative abstraction), combination as an orthogonal axis, and a computed anchor for rendering.
 - **Depends on:** #1, #2.
-- **Status:** Open.
+- **Status:** Proposed.
 
 ### 4. Achievement vs. Discovery vs. Invention
 
-- **Thesis (draft):** discoveries/inventions are capability-*producing* (other nodes can cite them as prerequisites); achievements are capability-*consuming* (leaf events, not prerequisites for anything). "Achievement" also does double duty as a spotlight/feed mechanism for newly-added nodes, independent of category. A single Achievements category houses both capability-demonstration events (four-minute mile, Moon landing, stratosphere jump, circumnavigation) and institutional/symbolic milestone events (the Dartmouth Conference) — no separate milestone subtype, since nothing downstream would treat them differently. Now also load-bearing for Essay 1's Axiom 2, which cites this essay's taxonomy directly.
+- **Thesis (draft):** discovery versus invention by pre-existence, achievement as an existing capability exercised to a superlative degree with no transferable technique, out-degree only as a sanity check, and the Dartmouth Conference falling outside all three categories.
 - **Depends on:** #3.
 - **Status:** Proposed.
 
@@ -95,10 +95,10 @@ Status:
 
 ### 6. Edge Schema — one claim, three orthogonal fields
 
-- **Thesis (draft):** an edge is a claim, carrying a relationship-kind, a basis, and a grounding — three independent fields on one schema (amended by Essay 9: the third field was originally a proof-tier, and the edge was originally treated as a bundle of claims rather than a single one). This essay owns and fixes the relationship-kind vocabulary (material necessity, conceptual enablement, combination, mere influence) and assigns ownership of the other two fields elsewhere, so future essays populate one shared schema instead of each inventing "edge type" separately. Also fixes multiplicity rules (historical claims may multiply per independent origin; logical-necessity claims are capped at one per node pair) and a hard render-time rule: the stored graph is never the displayed graph, and multi-edges always collapse to one line. The "mere influence" relationship-kind has a first concrete candidate use — the AI concept/aspiration lineage's weak, indirect connection to the technical lineages it never materially enabled (Essay 2 debate) — worth stress-testing this essay against once drafted further.
+- **Thesis (draft):** an edge is a claim, carrying a relationship-kind, a basis, and a grounding — three independent fields on one schema (amended by Essay 9: the third field was originally a grounding, and the edge was originally treated as a bundle of claims rather than a single one). This essay owns and fixes the relationship-kind vocabulary (material necessity, conceptual enablement, combination, mere influence) and assigns ownership of the other two fields elsewhere, so future essays populate one shared schema instead of each inventing "edge type" separately. Also fixes multiplicity rules (historical claims may multiply per independent origin; logical-necessity claims are capped at one per node pair) and a hard render-time rule: the stored graph is never the displayed graph, and multi-edges always collapse to one line. The "mere influence" relationship-kind has a first concrete candidate use — the AI concept/aspiration lineage's weak, indirect connection to the technical lineages it never materially enabled (Essay 2 debate) — worth stress-testing this essay against once drafted further.
 - **Depends on:** #1, #2.
 - **Gates:** #7 (basis values), #9 (grounding), #10 (governance acts on these fields).
-- **Status:** Proposed — drafted, not yet stress-tested against many concrete edges the way #1 was tested against many nodes. Amendments pending from Essay 9: define an edge as a single claim, replace proof-tier with grounding, and rework the basis-multiplicity section for single-valued basis.
+- **Status:** Proposed — drafted, not yet stress-tested against many concrete edges the way #1 was tested against many nodes. Amendments pending from Essay 9: define an edge as a single claim, replace grounding with grounding, and rework the basis-multiplicity section for single-valued basis.
 
 ### 7. The Alien Civilization Question — historical attestation vs. logical necessity
 
@@ -111,16 +111,15 @@ Status:
 
 ### 8. The Culture / Social-Systems Layer
 
-- **Question:** do abstract systems (writing, law, money, democracy) belong in a "technology" tree, and if so, under what edge semantics?
-- **Note:** Essay 1's faculty/instantiation split (the capacity for language vs. any specific language) is expected to be load-bearing here, and Essay 7 has now used the same split for independently-discovered technologies generally — likely a reusable pattern for this essay too.
+- **Thesis (draft):** the faculty/instantiation split generalizes, iterative abstraction is the default shape, democracy as a worked mere-influence case, and writing as a silent upgrade to the non-transmissibility test.
 - **Depends on:** #1, #6, #7.
-- **Status:** Open — not yet substantively discussed.
+- **Status:** Proposed.
 
 ## Tier 4 — Editorial / Operational Policy (how the wiki *functions*, not what's true)
 
 ### 9. Sourcing & Citation Policy for Edges
 
-- **Thesis (draft):** an edge is a claim, and a claim is backed by grounding of two types, citation and argument, in any mixture. A citation is used when a text states the exact claim. An argument is a deductive derivation — not strictly a syllogism — whose premises are each grounded by citations (which need not be about the relationship between the two nodes) or by sub-arguments, and whose ungrounded premises are permitted but always listed by name. Neither type outranks the other, and the proof-tier field from Essay 6 is retired. Both types go through the same review, a deliberate deviation from Wikipedia's practice of letting citations stand unchecked: reviews attest that each inference step is valid and each premise (or the claim itself, for a citation) is supported by its source, bind to a version, and are invalidated by any substantive change, computed from the difference rather than self-declared. The number of independent reviews required is computed from blast radius (with a human floor that rises with it) rather than fixed, and a computed status — ungrounded, red, yellow, green, shown with a shape and a label — discloses how well a claim is grounded and reviewed. Sourcing follows a pinned snapshot of Wikipedia's verifiability and reliable-sources policies until the project writes its own, and Wikipedia is never a source for a claim. Bots may author and review under independence and human-floor constraints.
+- **Thesis (draft):** an edge is a claim, and a claim is backed by grounding of two types, citation and argument, in any mixture. A citation is used when a text states the exact claim. An argument is a deductive derivation — not strictly a syllogism — whose premises are each grounded by citations (which need not be about the relationship between the two nodes) or by sub-arguments, and whose ungrounded premises are permitted but always listed by name. Neither type outranks the other, and the grounding field from Essay 6 is retired. Both types go through the same review, a deliberate deviation from Wikipedia's practice of letting citations stand unchecked: reviews attest that each inference step is valid and each premise (or the claim itself, for a citation) is supported by its source, bind to a version, and are invalidated by any substantive change, computed from the difference rather than self-declared. The number of independent reviews required is computed from blast radius (with a human floor that rises with it) rather than fixed, and a computed status — ungrounded, red, yellow, green, shown with a shape and a label — discloses how well a claim is grounded and reviewed. Sourcing follows a pinned snapshot of Wikipedia's verifiability and reliable-sources policies until the project writes its own, and Wikipedia is never a source for a claim. Bots may author and review under independence and human-floor constraints.
 - **Resolves into:** the claim/grounding/review schema, the status computation, and a review-independence rule; resolves the overturned-source case (the GCHQ precedent) as ordinary supersession and the external-ruling case (CRISPR) as a citable but non-deferential source; states pseudonymous attribution as general policy.
 - **Depends on:** #6, #7, #10.
 - **Gates:** interacts with #8 (a possible resolution of the "mere influence" sub-value question via grounding), #11 (notability), #13 (bot policy), #14 (argument page format).

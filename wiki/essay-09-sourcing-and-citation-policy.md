@@ -3,7 +3,7 @@
 **Status:** Proposed
 
 **Depends on:** [Edge Schema](essay-06-edge-schema.md) (this essay redefines what an edge is and
-replaces that essay's proof-tier field), [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md)
+replaces that essay's grounding field), [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md)
 (basis becomes single-valued here), [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md)
 (blast radius, permission tiers, and the dispute process this essay's review mechanism builds on)
 
@@ -21,8 +21,8 @@ traced to a source that makes it, and that assumption fails for much of this gra
 logical-necessity claims (see [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md),
 Section 3), where nobody has published the argument at all.
 
-[Edge Schema](essay-06-edge-schema.md) assigned this essay a third edge field, proof-tier, with
-provisional values (directly-cited, synthesized-from-citations, argued-consensus). Debate found that
+[Edge Schema](essay-06-edge-schema.md) assigned this essay a third edge field, grounding, with
+provisional values (citation, argument, argument). Debate found that
 the field was built on two assumptions that do not hold:
 
 - **That one edge bundles several claims.** A node pair can carry a dated regional claim, a second
@@ -54,7 +54,7 @@ scope and can hold itself to a stricter verification standard, especially with a
 > argument. Neither type outranks the other. What a reader sees is a computed status, never an
 > editor-assigned rank.**
 
-Proof-tier, as a field that ranks kinds of support, is retired. Its remaining job, disclosing what
+grounding, as a field that ranks kinds of support, is retired. Its remaining job, disclosing what
 kind of support a claim has, is done by the grounding list itself and by the computed status.
 
 ## 4. Every claim is its own edge
@@ -361,6 +361,7 @@ This essay defines claims, grounding, review, and status. It deliberately does n
 This essay is **Proposed**. It was developed by debate and has not been stress-tested against real
 edges. Threads flagged rather than resolved:
 
+- **Redirects and reviewed claims.** Whether a redirect-induced endpoint change resets reviews of a claimed edge [D2 outcome].
 - **Argument Page Format.** The structured page attached to a claim, its formal fields, and its
   objection mechanism. Section 7's computed-difference rule depends on this essay defining which
   fields are formal structure. Logged as a new index item.
@@ -379,11 +380,14 @@ edges. Threads flagged rather than resolved:
 
 **Cross-essay changes required, not performed here:**
 
-| Essay | Change |
-| --- | --- |
-| [Edge Schema](essay-06-edge-schema.md) | Define an edge as a claim. Replace the proof-tier field with grounding and reassign its ownership language accordingly. Rework Section 4's basis-multiplicity text for single-valued basis and uniqueness constraints. |
-| [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md) | Make basis single-valued. Replace the four-row combination table with the two-edge treatment of "both." Remove proof-tier language. Note the origin attribute on historical-attestation edges. |
-| [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md) | Reword Section 7's "debate followed by consensus" as argument plus objection. Add review and bot rules or point to this essay. Resolve the overturned-source and external-ruling stress cases by reference to Sections 11 and 12. Extend blast radius to edges. |
-| [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) | Cross-reference the "mere influence" proposal in Section 14. |
-| [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md) | Mark the pseudonymous-attribution thread resolved by Section 13. |
-| [Essay index](essay-index.md) | Update entries 6, 7, 9, and 10. Add items 11 through 14 (Notability, Spotlight / Feed Mechanism, Bot and Automation Policy, Argument Page Format). |
+| Essay | Change | Status |
+| --- | --- | --- |
+| [Founding Axioms](essay-01-founding-axioms.md) | Update grounding / notability references. | Done |
+| [Node Granularity](essay-02-node-granularity.md) | Add claim-chain note; add redirect open thread. | Done |
+| [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md) | Mark pseudonymous-attribution resolved; update stage/node scopes. | Done |
+| [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md) | Update index item references. | Done |
+| [Edge Schema](essay-06-edge-schema.md) | Define an edge as a claim. Replace the grounding field with grounding and reassign its ownership language accordingly. Rework Section 4's basis-multiplicity text for single-valued basis and uniqueness constraints. | Done |
+| [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md) | Make basis single-valued. Replace the four-row combination table with the two-edge treatment of "both." Remove grounding language. Note the origin attribute on historical-attestation edges. | Done |
+| [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) | Cross-reference the "mere influence" proposal in Section 14. | Done |
+| [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md) | Reword Section 7's "debate followed by consensus" as argument plus objection. Add review and bot rules or point to this essay. Resolve the overturned-source and external-ruling stress cases by reference to Sections 11 and 12. Extend blast radius to edges. | Done |
+| [Essay index](essay-index.md) | Update entries 3, 4, 6, 7, 8, 9, and 10. Add items 11 through 14 (Notability, Spotlight / Feed Mechanism, Bot and Automation Policy, Argument Page Format). | Done |

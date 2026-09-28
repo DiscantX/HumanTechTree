@@ -5,7 +5,8 @@
 **Depends on:** Essay 1 (Founding Axioms), Essay 6 (Edge Schema — governance acts on these fields),
 Essay 7 (Basis values — disputes over them follow different grounding rules)
 
-**Gates:** interacts with Essay 9 (dispute grounding standard) and Essay 2 (deletion defaults to
+**Gates:** interacts with Essay 9 (grounding, review, and the objection process this essay's dispute
+resolution operates on) and Essay 2 (deletion defaults to
 merge, which is a granularity question)
 
 ## 1. The problem
@@ -59,6 +60,11 @@ New or low-permission accounts should be limited to *proposing* structural edits
 than landing them directly, given that a bad graph edit can do quieter, farther-reaching damage than
 a bad text edit (per the emergent-invalidity problem in Section 2).
 
+Essay 9 extends blast radius to edges: an edge's blast radius is proposed as the transitive
+descendant count of its downstream node, and the number of independent reviews an edge requires is
+computed from it. Reviewer eligibility and permission tiers are therefore now load-bearing for
+Essay 9, and are still left open here (Section 11).
+
 ## 4. Deletion policy
 
 No node with existing dependents may be hard-deleted. Deletion requires the requester to first
@@ -87,7 +93,10 @@ database layer, and it fully answers the "what if it's malicious" half of the or
 
 It does not answer the harder half: if a bad edit stood long enough for good-faith work to be built
 on top of it, a revert now conflicts with that legitimate downstream work, the same revert-war
-problem text wikis face on high-traffic pages. This is not solved by the database — it is mitigated
+problem text wikis face on high-traffic pages.
+
+A related case, a well-sourced claim later shown incomplete by new evidence such as a declassified
+precedent, is handled in Essay 9, Section 11 as ordinary supersession rather than as revert. This is not solved by the database — it is mitigated
 by the protection tiers in Section 3 (higher tiers get bad edits caught faster, before anything gets
 built on them) and by bot-driven patrol on high-blast-radius nodes specifically, not by any
 mechanism this essay can guarantee outright.
@@ -123,13 +132,13 @@ one, and the two should not be designed separately.
 
 ## 10. What this essay is not
 
-This essay does not set the citation or proof-tier vocabulary (Essay 9), and it does not resolve the
+This essay does not define grounding, review, or status (Essay 9), and it does not resolve the
 branch-and-merge versus atomic-statement architecture fork raised in Section 2 — that is deliberately
 left as a distinct, unresolved thread.
 
 ## 11. Status and open threads
 
-This essay is **Proposed**. Three threads are flagged for future debate rather than resolved here:
+This essay is **Proposed**. Six threads are flagged for future debate rather than resolved here:
 
 - The merge-model fork in Section 2.
 - How many protection tiers exist and who is authorized to grant admin-level permissions — this may
@@ -138,5 +147,9 @@ This essay is **Proposed**. Three threads are flagged for future debate rather t
 - Whether cycle detection specifically should hard-block a merge outright, or soft-flag it the way
   Wikidata's constraint-report system flags contradictory statements for human attention without
   blocking the edit — these have different editing-friction trade-offs and have not been decided.
-- A revert/recovery scenario not covered by Section 6: a well-sourced historical-attestation claim that later evidence (e.g., a declassification, as in public-key cryptography's GCHQ precedent) shows was incomplete all along, through no fault of the original editor and no available citation at the time. This is neither vandalism, honest error, nor a contested consensus call, and the existing recovery model doesn't clearly say how to handle it.
-- A stress case for Section 7's dispute-resolution process: CRISPR's Broad Institute vs. UC Berkeley priority dispute has been litigated externally, with a binding legal outcome. Whether this wiki's own consensus process defers to that ruling, runs independently of it, or explicitly discloses a divergence from it is undecided.
+- A revert/recovery scenario not covered by Section 6: a well-sourced historical-attestation claim that later evidence (e.g., a declassification, as in public-key cryptography's GCHQ precedent) shows was incomplete all along, through no fault of the original editor and no available citation at the time. Essay 9, Section 11 proposes ordinary supersession; pending adoption here.
+- A stress case for Section 7's dispute-resolution process: CRISPR's Broad Institute vs. UC Berkeley priority dispute has been litigated externally, with a binding legal outcome. Essay 9, Section 12 proposes that a ruling is citable for what it decided but not deferred to, with any divergence disclosed on the claim; pending adoption here.
+- Reviewer eligibility and permission tiers are now load-bearing for Essay 9.
+- Bots (index item 13) follow this essay's low-permission-account rule.
+- A premise-dependency check may be needed when an argument cites another claim (index item 14).
+- Edge-level blast radius needs a definition (Essay 9, Section 8 proposes one).

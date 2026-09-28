@@ -8,7 +8,7 @@ proposing new ones), Essay 7 (basis distinction — applied here without modific
 
 **Gates:** interacts with Essay 2 (granularity checklist decides several split-vs-attest calls
 below), Essay 3 (iterative abstraction was found here first, as a byproduct of that essay's
-stress-testing), Essay 9 (no new citation standard needed, but this domain's sourcing leans harder
+stress-testing), Essay 9 (no new grounding type needed, but this domain's claims lean harder on argument-type grounding than most physical-tech claims will; Essay 9, Section 14 also proposes that grounding may carry the mere-influence distinction, but this domain's sourcing leans harder
 on argued consensus than most physical-tech nodes will)
 
 ## 1. The problem
@@ -30,7 +30,7 @@ them once the split is made?
 > **For every subject in this layer, separate the general human capacity (endowment, excluded) from
 > the specific institutional form (action-built, eligible). Once that separation is made, Essays 2,
 > 6, and 7 already have everything needed to model what remains — this essay adds no new
-> relationship-kind, no new basis value, and no new proof-tier.**
+> relationship-kind, no new basis value, and no new grounding type.**
 
 Concretely:
 
@@ -120,7 +120,7 @@ worked example. It deliberately does not:
   instead (Section 5),
 - resolve whether "mere influence" needs sub-values (a founder who demonstrably read Cleisthenes
   versus ambient, undocumented cultural diffusion feel like different strengths of the same
-  relationship-kind) — flagged for Essay 6,
+  relationship-kind) — flagged for Essay 6. Essay 9, Section 14 proposes that the distinction may be carried by the claim's grounding rather than by sub-values: documented direct influence is citation-grounded, and ambient influence can only be argued. Proposed, not decided.
 - resolve money's own split-vs-attest question, which belongs to Essay 2 directly and is only
   referenced here for the parallel reasoning.
 

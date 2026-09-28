@@ -27,9 +27,8 @@ or not anyone has written them down. If these get nodes, two things break:
   prerequisite. That is not a meaningful edge. It is the same noise repeated at every layer, true and
   useless in the same breath, and traced far enough it ends at the Big Bang.
 - **False exclusions.** The obvious fixes, "exclude anything physical," "exclude anything chemical,"
-  or "exclude anything biological," fail immediately. Metallurgy, steam engines, nuclear reactors,
-  and vaccines are technologies with real prerequisite chains (thermodynamics before engines, germ
-  theory before vaccines) that act on and harness natural phenomena. Excluding a whole kind of
+  or "exclude anything biological," fail immediately. Metallurgy, gene therapy, nuclear reactors,
+  and transistors are technologies with real prerequisite chains (genetics before gene therapy, semiconductor physics before the transistor) that act on and harness natural phenomena. Excluding a whole kind of
   substance would remove a legitimate part of the tree.
 
 The way out is to notice that substance is the wrong thing to sort by. What matters is not what a
@@ -181,8 +180,9 @@ Excluding a phenomenon does not exclude the topic. Every floor exclusion has a l
 node" available to the graph: the theory of gravity, thermodynamics, atomic theory, the geology of
 ore formation, the physiology of pain. These were discovered, can be taught, can be superseded, and
 can be dated. They are actions, and they belong in the graph like any other discovery, often as real
-prerequisites to real downstream nodes. Anesthesia depends on understanding pain physiology, not on
-the raw capacity to feel pain, and a steam engine depends on thermodynamics, not on heat itself.
+prerequisites to real downstream nodes. Gene therapy depends on an understanding of genetics, not on the mere existence of
+genes, and the transistor depends on semiconductor physics, not on materials merely
+conducting as they do.
 
 The floor also has a built-in weakness worth naming. A candidate's place on it is only fixed for as
 long as no action changes it. A synthesized element is the mild case. The strong case would be a

@@ -93,19 +93,19 @@ Status:
 
 ## Tier 2 — Graph Mechanics (how things *relate*)
 
-### 6. Edge Schema — three orthogonal fields, one relationship
+### 6. Edge Schema — one claim, three orthogonal fields
 
-- **Thesis (draft):** an edge is a relationship-kind, a basis, and a proof-tier — three independent fields on one schema. This essay owns and fixes the relationship-kind vocabulary (material necessity, conceptual enablement, combination, mere influence) and assigns ownership of the other two fields elsewhere, so future essays populate one shared schema instead of each inventing "edge type" separately. Also fixes multiplicity rules (historical claims may multiply per independent origin; logical-necessity claims are capped at one per node pair) and a hard render-time rule: the stored graph is never the displayed graph, and multi-edges always collapse to one line. The "mere influence" relationship-kind has a first concrete candidate use — the AI concept/aspiration lineage's weak, indirect connection to the technical lineages it never materially enabled (Essay 2 debate) — worth stress-testing this essay against once drafted further.
+- **Thesis (draft):** an edge is a claim, carrying a relationship-kind, a basis, and a grounding — three independent fields on one schema (amended by Essay 9: the third field was originally a proof-tier, and the edge was originally treated as a bundle of claims rather than a single one). This essay owns and fixes the relationship-kind vocabulary (material necessity, conceptual enablement, combination, mere influence) and assigns ownership of the other two fields elsewhere, so future essays populate one shared schema instead of each inventing "edge type" separately. Also fixes multiplicity rules (historical claims may multiply per independent origin; logical-necessity claims are capped at one per node pair) and a hard render-time rule: the stored graph is never the displayed graph, and multi-edges always collapse to one line. The "mere influence" relationship-kind has a first concrete candidate use — the AI concept/aspiration lineage's weak, indirect connection to the technical lineages it never materially enabled (Essay 2 debate) — worth stress-testing this essay against once drafted further.
 - **Depends on:** #1, #2.
-- **Gates:** #7 (basis values), #9 (proof-tier values), #10 (governance acts on these fields).
-- **Status:** Proposed — drafted, not yet stress-tested against many concrete edges the way #1 was tested against many nodes.
+- **Gates:** #7 (basis values), #9 (grounding), #10 (governance acts on these fields).
+- **Status:** Proposed — drafted, not yet stress-tested against many concrete edges the way #1 was tested against many nodes. Amendments pending from Essay 9: define an edge as a single claim, replace proof-tier with grounding, and rework the basis-multiplicity section for single-valued basis.
 
 ### 7. The Alien Civilization Question — historical attestation vs. logical necessity
 
-- **Thesis (draft):** an edge's basis is historical-attestation (a dated, sourced, regional claim that X preceded Y in the record), logical-necessity (a timeless claim that any civilization would need X before Y), both, or neither — two independent claims, not one merged question. This resolves the original historical-vs-timeless framing directly: the graph tracks both, as separate fields. It also resolves independent/convergent discovery (agriculture, writing) without new machinery, via the same faculty/instantiation split Essay 1 used for language — one node, one logical-necessity edge if any, one historical-attestation edge per independently-attested origin. A node's disconnected historical-attestation edges (an "island," e.g. Mesoamerican technology with no link to Old World technology pre-contact) are not a defect to be patched.
+- **Thesis (draft):** an edge's basis is historical-attestation (a dated, sourced, regional claim that X preceded Y in the record) or logical-necessity (a timeless claim that any civilization would need X before Y) — two independent kinds of claim about the same node pair, not one merged question (amended by Essay 9: basis is single-valued, so "both" is now two edges and "neither" is no edge). This resolves the original historical-vs-timeless framing directly: the graph tracks both, as separate edges. It also resolves independent/convergent discovery (agriculture, writing) without new machinery, via the same faculty/instantiation split Essay 1 used for language — one node, one logical-necessity edge if any, one historical-attestation edge per independently-attested origin. A node's disconnected historical-attestation edges (an "island," e.g. Mesoamerican technology with no link to Old World technology pre-contact) are not a defect to be patched.
 - **Depends on:** #1, #6.
-- **Gates:** interacts with #2 (node-split decision), #9 (citation standards differ by basis value).
-- **Status:** Proposed — previously flagged as possibly needing resolution before other essays finalize; now drafted, still pending stress-testing against more edge pairs before ratification. Also carries forward Essay 1 Section 5's point that the floor's contingency (on species) may eventually bear on logical-necessity claims too — noted, not resolved.
+- **Gates:** interacts with #2 (node-split decision), #9 (grounding standards differ by basis value).
+- **Status:** Proposed — previously flagged as possibly needing resolution before other essays finalize; now drafted, still pending stress-testing against more edge pairs before ratification. Also carries forward Essay 1 Section 5's point that the floor's contingency (on species) may eventually bear on logical-necessity claims too — noted, not resolved. Amendments pending from Essay 9: single-valued basis, the two-edge treatment of "both," and an origin attribute on historical-attestation edges.
 
 ## Tier 3 — Scope Boundaries
 
@@ -120,17 +120,46 @@ Status:
 
 ### 9. Sourcing & Citation Policy for Edges
 
-- **Question:** Wikipedia ledes suffice for describing a node; what justifies a *prerequisite claim* (an edge), which is usually original synthesis rather than one citable sentence? Additional concern raised: unlike Wikipedia's citation-as-ground-truth model, there may not be enough citation coverage in the literature for every prerequisite claim across all of human technology, particularly for logical-necessity claims (#7), which are frequently this wiki's own synthesis rather than reported fact.
-- **New scope added:** this essay now also owns the *proof-tier* field from Essay 6's schema — expected values along the lines of directly-cited, synthesized-from-citations, and argued-consensus — and needs to define a distinct grounding standard for historical-attestation claims (ordinary verifiability) versus logical-necessity claims (argued soundness via this project's own debate process), rather than one citation standard for both.
-- **Depends on:** #6, #7.
-- **Status:** Open.
+- **Thesis (draft):** an edge is a claim, and a claim is backed by grounding of two types, citation and argument, in any mixture. A citation is used when a text states the exact claim. An argument is a deductive derivation — not strictly a syllogism — whose premises are each grounded by citations (which need not be about the relationship between the two nodes) or by sub-arguments, and whose ungrounded premises are permitted but always listed by name. Neither type outranks the other, and the proof-tier field from Essay 6 is retired. Both types go through the same review, a deliberate deviation from Wikipedia's practice of letting citations stand unchecked: reviews attest that each inference step is valid and each premise (or the claim itself, for a citation) is supported by its source, bind to a version, and are invalidated by any substantive change, computed from the difference rather than self-declared. The number of independent reviews required is computed from blast radius (with a human floor that rises with it) rather than fixed, and a computed status — ungrounded, red, yellow, green, shown with a shape and a label — discloses how well a claim is grounded and reviewed. Sourcing follows a pinned snapshot of Wikipedia's verifiability and reliable-sources policies until the project writes its own, and Wikipedia is never a source for a claim. Bots may author and review under independence and human-floor constraints.
+- **Resolves into:** the claim/grounding/review schema, the status computation, and a review-independence rule; resolves the overturned-source case (the GCHQ precedent) as ordinary supersession and the external-ruling case (CRISPR) as a citable but non-deferential source; states pseudonymous attribution as general policy.
+- **Depends on:** #6, #7, #10.
+- **Gates:** interacts with #8 (a possible resolution of the "mere influence" sub-value question via grounding), #11 (notability), #13 (bot policy), #14 (argument page format).
+- **Status:** Proposed — drafted after debate; not yet stress-tested against real edges. Requires cross-essay amendments to #6, #7, and #10, listed in the essay itself.
 
 ### 10. Governance and Moderation for a Living Graph
 
 - **Thesis (draft):** two problems a text wiki never faces: emergent invalidity (two individually-valid edits on different nodes jointly produce a cycle, uncatchable by field-level merge conflict detection) and catastrophic blast radius (a handful of extremely central nodes can do far more damage than any single page if deleted or corrupted). Resolves into: a post-merge validation gate (cycle/dangling-edge/orphan checks) as application code, not something inherited from the database; node protection tiers computed automatically from blast radius (transitive descendant count); a deletion policy requiring forced re-parenting of dependents before any deletion, with hard deletion reserved for zero-dependent nodes and most "delete" requests routed to merge/rename instead (#2); stable node identifiers with redirects on move; and dispute resolution via this project's own debate/consensus process, grounded per Essay 7's basis distinction. Explicitly does *not* resolve whether the long-run edit model should stay branch-and-merge or move toward a Wikidata-style atomic, independently-addressable-statement model — flagged as its own open architectural fork. Newly relevant to #2: the redirect mechanism here is proposed as the general answer to what a decomposed compound label ("fire") resolves to, and this essay may need to absorb cluster-pinning governance (algorithmic clustering drift on open-ended macro-topics) as a further addendum once #2 is written up.
 - **Depends on:** #1, #6, #7.
 - **Gates:** interacts with #9 (dispute grounding standard) and #2 (deletion-vs-merge default).
-- **Status:** Proposed — drafted; the branch-vs-atomic-statement fork, the exact number and assignment of permission tiers, hard-block-vs-soft-flag for cycle detection, and now the cluster-pinning governance question raised by #2 are flagged as separate future debate threads rather than resolved.
+- **Status:** Proposed — drafted; the branch-vs-atomic-statement fork, the exact number and assignment of permission tiers, hard-block-vs-soft-flag for cycle detection, and now the cluster-pinning governance question raised by #2 are flagged as separate future debate threads rather than resolved. Amendments pending from Essay 9: reword dispute resolution as argument plus objection, extend blast radius to edges, and resolve the overturned-source and external-ruling stress cases by reference.
+
+### 11. Notability / Inclusion Threshold
+
+- **Question:** what makes a candidate that clears both of Essay 1's axioms significant enough to warrant its own node, as opposed to being folded into a larger one or excluded as trivial (the "someone's garage invention made of duct tape and sticks" problem)? Structurally similar to Wikipedia's notability guideline, distinct from Essay 1's category test, and applies at every level of the graph.
+- **Note:** some Wikipedia notability policies do not transfer to this project at all (a school-outcomes rule, for instance). Candidate material carried over from Essay 4: the Guinness-record heuristic — a genuine achievement pushes against a dimension already meaningfully constraining before someone beat it, while a manufactured record invents an arbitrary contest category. Likely entangled with #9 (whether having enough grounding is part of notability) and #2 (granularity).
+- **Depends on:** #1, #2, #9.
+- **Status:** Open — not yet substantively discussed.
+
+### 12. Spotlight / Feed Mechanism
+
+- **Question:** how does the wiki surface "this is a big deal" — a newly added node, or a recent event like Navier–Stokes being solved lighting up in gold — without conflating magnitude with category? Editor's choice and non-load-bearing by nature: nothing structural depends on it.
+- **Open questions:** whether a spotlight is expiring or permanent metadata, whether it applies retroactively to older nodes, and how it relates to the notability threshold (#11).
+- **Depends on:** #4.
+- **Status:** Open — spun off from Essay 4, deferred entirely.
+
+### 13. Bot and Automation Policy
+
+- **Question:** what may automated accounts do in the wiki, and under what constraints? Essay 9 establishes that bots are allowed and may author arguments, verify citations, and review, and fixes only what the review mechanism needs: labeled and reasoned bot reviews, independence by instance and model rather than by operator, all bots of one model family counting as one reviewer, verification that retrieves the source itself, a human floor that rises with blast radius, and a declared operator of record. This essay owns everything beyond that.
+- **Open questions:** whether and how the API opens beyond the project's own bots (initially only the project operates them); defenses against fabricated sources and against injection through source text; bot permission tiers relative to Essay 10's low-permission-account rule; bulk import of new claims; the scope of bot patrol on high-blast-radius nodes.
+- **Depends on:** #9, #10.
+- **Status:** Open — not yet substantively discussed.
+
+### 14. Argument Page Format
+
+- **Question:** what is the structured page attached to a claim? Essay 9 defines what an argument is (a deductive derivation with grounded premises) and that it can be modified by others, but not its concrete structure.
+- **Open questions:** which fields are formal structure (a change to which invalidates reviews) versus free text; how premises reference other claims in the graph, and whether a premise-dependency check is needed when a referenced claim is overturned; how objections are structured and resolved; how the page relates to the general talk page, which remains an open-forum space.
+- **Depends on:** #9.
+- **Status:** Open — spun off from Essay 9, deferred.
 
 ---
 *New topics get added here as they surface — this index itself is expected to grow.*

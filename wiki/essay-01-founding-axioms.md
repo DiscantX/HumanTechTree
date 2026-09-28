@@ -1,232 +1,237 @@
-# Essay 1 — Founding Axioms: What Never Becomes a Node
+# Founding Axioms: What Never Becomes a Node
 
-**Status:** Proposed (Axiom 1 previously ratified and stress-tested; Axiom 2 is newly added and
-has only been run against one case so far)
+**Status:** Proposed
 
-**Depends on:** nothing in the strict sense — though Axiom 2 below references the technology /
-discovery / invention / achievement taxonomy that Essay 4 owns, without waiting for Essay 4 to be
-finalized first
+This project maps human technology as a graph. Each [node](essay-00-about-the-project.md#glossary)
+is a discovery, invention, or achievement, and each [edge](essay-00-about-the-project.md#glossary)
+records that one thing was a prerequisite of another. Two rules decide what can become a node at all.
 
-**Gates:** eligibility for every candidate entry in the tree — decides what is allowed into the
-graph at all. It does not decide how eligible entries are prioritized, split, sourced, or curated
-once admitted; that work belongs to later essays (2, 6, 9, and a new notability essay flagged
-below).
+1. **Origin.** Something is left out of the graph if no human action is responsible for its
+   existence. Gravity, copper ore, and the ability to feel heat are not nodes. The lever, smelting,
+   and the discovery of gravity are.
+2. **Category.** Something a person did still needs a node only if it is itself a discovery, an
+   invention, or an achievement. A conference at which an idea was announced is not a node, though
+   the idea might be.
 
-## 1. The problem
+In short, the graph records what people did, not what merely exists. Everything below explains why
+the rules are drawn this way, how to apply them to hard cases, and which questions remain open.
 
-The graph needs a floor. If "prerequisite" is asked recursively of every node, you eventually hit
-capacities every human simply *has* — the ability to feel heat, register pain, perceive depth. If
-these get nodes, two things break:
+## Why the graph needs a floor
 
-- **Infinite regress.** Almost any node could cite "the ability to perceive the world" as a
-  prerequisite. That is not a meaningful edge — it is noise repeated at every layer. Taken to its
-  absurd conclusion, "you have a nervous system" becomes a cited prerequisite of fire, which is
-  true and useless in the same breath.
-- **A real exclusion, not a blunt one.** The naive fix — "exclude anything biological" — fails
-  immediately. Gene therapy, vaccines, prosthetics, and IVF are technologies with real prerequisite
-  chains (germ theory before vaccines, genetics before gene therapy) that happen to act on biology.
-  Excluding "biological" would gut a legitimate, node-shaped part of the tree. The axis was never
-  substance; it is origin.
+If "what was required for this?" is asked over and over of every node, the chain eventually reaches
+things no one made: the pull of gravity, the properties of the chemical elements, the energy arriving
+from the sun, the metal ores sitting in the ground, the mathematical relationships that hold whether
+or not anyone has written them down. If these get nodes, two things break:
 
-A second, different problem surfaced later, once the project started running real candidates
-through the first axiom: some candidates clear the origin test easily — someone plainly *did*
-something — but are not themselves a technology, discovery, invention, or achievement. A
-conference, an announcement, a publication venue can all be genuine actions with real downstream
-consequences without being the kind of thing this graph is meant to hold nodes for. Section 2's
-second axiom exists to catch this case, which the origin test alone cannot.
+- **Infinite regress.** Almost any node could cite basic physical reality or natural law as a
+  prerequisite. That is not a meaningful edge. It is the same noise repeated at every layer, true and
+  useless in the same breath, and traced far enough it ends at the Big Bang.
+- **False exclusions.** The obvious fixes, "exclude anything physical," "exclude anything chemical,"
+  or "exclude anything biological," fail immediately. Metallurgy, steam engines, nuclear reactors,
+  and vaccines are technologies with real prerequisite chains (thermodynamics before engines, germ
+  theory before vaccines) that act on and harness natural phenomena. Excluding a whole kind of
+  substance would remove a legitimate part of the tree.
 
-## 2. The founding axioms
+The way out is to notice that substance is the wrong thing to sort by. What matters is not what a
+candidate is made of, but whether any human action is responsible for its existence. Gravity and the
+lever are both physical, yet only one of them was ever worked out by someone. The stopping point of
+the graph, the "floor," is therefore a line drawn by origin.
 
-This project's floor is not a single axiom, despite this essay's earlier framing — it is a growing
-set, checked together against every candidate. Two exist so far.
+A second problem appears once real candidates are tested. Some clearly pass the origin test, because
+someone plainly *did* something, and still are not the kind of thing this graph holds nodes for. A
+conference, an announcement, or a publication venue can be a genuine action with real consequences
+without being a discovery, an invention, or an achievement. The second rule exists to catch these.
 
-> **Axiom 1 — Origin.** A candidate is excluded from the graph — placed on the floor rather than
-> treated as a node — if and only if no human action is responsible for its existence.
+## The two rules
 
-Everything that exists *because someone did something* — discovered a pattern, tried a technique,
-built an artifact, formalized an idea, even something as small as noticing a regularity — is
-eligible as a node, at whatever level of granularity that action occurred. Fire-starting is
-eligible because someone figured it out, could have failed to, and the technique can be lost and
-re-taught. Gene therapy is eligible because it is an act of discovery and engineering, regardless
-of whether the capacity it restores is itself axiomatic.
+The floor is not a single rule. It is a set, and every candidate must clear all of them. Two exist so
+far.
 
-Nothing is eligible if it is simply a standing fact about what a human is, prior to and independent
-of anything any human ever did. Heat sensation, depth perception, and puberty are not "held" by
-anyone the way a technique is held — there is no point in the record where a human went from
-lacking them to having them through their own activity, and no point where they could be lost the
-way a craft is lost.
+> **Axiom 1 — Origin.** A candidate is excluded from the graph, placed on the floor rather than
+> treated as a node, if and only if no human action is responsible for its existence.
 
-> **Axiom 2 — Candidate category.** A candidate that clears Axiom 1 still requires no node unless
-> it is itself a discovery, invention, or achievement, per Essay 4's taxonomy. A
-> candidate that is merely the occasion, venue, or context in which one of those three was produced
-> — a conference, an announcement, a publication venue — does not itself receive a node.
+Everything that exists *because someone did something* is eligible at whatever level of detail that
+action occurred: someone discovered a pattern, tried a technique, built an artifact, formalized an
+idea, or simply noticed a regularity. Fire-starting is eligible because someone figured it out, could
+have failed to, and the technique can be lost and re-taught.
 
-Axiom 2 does not reopen Axiom 1's question. A candidate can pass Axiom 1 outright — real human
-action, no dispute — and still fail Axiom 2, because acting is not the same as producing a
-technology, discovery, invention, or achievement in its own right. The two axioms are checked in
-sequence (Section 7), and a candidate needs to clear both to earn a node.
+Nothing is eligible if it is a standing fact about the universe, prior to and independent of anything
+any human ever did. Gravity, the speed of light, the chemical elements as they occur in nature, solar
+radiation, lightning, the tides, deposits of copper ore, and the truths of mathematics are not "held"
+by anyone the way a technique is held. There is no point in the record where people went from lacking
+them to having them through their own activity, and no point where they could be lost the way a
+craft is lost. The same is true of the natural traits of the human body, such as heat sensation,
+depth perception, or puberty. These are one kind of natural phenomenon among many, not a special
+case.
 
-Each axiom answers a narrower question than "should this be in the graph at all" might suggest:
-Axiom 1 asks whether anything was done; Axiom 2 asks whether what was done was itself one of the
-four admitted kinds of thing, or only the setting in which one of those four kinds of thing
-happened to occur. Neither axiom decides whether an admitted entry is significant enough, granular
-enough, or well-sourced enough to warrant its own node — those remain separate problems, addressed
-below in Section 6.
+The test concerns a candidate's *existence*, not its substance. A naturally occurring element is on
+the floor, but a synthesized element that exists only because a laboratory made it is not, since
+human action is responsible for its existence.
 
-## 3. Recognizing the absence of action: three diagnostics for Axiom 1
+> **Axiom 2 — Candidate category.** A candidate that clears Axiom 1 still requires no node unless it
+> is itself a discovery, invention, or achievement, as defined in
+> [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md) (which
+> distinguishes the three by whether the thing already existed and whether it produced a technique
+> others can build on). A candidate that is merely the occasion, venue, or context in which one of
+> those three was produced, such as a conference, an announcement, or a publication venue, does not
+> itself receive a node.
+
+The two rules ask different questions. Axiom 1 asks whether anything was done. Axiom 2 asks whether
+what was done was itself one of the three admitted kinds of thing, or only the setting in which one
+of them happened to occur. A candidate can pass the first outright and still fail the second, because
+acting is not the same as producing a discovery, invention, or achievement.
+
+Neither rule decides whether an admitted entry is significant enough, detailed enough, or
+well-sourced enough to warrant its own node. Those are separate problems, listed under "What these
+rules do not decide" below.
+
+## Applying the origin rule: three diagnostics
 
 "No human action is responsible" is a claim about causal history, which is not always visible on
-inspection. Three observable symptoms diagnose it in practice. These are not three separate tests
-to pass — they are three ways the same underlying fact (no action occurred) tends to show up.
+inspection. Three observable symptoms diagnose it in practice. They are not three separate tests.
+They are three ways the same underlying fact, that no action occurred, tends to show up.
 
-**Endowment.** The capacity arises through normal species-typical biological or developmental
-processes, with no point in the record where it was discovered, invented, or achieved. This is
-what "no action" looks like from the outside: it just develops, on schedule, in everyone.
+**Natural occurrence.** The phenomenon arises through the ordinary workings of the universe, whether
+physical, chemical, geological, astronomical, or biological, with no point in the record where anyone
+discovered, invented, or achieved it. It happens, or holds, whether or not anyone is present to see
+it. A biological capacity that develops on schedule in every member of the species (an
+"endowment") is one instance of this, not the definition of it.
 
-**Non-transmissibility.** If no action produced the capacity, there is no technique or item of
-knowledge behind it — and nothing without a technique behind it can be taught into a population
-that lacks it, or lost by a population through forgetting or disruption. Fire-starting can be lost
-by an isolated group and re-taught by contact with outsiders; pain sensation cannot.
+**Non-transmissibility.** If no action produced the phenomenon, there is no technique or piece of
+knowledge behind it, and nothing without a technique behind it can be taught into a population that
+lacks it or lost by a population through forgetting. Fire-starting can be lost by an isolated group
+and re-taught by contact with outsiders. Gravity, the properties of copper, and the ability to feel
+pain cannot.
 
-Two clarifications sharpen this diagnostic considerably, both surfaced by pushing on real
-counterexamples rather than hypotheticals:
+Two clarifications keep this diagnostic honest:
 
-- *Individual pathology is not population-level transmission.* A person can lose pain sensation
-  (CIPA), hearing, or sight through injury or disease — that is a health outcome, not evidence that
-  the capacity is culturally transmitted. The diagnostic only asks whether a *population* could
-  regain the capacity the way a village regains a lost craft by contact with outsiders. A
-  population with elevated rates of a condition does not need to import a technique to restore
-  species-typical sensation the way a village needs contact to relearn metallurgy — this
-  diagnostic tracks that second kind of fragility, not the first.
-- *Propagating the biological substrate is a different channel from propagating a technique.* A
-  population can acquire a capacity it lacked through gene flow (interbreeding), or have it
-  restored through medicine aimed at species-typical baseline (a cochlear implant, a vitamin
-  deficiency corrected). Neither of these transmits a discovered technique that could subsequently
-  be lost through forgetting — they propagate the endowment mechanism itself, which is exactly what
-  "endowment" already presumes everyone has access to. This channel does not count against the
-  diagnostic. (Note: a *novel* biological addition — a capacity no human population has ever had —
-  would itself be a node, the biotech that created it. See Section 5 for where this leads.)
+- *Local or individual absence is not loss of a technique.* A region with no copper ore, a coast
+  with no tides, and a person who has lost hearing or pain sensation through injury or disease all
+  lack something. None of them lacks a *technique* that contact with outsiders could restore. The
+  diagnostic asks whether a population could regain the thing the way a village regains a lost craft,
+  not whether it happens to be missing somewhere.
+- *Moving the substrate is not moving a technique.* Carrying ore to a region that lacks it, or
+  restoring typical hearing with a cochlear implant, delivers the natural phenomenon or restores its
+  baseline. It does not pass along a discovered technique that could later be forgotten. Smelting the
+  ore is a technique and is a node, while the ore is not. A genuinely *novel* addition, something no
+  natural process had ever produced, would itself be a node (see "The shadow-node principle").
 
-**Non-decomposability.** If no action produced the capacity, there is no historically or culturally
-variable sequence of enabling sub-steps behind it (per Essay 2's granularity logic) — because each
-step in such a sequence would itself be an action someone took. Fire decomposes into observation,
-exploitation, production, and explanation; puberty does not decompose into anything a culture built
-up over time.
+**Non-decomposability.** If no action produced the phenomenon, there is no historically or
+culturally variable sequence of enabling steps behind it, because each step in such a sequence would
+itself be an action someone took. Fire decomposes into observation, exploitation, production, and
+explanation. Gravity, the tides, and puberty do not decompose into anything a culture built up over
+time.
 
-This diagnostic also catches a case worth naming explicitly: a **trained skill riding on an innate
-sense** is not itself axiomatic, even when it feels like a pure extension of the senses. Learned
-echolocation via mouth-clicks, or a sommelier's trained palate, are not species-typical, require
-deliberate practice, vary by skill level, can be taught to someone who lacks them, and can be lost
-institutionally if the training tradition dies out. They decompose into a teachable technique built
-on top of an endowment, which makes the *technique* a node even though the underlying sense (a
-functioning cochlea, functioning taste receptors) is not.
+This diagnostic also separates a natural phenomenon from a technique built on top of it. The lever is
+a node, while the gravity and rigidity it exploits are not. A sailing technique is a node, while the
+wind is not. The same holds for trained skills that feel like pure extensions of a natural capacity:
+learned echolocation or a sommelier's palate requires deliberate practice, varies by skill level, can
+be taught, and can be lost if the training tradition dies out, so the *technique* is a node even
+though the underlying sense is not.
 
-## 4. Stress-tested edge cases
+## Worked examples
 
-**Puberty.** No action anywhere in its causal history — nobody achieves or invents a maturation
-cascade. Passes endowment and non-decomposability cleanly despite not being present from birth,
-which is why "present from birth" was rejected as the wording for endowment in favor of "normal
-developmental trajectory." Excluded under Axiom 1.
+| Candidate | Verdict | Reason |
+| --- | --- | --- |
+| Gravity | Floor | No human action; passes all three diagnostics |
+| Copper ore, lightning, the tides | Floor | Natural occurrences, present whether or not anyone observes them |
+| Heat sensation, puberty, opposable thumbs | Floor | Species-typical natural traits; no action produced them |
+| A mathematical theorem's truth | Floor | It holds whether or not anyone proves it |
+| A synthesized element | Passes Axiom 1 | Exists only because of human action; the act of making it must still clear Axiom 2 |
+| The lever, smelting, sailing | Eligible | Techniques someone worked out, built on natural phenomena |
+| A specific language or script | Eligible | Built by people, varies by culture, can be lost |
+| The Dartmouth Conference (1956) | Fails Axiom 2 | A human action, but not a discovery, invention, or achievement |
 
-**Language acquisition.** Splits cleanly under the origin test. The underlying faculty for syntax
-is not the product of any action — it develops in any species-typical human regardless of which
-community raises them — so the *faculty* is excluded under Axiom 1. A specific language, script, or
-literacy is the opposite: someone built it, it varies by culture, it is taught, it can be lost
-(dead languages), and it decomposes historically (speech, writing, alphabets, printing). Node, or
-node-chain. This faculty/instantiation split is exactly what Essay 8 (culture and social systems)
-will need to apply to writing, law, money, and similar systems.
+A few of these need more than a table row.
 
-**Color vision.** No action produced trichromatic vision, and colorblindness — affecting roughly 1
-in 12 men — does not change that: it is individual biological variance, not evidence the capacity
-was ever culturally transmitted or could be un-invented. Excluded under Axiom 1, per the
-population/individual clarification in Section 3.
+**Fire, split at the origin line.** Naturally occurring fire, from lightning or wildfire, is on the
+floor. Noticing that it behaves regularly, capturing it, producing it on demand, and explaining it
+are each human actions with their own histories. This boundary is where the stage-by-stage breakdown
+in [Node Granularity](essay-02-node-granularity.md) begins (an essay on when one topic should be
+split into several nodes), and the stages themselves are described in
+[What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md).
 
-**Opposable thumbs.** The origin test never required the candidate to be a sensation. No action
-produced this anatomical trait either, so it is excluded on the same grounds as heat sensation.
-This confirms Axiom 1 applies identically to physical traits, sensory capacities, and cognitive
-faculties — there is no separate carve-out for "mere sensations."
+**Mathematical truths.** A theorem holds whether or not anyone has proved it, so the truth itself is
+a natural feature of the world in the relevant sense and sits on the floor. Discovering it, proving
+it, and inventing the notation or proof technique that expresses it are actions. This follows the
+distinction that a mathematician *discovers* a theorem because it was always true.
 
-**The Dartmouth Conference (1956).** The first stress test of Axiom 2. Clears Axiom 1 without
-difficulty — convening the conference and coining the term "artificial intelligence" as a named
-research program were unambiguous human actions with real downstream institutional consequences.
-It fails Axiom 2, failing all three categories (discovery, invention, and achievement) per Essay 4. It falls out of the graph entirely as a non-node, its content becoming descriptive context on whichever real node it actually contributed to, rather than receiving a node of its own. This is the case that motivated
-adding Axiom 2 in the first place: without it, any sufficiently consequential meeting,
-announcement, or publication would clear the origin test and demand a node, even though it
-produced no capability anything else could genuinely cite as a prerequisite.
+**Language.** The origin test splits language cleanly. The underlying human faculty for syntax is not
+the product of any action, so the faculty is excluded. A specific language, script, or literacy is
+the opposite: someone built it, it is taught, it can be lost (dead languages), and it decomposes
+historically. That split between a natural faculty and a built instance is generalized in
+[The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) to writing, money, and
+democracy.
 
-## 5. The shadow-node principle
+**Colorblindness.** It affects roughly 1 in 12 men and might seem to suggest that color vision is
+something that can be lost and regained. It does not. It is individual variation, not a lost
+technique, which is the first clarification above.
 
-Excluding a capacity does not exclude the topic. Every axiom-1 exclusion has a legitimate shadow
-node available to the graph: "understanding of pain / nociception," "theory of color vision,"
-"endocrinology of puberty." These were discovered, are teachable, are transmissible, are
-supersedable, and are historically datable — they are actions, and they belong in the graph like
-any other discovery node, often as real prerequisites to real downstream nodes (anesthesia depends
-on understanding pain physiology, not on the raw capacity to feel pain).
+**The Dartmouth Conference.** Convening the conference and coining the term "artificial
+intelligence" for a research program were real human actions with real consequences, so the
+conference clears Axiom 1. It fails Axiom 2. It exercised no capability and produced no technique
+that anything else could build on, so it is not a discovery, invention, or achievement. It does not
+become a node. Its content becomes descriptive context on whichever real node it contributed to.
+This is the standard treatment for meetings, announcements, and publications: without the second
+rule, any sufficiently consequential event would clear the origin test and demand a node.
 
-This also means Axiom 1 has a built-in trapdoor worth naming rather than resolving here: an
-endowment is only fixed for as long as no action changes it. If a biological intervention ever
-produced a capacity no human population previously had, and that capacity became heritable and
-species-typical, something that began as a node (the biotech) would end as a future editor's
-axiom. Nothing like this exists today, but it means "endowment" is not a metaphysical constant — it
-is a contingent fact about what *Homo sapiens* currently is, which is precisely the kind of
-question Essay 7 (the alien-civilization question) should inherit: not only is the historical
-*order* of discovery contingent, the floor itself is contingent on which species is building the
-tree.
+## The shadow-node principle
 
-## 6. What this essay is not
+Excluding a phenomenon does not exclude the topic. Every floor exclusion has a legitimate "shadow
+node" available to the graph: the theory of gravity, thermodynamics, atomic theory, the geology of
+ore formation, the physiology of pain. These were discovered, can be taught, can be superseded, and
+can be dated. They are actions, and they belong in the graph like any other discovery, often as real
+prerequisites to real downstream nodes. Anesthesia depends on understanding pain physiology, not on
+the raw capacity to feel pain, and a steam engine depends on thermodynamics, not on heat itself.
 
-These axioms establish two gates: is a candidate eligible to be discussed as a node at all (Axiom
-1), and is what the candidate actually is one of the admitted kinds of thing rather than merely the
-setting for one (Axiom 2). They deliberately do not decide:
+The floor also has a built-in weakness worth naming. A candidate's place on it is only fixed for as
+long as no action changes it. A synthesized element is the mild case. The strong case would be a
+biological intervention that gave people a capacity no population previously had and made it
+heritable, so that something that began as a node (the technology) would end up as part of the
+floor. Nothing like that exists today, but it means the floor is not a metaphysical constant.
 
-- whether an entry that clears both axioms is *significant* enough in scale to warrant its own
-  node, as opposed to being folded into a larger one or excluded as trivial (the "someone's garage
-  invention made of duct tape and sticks" problem) — that is a curation/notability question,
-  structurally similar to Wikipedia's notability guideline, distinct from Axiom 2's category test,
-  and it applies at every level of the graph, not just the bottom. It has been logged as a new
-  index item rather than folded in here, since conflating a floor test with a significance
-  threshold would blur two different jobs,
-- how granular an eligible entry should be (Essay 2),
-- what edge type connects it to other nodes (Essay 6),
-- what sourcing standard justifies including it (Essay 9).
+Some of the floor is also a fact about who is building the tree. Physical law and mathematical truth
+plausibly hold for any civilization, while the natural traits of the human body do not. The question
+of whether the graph should record human history or the prerequisites any civilization would face is
+taken up in [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md),
+and this point bears on it: not only is the historical *order* of discovery contingent, some of the
+floor itself may depend on which species is doing the building.
 
-## 7. What this resolves into
+## What these rules do not decide
 
-**The Founding Axiom Gate** — now two questions, checked in sequence per candidate:
+The two rules decide whether a candidate is eligible for a node. Clearing both makes a candidate
+eligible, not guaranteed a node. They deliberately leave four things to other policies:
 
-1. Is any human action responsible for this candidate's existence? (Axiom 1)
-   - **No** → excluded as a floor axiom. Check whether a corresponding "understanding/theory of X"
-     shadow node is missing from the graph and add it if warranted.
-   - **Yes** → proceed to question 2.
-2. Is the candidate itself a discovery, invention, or achievement, per Essay 4's
-   taxonomy? (Axiom 2)
-   - **No** → excluded. The candidate may still belong in the description of whichever node it
-     actually produced or named, rather than as a node of its own.
-   - **Yes** → eligible. Proceed to normal node evaluation (Essay 2's granularity checklist, Essay
-     6's edge-type taxonomy, the forthcoming notability threshold, etc.).
+- **Significance.** Whether an eligible entry is important enough to warrant its own node, as opposed
+  to being folded into a larger one or excluded as trivial (the "someone's garage invention made of
+  duct tape and sticks" problem). This is a curation question similar to Wikipedia's notability
+  guideline, and it applies at every level of the graph. It will be addressed by a separate
+  Notability / Inclusion Threshold policy, which has not yet been written.
+- **Granularity.** How finely an eligible topic is divided into nodes, covered in
+  [Node Granularity](essay-02-node-granularity.md).
+- **Relationships.** What kind of edge connects one node to another, covered in
+  [Edge Schema](essay-06-edge-schema.md).
+- **Sourcing.** What evidence justifies a node or a prerequisite claim, covered in
+  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
 
-The order matters in the sense that Axiom 1 is the more fundamental question, but what matters more
-than the order is that a candidate must clear every axiom in this set, however many it eventually
-grows to — this is not a checklist where partial credit is possible.
+## Open questions
 
-## 8. Status and open threads
-
-This essay was previously Ratified on the strength of a single axiom (origin), stress-tested
-against puberty, language, color vision, and thumbs. It is being reopened to **Proposed** now that
-a second axiom has been added, consistent with treating the whole essay set as a work in progress
-during this planning phase rather than closing essays permanently on first ratification.
-
-Threads flagged rather than resolved here:
-
-- Axiom 2 has only been run against one case (Dartmouth). Further candidates — other conferences,
-  announcements, publications, and possibly award ceremonies or standards bodies — should be run
-  through it before any future ratification.
-- Additional axioms may be identified as more candidates are tested; this essay's title already
-  anticipated a set ("Founding Axioms," plural) even when the body only delivered one.
-- **Essay 7** must treat the floor itself, not just the historical order built on it, as
-  potentially contingent on which species is building the tree.
-- **Essay 8** inherits the faculty/instantiation split surfaced by the language-acquisition case.
-- Democracy, surfaced during Essay 3's stress-testing, strains the non-transmissibility diagnostic in a way none of the essay's existing edge cases do: it is not continuously practiced (ruling out "endowment"), but its ~2,000-year gap between Athenian practice and modern reinvention is neither the lost-and-reteaught-by-contact channel nor the gene-flow/medical-restoration channel this essay already names — it is forgotten as a practiced institution and reconstructed independently from historical record rather than transmitted. Whether this counts as a third transmissibility channel, or as evidence that Athenian and modern democracy are simply two separate nodes connected by influence rather than one continuous subject, is left to Essay 8.
-- **A new essay — Notability / Inclusion Threshold** is needed to handle candidates that clear both
-  axioms but are too trivial or narrow to warrant a node, likely entangled with Essay 9's sourcing
-  standards and Essay 2's granularity logic. Logged in the index as a new Tier 4 item.
+- **Partly human-made phenomena.** The rules handle clear cases in both directions. Gradient cases,
+  such as synthesized elements, engineered organisms, and human-altered landscapes, deserve a
+  deliberate look to confirm that "responsible for its existence" holds up.
+- **Formal subjects.** Treating mathematical truth as part of the floor follows from the
+  discovery/invention distinction, but it has been tested less than the physical and biological
+  cases. Cosmic and geological cases have had less scrutiny as well.
+- **Two layers of floor.** Should the floor be recorded as a universal layer (physical law,
+  mathematical truth) and a species-contingent layer (biological endowment)? This is a new idea and
+  it bears on how prerequisite claims about "any civilization" are phrased.
+- **Writing and transmissibility.** Once writing exists, a lost technique can be recovered from the
+  record without contact with any practitioner, which changes the non-transmissibility diagnostic for
+  everything that comes after. [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md)
+  proposes handling this as a note on writing's own node instead of rewriting the diagnostic here.
+  Whether that becomes a formal convention is undecided.
+- **The category rule's coverage.** Axiom 2 has been tested mainly against the Dartmouth Conference.
+  Other conferences, announcements, publications, award ceremonies, and standards bodies should be
+  run through it.
+- **Further axioms.** The title anticipates a set, and the body so far delivers two. More may be
+  identified as more candidates are tested.

@@ -57,8 +57,8 @@ lacking them to having them through their own activity, and no point where they 
 way a craft is lost.
 
 > **Axiom 2 — Candidate category.** A candidate that clears Axiom 1 still requires no node unless
-> it is itself a technology, discovery, invention, or achievement, per Essay 4's taxonomy. A
-> candidate that is merely the occasion, venue, or context in which one of those four was produced
+> it is itself a discovery, invention, or achievement, per Essay 4's taxonomy. A
+> candidate that is merely the occasion, venue, or context in which one of those three was produced
 > — a conference, an announcement, a publication venue — does not itself receive a node.
 
 Axiom 2 does not reopen Axiom 1's question. A candidate can pass Axiom 1 outright — real human
@@ -149,11 +149,7 @@ faculties — there is no separate carve-out for "mere sensations."
 **The Dartmouth Conference (1956).** The first stress test of Axiom 2. Clears Axiom 1 without
 difficulty — convening the conference and coining the term "artificial intelligence" as a named
 research program were unambiguous human actions with real downstream institutional consequences.
-It fails Axiom 2: the conference is not itself a technology, discovery, invention, or achievement
-in Essay 4's sense — it is the venue and occasion in which a research program was named, not a
-technique anyone can build on or a capability anyone can point to. It has a place in the graph as
-an **achievement** leaf (Essay 4) — something to point at, not something to build from — but it
-receives no node with outgoing prerequisite edges of its own. This is the case that motivated
+It fails Axiom 2, failing all three categories (discovery, invention, and achievement) per Essay 4. It falls out of the graph entirely as a non-node, its content becoming descriptive context on whichever real node it actually contributed to, rather than receiving a node of its own. This is the case that motivated
 adding Axiom 2 in the first place: without it, any sufficiently consequential meeting,
 announcement, or publication would clear the origin test and demand a node, even though it
 produced no capability anything else could genuinely cite as a prerequisite.
@@ -202,7 +198,7 @@ setting for one (Axiom 2). They deliberately do not decide:
    - **No** → excluded as a floor axiom. Check whether a corresponding "understanding/theory of X"
      shadow node is missing from the graph and add it if warranted.
    - **Yes** → proceed to question 2.
-2. Is the candidate itself a technology, discovery, invention, or achievement, per Essay 4's
+2. Is the candidate itself a discovery, invention, or achievement, per Essay 4's
    taxonomy? (Axiom 2)
    - **No** → excluded. The candidate may still belong in the description of whichever node it
      actually produced or named, rather than as a node of its own.

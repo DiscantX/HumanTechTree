@@ -139,7 +139,7 @@ worked example of a pattern Essay 2 already established.
 A significant Discovery or Invention (fusion ignition, Navier–Stokes) is not miscategorized as
 Achievement to capture its importance. Magnitude and category are independent; a separate,
 non-taxonomic **spotlight/feed mechanism** is the intended home for "this is a big deal," logged as
-its own future Tier 4 index item rather than designed here (Section 10).
+its own future index item (#12) rather than designed here (Section 10).
 
 ## 8. Category at the subject level: a computed Disambiguation value
 
@@ -164,7 +164,7 @@ verdict. It deliberately does not:
 - decide whether combination/synthesis nodes (Essay 6) default to invention or can also be
   discovery — left open pending real graph data, per the same reasoning Essay 3 used to defer its
   own regional-lineage question,
-- design the spotlight/feed mechanism — spun off as a new Tier 4 index item, non-load-bearing and
+- design the spotlight/feed mechanism — spun off as index item #12 (Tier 4), non-load-bearing and
   editor's-choice by nature, deferred entirely,
 - resolve whether "Achievement" as a category name should eventually change (e.g. to "Feat" or
   "Milestone") to stop colliding with the word's colloquial, magnitude-implying sense — flagged,

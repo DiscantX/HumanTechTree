@@ -6,7 +6,7 @@
 *basis* field that essay defines)
 
 **Gates:** Essay 2 (interacts with the node-splitting decision for independently-discovered
-technologies), Essay 9 (grounding: historical claims lean on citation, necessity claims on argument, both reviewed to the same standard), and
+technologies), Essay 9, and
 loosens the constraint the original index placed on Essay 8
 
 ## 1. The problem
@@ -27,30 +27,23 @@ uncitable by construction. Nobody has published a paper proving fire is logicall
 smelting; that is an inference this wiki itself would be making, dressed up as if it were reported
 fact.
 
-## 2. The resolution: two independent basis values, not one merged claim
+## 2. The resolution: single-valued basis and the two-edge treatment of "both"
 
-> **An edge's basis is either historical-attestation or logical-necessity — two distinct kinds of
-> claim about the same node pair. Each is its own edge (Essay 9), true or false independently of
-> the other.**
+> **An edge's basis is single-valued, taking either historical-attestation or logical-necessity as its value. Where both claims apply between a node pair, they are represented by two independent edges — one historical-attestation edge and one logical-necessity edge (Essay 9), true or false independently of each other.**
 
 **Historical-attestation** is a specific, dated, regionally-located claim that X preceded and
-enabled Y in the actual causal record, evidenced by ordinary historical or archaeological sourcing.
-It can be false in one region and true in another for the same node pair, and it can appear more
-than once per pair (Section 4).
+enabled Y in the actual causal record, evidenced by ordinary historical sourcing. It carries an origin attribute to distinguish multiple independent historical origins (Section 4). It can be false in one region and true in another for the same node pair, and it can appear more than once per pair.
 
 **Logical-necessity** is a general, timeless proposition that Y cannot exist — for any civilization,
 human or not — without X having been achieved first, independent of the order in which any actual
 civilization discovered them. It does not multiply; there is exactly one such claim per node pair,
 contested and revised in place rather than duplicated (Essay 6, Section 4).
 
-Neither implies the other, and the presence or absence of each is meaningful:
-
-| Edges present between the pair | What this represents |
-| --- | --- |
-| Historical-attestation and logical-necessity | Strongest case: dated in the record, and independently arguable that it had to be this way (fire before smelting is a plausible candidate for both). |
-| Historical-attestation only | An accident of sequence: it happened in this order, but nothing prevented a different order in principle. Worth marking explicitly rather than leaving as an oversight. |
-| Logical-necessity only | A physical or logical constraint argued on its own terms, where fine-grained dating evidence for the actual historical sequence does not exist or has not been added yet. |
-| Neither | No edge. A candidate pairing nobody has attested to or argued for. Bare edges with unspecified basis are also permitted (Essay 6, Section 7). |
+Neither implies the other, and their presence is modeled purely through independent edges:
+- **Both present:** Represented by two separate edges between the pair (one historical-attestation, one logical-necessity), capturing both actual temporal sequence and necessary dependency.
+- **Historical-attestation only:** An accident of sequence: it happened in this order, but no necessary constraint prevented a different order in principle.
+- **Logical-necessity only:** A physical or logical constraint argued on its own terms, where fine-grained dating evidence for the actual historical sequence does not exist or has not been added yet.
+- **Neither:** No edge present.
 
 ## 3. The citability asymmetry between the two bases
 
@@ -60,8 +53,8 @@ some are directly citable physical facts (smelting copper requires sustained tem
 only through controlled combustion or an equivalent heat source, which is a checkable metallurgical
 claim), while others are much larger inferential leaps this wiki has no citation for at all (the
 fully general "any conceivable civilization would need this" version of the claim). Essay 9 will
-need to formalize a grounding that reflects this spectrum rather than treating all logical-necessity
-claims as equally grounded — this essay only establishes that the spectrum exists and that the wiki
+need to reflect this spectrum rather than treating all logical-necessity
+claims uniformly — this essay only establishes that the spectrum exists and that the wiki
 must disclose, not obscure, where a given claim sits on it.
 
 ## 4. Multiple independent discovery, resolved without new machinery
@@ -100,7 +93,7 @@ edge. A split additionally requires the kind of decomposable, culturally-variabl
 This essay defines the two basis values and how they combine. It deliberately does not:
 
 - define the relationship-kind vocabulary (Essay 6),
-- set citation or grounding standards for either basis value (Essay 9),
+- set citation standards for either basis value (Essay 9),
 - decide who may create or dispute a logical-necessity claim, or how that dispute resolves (Essay
   10).
 
@@ -117,4 +110,4 @@ This essay is **Proposed**. Two threads are flagged rather than resolved here:
 - This resolution has so far only been stress-tested against fire/smelting, agriculture, and
   writing. Further debate against additional concrete edge pairs is expected before ratification.
 - Essay 3's stress-testing surfaced a possible tension with Section 4's multi-origin handling: if a subject like money or agriculture is also stage-decomposed (Essay 3), it is unresolved whether each independently-attested regional origin needs its own stage chain, or whether multi-origin subjects are better left undecomposed. Left open until the graph is actually populated and the interaction can be observed.
-- A new failure mode distinct from ordinary citation-updating: public-key cryptography's GCHQ precedent (Ellis 1970, Cocks 1973) was classified and only declassified in 1997, decades after Diffie-Hellman/RSA were publicly credited. This is a historical-attestation claim that was true all along and became verifiably incomplete only through declassification, not through new discovery or editorial error — a case Essay 9's grounding work and Essay 10's revert model should both be aware of.
+- A new failure mode distinct from ordinary citation-updating: public-key cryptography's GCHQ precedent (Ellis 1970, Cocks 1973) was classified and only declassified in 1997, decades after Diffie-Hellman/RSA were publicly credited. This is a historical-attestation claim that was true all along and became verifiably incomplete only through declassification, not through new discovery or editorial error — a case Essay 9 and Essay 10's revert model should both be aware of.

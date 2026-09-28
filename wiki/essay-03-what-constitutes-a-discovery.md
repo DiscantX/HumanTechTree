@@ -181,10 +181,9 @@ ratification. Several threads are flagged rather than resolved:
 - **A litigated-dispute stress case for Essay 10.** Essay 9, Section 12 proposes that a ruling is citable for what it decided but not deferred to; pending adoption in Essay 10. CRISPR's Broad Institute vs. UC Berkeley priority
     dispute has a binding external legal outcome. Whether this wiki's consensus process defers to that
     ruling, runs independently, or discloses a divergence is undecided.
-- **Pseudonymous attribution, partially resolved.** Where a pseudonym is the commonly-credited
+- **Pseudonymous attribution, officially resolved.** Where a pseudonym is the commonly-credited
     attribution in mainstream literature (cryptocurrency's "Satoshi Nakamoto"), this wiki follows that
-    convention rather than inventing its own rule. Essay 9 should formalize this as general policy
-    rather than a one-off exception.
+    convention per Essay 9's general policy.
 - **Forward pointer to Essay 8.** Writing, money, and democracy are culture/social-systems subjects
     and this essay's use of them is exploratory, not a claim on Essay 8's territory. Two findings are
     flagged for Essay 8 specifically to take up: iterative abstraction as the apparent default shape

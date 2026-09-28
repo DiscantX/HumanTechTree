@@ -43,7 +43,7 @@ stays open to challenge on physical grounds.
 An edge is one proposition about an ordered node pair, running from the earlier or more basic node to
 the later one. It carries a statement, which is the claim itself, and three fields: one
 relationship-kind, one basis, and a list of groundings. The statement is what gets grounded, reviewed,
-and disputed. See [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md)
+and disputed. See Sourcing and Citation Policy for Edges
 for how groundings work and how the resulting status is shown to readers.
 
 Because an edge is one claim, a compound statement is more than one edge. "X requires Y and Z as
@@ -78,11 +78,11 @@ Each field has one owner, so that later policies fill in a shared schema and do 
 own idea of an edge type.
 
 - **Relationship-kind** is defined here.
-- **Basis** is defined in [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+- **Basis** is defined in Historical Attestation vs. Logical Necessity.
   It takes one of two values, historical attestation (a dated, regionally located claim about what
   happened) or logical necessity (a timeless claim that the downstream node cannot exist without the
   upstream one).
-- **Grounding** is defined in [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+- **Grounding** is defined in Sourcing and Citation Policy for Edges.
   It is a disclosure of what supports a claim, not a ranking of kinds of support.
 
 Any later proposal to change how edges are classified should revise the *values* of one of these
@@ -109,7 +109,7 @@ The rules for how many edges may join a pair are simple, because each edge is on
   historical instance, or a different relationship-kind.
 - **A bare edge is allowed.** An edge may leave its basis unspecified. It is then excluded from the
   cycle check and the basis-fit check described in
-  [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md), and it
+  Governance and Moderation for a Living Graph, and it
   shows the neutral "ungrounded" marker unless it has groundings.
 
 ## Splitting a node versus adding an edge
@@ -120,7 +120,7 @@ is one thing even where specific instances are many.
 
 Splitting into separate nodes, for example Fertile Crescent agriculture as distinct from Mesoamerican
 agriculture, is justified only when the granularity checklist in
-[Node Granularity](essay-02-node-granularity.md) independently finds enough decomposable history on
+Node Granularity independently finds enough decomposable history on
 each side. Independent origin alone is never sufficient. It is grounds for an additional edge on the
 shared node.
 
@@ -145,7 +145,7 @@ stub waiting to be finished. Richer detail is added when an editor chooses to ad
 forces it, and is never owed by default across the whole graph.
 
 This is a property of the schema itself, but it carries weight elsewhere.
-[Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md) depends on
+Governance and Moderation for a Living Graph depends on
 it to keep moderation effort proportional to genuine disputes and not to the total size of the graph.
 
 ## What this essay does not decide

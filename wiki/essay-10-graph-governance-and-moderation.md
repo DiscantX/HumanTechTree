@@ -79,7 +79,7 @@ Protection follows directly from that number.
   smaller problem than a bad edge.
 - **The number of independent reviews** a claim needs is computed from its blast radius, with a
   minimum number of human reviews that rises with it. The review rules themselves are defined in
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  Sourcing and Citation Policy for Edges.
 - **New or low-permission accounts** may propose structural edits for review but not land them
   directly, because a bad graph edit can cause quieter, farther-reaching damage than a bad text edit.
 
@@ -96,7 +96,7 @@ transitive descendant count and naming which high-profile nodes are among them.
 In practice most legitimate "this should not exist" cases are mis-splits and should go to merge or
 rename. If re-parenting forty edges shows they all belong on another node, that is usually evidence
 the node should have been merged into that other one, which is a question for
-[Node Granularity](essay-02-node-granularity.md). True hard deletion is reserved for nodes with no
+Node Granularity. True hard deletion is reserved for nodes with no
 legitimate dependents, which by construction describes spam and vandalism far more often than a real
 technology someone got wrong.
 
@@ -141,7 +141,7 @@ whole claim.
 
 - **An open objection keeps a claim from displaying above yellow** and marks it as contested until
   the objection is resolved. This follows from the review rules in
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  Sourcing and Citation Policy for Edges.
 - **An objection is resolved** when it is withdrawn, when the grounding is amended to answer it, or
   when eligible reviewers judge it answered. An amendment that changes the formal structure of a
   grounding invalidates existing reviews, and prior reviewers may re-attest against the difference.
@@ -171,11 +171,11 @@ account: they may propose structural edits, and review and verification are the 
 authority by default. Bot patrol is used on high-blast-radius nodes in particular. The full policy,
 including independence rules for bot reviewers and whether the API opens to other operators, belongs
 to the planned Bot and Automation Policy. The constraints the review mechanism needs are set out in
-[Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+Sourcing and Citation Policy for Edges.
 
 ## Keeping the moderation load proportional
 
-The [Edge Schema](essay-06-edge-schema.md) establishes that no edge field ever has to reach a settled
+The Edge Schema establishes that no edge field ever has to reach a settled
 state to be valid. That answers the worry that a rich schema makes the graph impossible to moderate. It
 does not, provided effort goes to contested and high-blast-radius items and not to pushing every edge
 toward full specification. A niche, uncontested edge sitting permanently at its cheapest state is not
@@ -185,7 +185,7 @@ as a single line also helps patrollers, who have less to parse when reviewing re
 ## What this essay does not decide
 
 - The definitions of grounding, review, and status, which belong to
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  Sourcing and Citation Policy for Edges.
 - The long-run editing architecture (see the open questions).
 - The structure of objections, or the full bot policy, each of which is a planned policy of its own.
 
@@ -211,7 +211,7 @@ as a single line also helps patrollers, who have less to parse when reviewing re
 - **Premise dependencies.** The premise-dependency check above is proposed, not adopted, and needs
   the argument page format to be settled first.
 - **Where cluster governance lives.** The flag-and-review handling of named clusters that drift is
-  described in [Node Granularity](essay-02-node-granularity.md), but whether its governance rules
+  described in Node Granularity, but whether its governance rules
   belong there or here has not been decided.
 - **Reviewer eligibility.** The review rules depend on it, so it is load-bearing, and it is still
   undecided.

@@ -3,7 +3,7 @@
 **Status:** Proposed
 
 This project maps human technology as a graph. Each [node](essay-00-about-the-project.md#glossary)
-is a discovery, invention, or achievement, and each [edge](essay-00-about-the-project.md#glossary)
+is a discovery, invention, or achievement, and each edge
 records that one thing was a prerequisite of another. Two rules decide what can become a node at all.
 
 1. **Origin.** Something is left out of the graph if no human action is responsible for its
@@ -208,7 +208,7 @@ eligible, not guaranteed a node. They deliberately leave four things to other po
   guideline, and it applies at every level of the graph. It will be addressed by a separate
   Notability / Inclusion Threshold policy, which has not yet been written.
 - **Granularity.** How finely an eligible topic is divided into nodes, covered in
-  [Node Granularity](essay-02-node-granularity.md).
+  Node Granularity.
 - **Relationships.** What kind of edge connects one node to another, covered in
   [Edge Schema](essay-06-edge-schema.md).
 - **Sourcing.** What evidence justifies a node or a prerequisite claim, covered in
@@ -227,7 +227,7 @@ eligible, not guaranteed a node. They deliberately leave four things to other po
   it bears on how prerequisite claims about "any civilization" are phrased.
 - **Writing and transmissibility.** Once writing exists, a lost technique can be recovered from the
   record without contact with any practitioner, which changes the non-transmissibility diagnostic for
-  everything that comes after. [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md)
+  everything that comes after. The Culture / Social-Systems Layer
   proposes handling this as a note on writing's own node instead of rewriting the diagnostic here.
   Whether that becomes a formal convention is undecided.
 - **The category rule's coverage.** Axiom 2 has been tested mainly against the Dartmouth Conference.

@@ -1,210 +1,204 @@
-# Essay 2 — Node Granularity: What Counts as One Node
+# Node Granularity: What Counts as One Node
 
 **Status:** Proposed
 
-**Depends on:** Essay 1 (the two founding axioms — granularity is decided by applying them
-node-by-node, not by a separate checklist), Essay 6 (edge schema — decomposition is expressed
-entirely through existing edges), Essay 10 (the redirect mechanism this essay leans on for
-dissolved compound labels)
+This policy decides how finely a topic is divided into [nodes](essay-00-about-the-project.md#glossary).
+It rests on three principles.
 
-**Gates:** Essay 7 (the deciding factor for when an independently-discovered technology gets split
-into separate nodes rather than one node with multiple historical-attestation edges), Essay 8
-(culture/social-systems layer likely reuses the sequential/compositional distinction below), Essay
-10 (may need to absorb cluster-pinning governance as an addendum — see Section 5)
+1. **A topic becomes several nodes only when each part earns it.** Each part must be eligible on its
+   own, must have a history of its own, and, where the same thing arose independently in several
+   places, must differ in mechanism and not merely in date and location. Otherwise it stays one node.
+2. **Compound topics divide in one of two ways.** Some are a sequence of steps in mastering a
+   natural phenomenon, and some are the convergence of independently developed lines. Both are
+   expressed with ordinary edges, so no separate "parent" or "container" relationship is needed.
+3. **Broad umbrella topics with no endpoint never become nodes.** "Artificial intelligence" is the
+   standard example. Such topics are computed as clusters of real nodes when the graph is drawn, and
+   nothing can depend on them directly.
 
-## 1. The problem
+## The problem: one label, many things
 
-The original framing of this essay was narrower than the problem turned out to be: "big" compound
-discoveries like fire decompose into a sequence of separable capability transitions — observation,
-exploitation, production, explanation — and the job of this essay was assumed to be writing the
-checklist that tells an editor when a candidate warrants that kind of split.
+A single familiar word can cover very different amounts of history. "The discovery of fire" spans
+hundreds of thousands of years, from noticing that wildfire behaves regularly, through capturing it,
+to producing it on demand, to finally explaining why it burns. Treating that as one node hides the
+fact that people mastered fire in practice for a very long time while being wrong, or simply silent,
+about why it worked.
 
-That framing quietly generalized from a single worked example. Running a second case — artificial
-intelligence — through the same assumption broke it in two separate ways at once. First, AI has no
-single causal lineage to decompose in the first place: a concept/aspiration lineage (Dartmouth,
-1956), a technical-capability lineage (NLP, neural networks, transformers), and a compute/hardware
-lineage (Moore's Law, GPUs) all contribute, but the first barely causally connects to the other two
-— they didn't converge from one trunk the way fire's observation leads to its exploitation. Second,
-AI has no terminal state: fire either can or cannot be reliably produced, full stop, but "AI" is
-still an open, moving frontier, ending in a currently-undefined "AGI (future)" in any sketch of it
-someone draws today.
+Other labels are not one thing at all. "Artificial intelligence" gathers several lines of work that
+barely depend on each other, and it names a frontier that is still moving. The question this policy
+answers is when a label should be one node, when it should be several, and when it should not be a
+node at all.
 
-Those two failures turned out to be the actual content of this essay. Fire's decomposition was
-never wrong, but it was one shape among at least two, and a third situation exists that isn't a
-decomposition at all in the sense fire's is.
+## Two ways a compound topic divides
 
-## 2. Two decomposition topologies, not one universal template
+A compound topic divides either sequentially or compositionally, and the two need different
+treatment. Neither needs a relationship type beyond those in the [Edge Schema](essay-06-edge-schema.md).
 
-> **A compound topic decomposes either sequentially or compositionally, and the two require
-> different treatment — neither requires a new relationship type beyond what Essay 6 already
-> defines.**
+**Sequential division** applies to *phenomenon-mastery* topics. These concern something that exists
+in nature before anyone touches it, where the division tracks humanity's deepening relationship to
+that phenomenon. Fire is the clean case: observed, then exploited, then produced on demand, then
+explained. Fermentation and electricity plausibly share the shape. Each step is a separate human
+action and each is a genuine prerequisite of the next. This is an ordinary chain of edges, with the
+kind of each link (material necessity or conceptual enablement) decided step by step. Once the topic
+is divided, nothing remains for the original label to be beyond that chain. The four stage names are
+defined in [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md).
 
-**Sequential decomposition** applies to *phenomenon-mastery* topics: something that already exists
-in nature, independent of human effort, before anyone touches it, where the decomposition tracks
-humanity's progressively deeper relationship to that pre-existing phenomenon. Fire is the clean
-case — observed, then exploited, then produced on demand, then explained — and fermentation or
-electricity (static and lightning observed, then amber and eels exploited, then batteries and
-generators produced it, then electromagnetism explained it) likely share the same shape. Each step
-is a genuine, separate human action, and each step is a genuine prerequisite of the next — which
-means this is not a new kind of structure at all. It is an ordinary chain of edges under Essay 6's
-existing schema (material necessity or conceptual enablement, decided per step), and once the
-decomposition happens, there is no independent thing left for the compound label to *be* other
-than that chain. Each link in the chain is a claim, grounded and reviewed like any other edge (Essay 9).
+**Compositional division** applies to topics assembled from several independently developed lines
+that converge: an automobile from engine, chassis, wheels, and drivetrain, or a cryptocurrency from
+public-key cryptography, proof-of-work, fault-tolerance theory, and earlier digital-cash proposals.
+The Edge Schema's *combination* relationship-kind already covers this, with several prerequisite
+edges converging on one real node. The compound node does not dissolve, because it is a new thing and
+not merely the last link in a sequence.
 
-**Compositional decomposition** applies to topics assembled from multiple independently-developed
-lines that converge — an automobile from engine, chassis, wheels, and drivetrain; plausibly AI's
-technical-capability and compute lineages relative to whatever gets built on top of both. This is
-already exactly what Essay 6's **combination** relationship-kind exists for: several prerequisite
-edges converging on one real, persisting node. The compound node does not dissolve here, because it
-genuinely is a new thing and not merely the last link in a sequence — but again, no new relationship
-type is needed, because Essay 6 already has one.
+## Why no container relationship is needed
 
-## 3. Why no container/parent relationship type is needed
+It might seem that decomposition needs a parent-node relationship separate from ordinary edges. It
+does not, for a reason specific to each shape.
 
-The question that opened this debate was whether decomposition needs a parent-node containment
-relation distinct from ordinary edges. It does not, for a reason specific to each topology:
+- **Sequential division needs no container** because the compound label has no independent identity
+  after the division. When a topic is split, the old identifier redirects to the new one, as
+  described in [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+  An existing edge that cited "fire" as a prerequisite resolves to the terminal node of the chain,
+  which is production of fire. That is the node representing the fully realized capability, since
+  "requires fire" means "requires the ability to make it," not "requires having once seen it burn."
+- **Compositional division needs no container** because the compound node already exists as a real
+  thing, the meeting point of the combination edges. There is nothing left for a container to hold.
 
-- **Sequential** decomposition doesn't need a container because the compound label doesn't survive
-  decomposition as anything with independent graph identity. Essay 10, Section 5 already commits to
-  a mechanism for exactly this situation — a move, rename, or merge leaves a redirect at the old
-  identifier. Any existing edge that generically cited "fire" as a prerequisite resolves through the
-  redirect to the terminal node in the chain (production, in fire's case) — the node representing
-  the fully realized capability, since "requires fire" means "requires the capability to make it,"
-  not "requires having once observed it burn."
-- **Compositional** decomposition doesn't need a container because the compound node already exists
-  as a real, addressable thing — the convergence point of combination edges. There is nothing left
-  for a container to hold that the node itself doesn't already represent.
+Adding a container concept would create a second, competing way to express structure. The Edge Schema
+exists to prevent that, so that every policy populates one shared schema and none invents a new
+relationship type when a new case appears.
 
-Introducing a parent/container concept alongside these would be a second, competing way to express
-structure, which is precisely what Essay 6, Section 3 was written to prevent — every future essay
-is meant to populate one shared edge schema, not invent a new type each time a new case turns up.
+## The granularity checklist
 
-## 4. The case neither topology covers: open-ended, multi-lineage macro-topics
+Every proposed division is tested with three questions.
 
-AI does not fit cleanly into either shape above, and forcing it into one would misrepresent what it
-actually is. It has multiple lineages like a compositional case, but those lineages barely relate to
-each other causally — the concept lineage did not materially enable the technical lineage the way an
-engine and a chassis both feed into an automobile. And unlike a sequential case, it has no terminal
-node to redirect a generic reference to: today "AI" might colloquially mean transformers or large
-language models, but that pointer has already been wrong once (expert systems, in the 1980s) and
-will likely be wrong again.
+1. **Is each part eligible on its own?** Each proposed node must clear both rules in
+   [Founding Axioms](essay-01-founding-axioms.md): human action is responsible for it, and it is
+   itself a discovery, invention, or achievement as defined in
+   [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md). A part that
+   fails is not a node. It becomes descriptive context on whichever node it explains.
+2. **Does it have a history of its own?** A part is *thin* when it has no independent history or
+   sourcing beyond being a phase of its parent's story, and it stays a stage of the parent subject.
+   It is *thick* when it has a substantial, decomposable history and prerequisite chain in its own
+   right, and it becomes a separate subject linked to the parent by an ordinary edge. Germ theory
+   relative to vaccination is the clearest thick case. Germ theory's own prerequisite chain
+   (microscopy, cell theory, the separate work of Pasteur and Koch) has little to do with
+   vaccination's specific history, so "explanation of vaccination" is the wrong label. Germ theory is
+   its own subject.
+3. **For independent origins: does the mechanism differ?** When the same-named thing arises
+   independently in several places, one node with a separate historical-attestation edge for each
+   origin is the default. Independent origin alone is never enough to split a node. A split requires
+   that the mechanisms themselves differ and that each side has enough distinct history to earn a node
+   on its own terms.
 
-This is not a third decomposition topology to formally define — adding topologies was explicitly
-something to avoid, given the complexity cost, and open-endedness is better understood as a
-property that defeats redirect resolution specifically, not a new structural category requiring its
-own checklist. The resolution proposed for it doesn't live in the stored graph at all.
+Some applications:
 
-## 5. Resolving the open-ended case: algorithmic clustering as a render-layer device
+- **Fire.** Observation, exploitation, production, and explanation are each a distinct human action
+  and each is a discovery, invention, or technique in its own right. They are four legitimate nodes,
+  not one artificially preserved compound.
+- **Agriculture.** It arose independently in several regions by essentially the same mechanism, so it
+  is one node with an attestation edge per region, as set out in
+  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+- **Democracy.** Athenian direct democracy and modern representative democracy differ in mechanism
+  and each has its own decomposable lead-up, so they are two subjects joined by a mere-influence edge,
+  as worked out in [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md).
+- **A bare concept with no artifact behind it.** It fails the first question and stays out of the
+  graph as a node.
 
-> **A macro-topic with no terminal state and no clean single lineage is never itself a node. It is
-> a computed cluster over the real nodes that do exist, produced at render time and re-derivable at
-> any point, never a citable prerequisite.**
+## Open-ended macro-topics: clusters
 
-An algorithm (Louvain, Leiden, or Markov Clustering) run over the existing edge graph identifies
-densely-connected communities of real nodes. This has a clean justification under Essay 1's own
-terms, not just as a convenient engineering trick: a computed community is not the product of any
-human action — nobody discovered or built "the AI cluster," an algorithm noticed the edges were
-dense there — so it fails Axiom 1 automatically and can never be a node. That, in turn, resolves
-the redirect problem from Section 4 by dissolving it rather than answering it: a cluster was never
-supposed to be something a downstream edge could point at. If a new node wants to claim "requires
-AI," it has to point at whatever specific real node it actually means (transformers, or NLP, or
-whatever) — the umbrella never gets prerequisite-citation privileges.
+Artificial intelligence fits neither division. It has several lines of work, at least a
+technical-capability lineage (natural language processing, neural networks, transformers) and a
+compute and hardware lineage (Moore's Law, GPUs), that did not converge from one trunk the way
+observation leads to exploitation in the fire case. It also has no endpoint. Fire either can or
+cannot be produced reliably, but "AI" is a moving frontier whose far end is still undefined. Any
+sketch drawn today ends in something like "AGI (future)."
 
-This also answers, by disqualification, an open question from Essay 1's debate about whether a
-bare "concept of AI" deserves its own node: it does not, under Axiom 2, unless it names a specific,
-citable artifact the way the Dartmouth Conference does (and even then, per Essay 1 Section 4, the
-result is an achievement leaf, not a hub with outgoing edges). A concept without that kind of
-artifact becomes descriptive context on whichever real node it explains, not a node of its own.
+That second property defeats redirection. A sequential topic can redirect a generic reference to its
+terminal node, but "AI" has no terminal node to point at. Today the word might colloquially mean
+large language models, but that pointer has already been wrong once, when it meant expert systems in
+the 1980s, and it will probably be wrong again. The lineage of the *idea* of thinking machines adds
+no nodes of its own. Under Founding Axioms, a bare concept, or a named event such as the 1956
+Dartmouth Conference where the term was coined, does not qualify.
 
-**Cluster mechanics, provisionally:**
+This is not a third kind of division to define, because more kinds would only add complexity.
+Open-endedness is better understood as a property that defeats redirection. The proposed resolution
+does not live in the stored graph at all.
 
-- A cluster gets a default algorithmically-generated name, flagged as needing human review, plus a
-  cheap, stable slug an editor can bookmark or link to. Assigning the slug and the real name is an
-  editorial action, not an algorithmic one.
-- Clusters shift as new edges are added — a bridging edge can merge two clusters, or a dense
-  subcluster can split off from a larger one. A pinned (editor-named) cluster's membership should
-  not silently drift out from under the name an editor gave it, but it also shouldn't be treated as
-  permanently frozen against a genuinely changed graph. The proposed handling reuses the
-  automated-check-plus-human-flag pattern Essay 10 already established for cycle/orphan detection:
-  compute the algorithm's current answer, diff it against the pinned membership, and surface the
-  delta to editors — never the public — only once it crosses some variance threshold.
-- A **merge** of two pinned clusters reuses Essay 10's existing redirect mechanism outright: one
-  slug redirects to the other, or both redirect to a new merged slug. No new machinery is needed.
-- A **bifurcation** cannot be resolved the same way, because a redirect cannot resolve one-to-many.
-  The old slug provisionally lands on whichever descendant has higher overlap with the original
-  membership, while the other is queued for an editor to name fresh — an editorial action the
-  algorithm can flag but not finish on its own.
+> **A macro-topic with no terminal state and no clean single lineage is never itself a node. It is a
+> computed cluster over the real nodes that do exist, produced when the graph is drawn and
+> re-derivable at any time, and never something an edge can cite as a prerequisite.**
 
-## 6. Taxonomy tags are a separate feature, not a decomposition mechanism
+An algorithm (Louvain, Leiden, or Markov Clustering) run over the existing edges identifies densely
+connected communities of real nodes. This has a clean justification under the founding rules, not just
+as an engineering convenience. A computed community is not the product of any human action. Nobody
+discovered or built "the AI cluster," because an algorithm noticed the edges were dense there. It
+therefore fails the origin rule and can never be a node. That dissolves the redirection problem
+instead of answering it: a cluster was never meant to be something a downstream edge could point at.
+A node that wants to claim it "requires AI" must point at whichever real node it means, whether
+transformers or natural language processing or something else. The umbrella never gets
+prerequisite-citation privileges.
 
-Cross-cutting categories for browsing — "Energy," "Metallurgy," "Agriculture-adjacent" — are
-many-to-many, imply no prerequisite relationship, and exist purely for discoverability. This can be
-a plain metadata field with no interaction with Essay 6's edge schema at all, closer to Wikipedia
-categories than to anything structural. It is worth naming explicitly and separately here only
-because the original question that opened this debate risked conflating it with decomposition —
-they solve different problems and should not share a mechanism.
+**How clusters behave**
 
-## 7. What this leaves the granularity checklist to actually decide
+- **Names and slugs.** A cluster gets a default, algorithmically generated name that is flagged for
+  human review, plus a cheap, stable slug an editor can bookmark or link. Assigning the slug and a
+  real name is an editorial action, not an algorithmic one.
+- **Drift.** Clusters shift as edges are added, since a bridging edge can merge two clusters or a
+  dense subcluster can split off. A pinned (editor-named) cluster should not silently drift out from
+  under the name an editor gave it, and it should not be treated as frozen against a genuinely changed
+  graph either. The proposed handling reuses the pattern of an automatic check that flags a human,
+  which Governance and Moderation for a Living Graph
+  already uses for cycles and orphans. The algorithm's current answer is diffed against the pinned
+  membership, and the difference is shown to editors, never the public, once it crosses a variance
+  threshold.
+- **Merges.** When two pinned clusters merge, the existing redirect mechanism applies: one slug
+  redirects to the other, or both redirect to a new merged slug.
+- **Splits.** A split cannot be resolved that way, because a redirect cannot point one place to many.
+  The old slug provisionally lands on whichever descendant overlaps most with the original membership,
+  and the other is queued for an editor to name. That is an editorial action the algorithm can flag but
+  not finish.
 
-With decomposition-as-structure handled by ordinary edges and redirects (Sections 2–3), and the
-anti-clutter concern that originally motivated a "checklist" handled by clustering at render time
-(Section 5), the granularity question shrinks to something Essay 1 already answers: **does each
-proposed sub-node clear both founding axioms independently?**
+## Taxonomy tags are a separate feature
 
-Applied to fire: observation, exploitation, production, and explanation are each a distinct human
-action (Axiom 1) and each is itself a discovery, invention, or technique in Essay 4's sense (Axiom
-2) — four legitimate nodes, not one artificially preserved compound. Applied to a bare concept with
-no artifact behind it (Section 5): it fails Axiom 2 regardless of how real the underlying human
-activity was, and stays out of the graph as a node.
+Cross-cutting categories used for browsing, such as "Energy," "Metallurgy," or "Agriculture-adjacent,"
+are many-to-many, imply no prerequisite relationship, and exist only for discoverability. They are a
+plain metadata field with no interaction with the Edge Schema, closer to Wikipedia categories than to
+anything structural. They are named here only to keep them from being confused with decomposition.
+They solve a different problem and should not share its mechanism.
 
-This is a smaller job than the original draft thesis implied, and that is treated here as a
-simplification rather than a loss: the checklist doesn't need its own anti-bloat logic once
-rendering absorbs that cost, so it can stay a direct application of axioms already settled rather
-than growing a parallel, harder-to-justify set of rules.
+## What this policy does not decide
 
-## 8. What this essay is not
+- The clustering algorithm's parameters, edge weighting, and variance threshold. These are
+  implementation details, though one substantive question is raised below.
+- Who may name a cluster or resolve a flagged variance. That belongs to the permission tiers in
+  Governance and Moderation for a Living Graph.
+- The vocabulary of taxonomy tags. Only their existence and their separation from decomposition are
+  fixed here.
+- Whether an eligible node is significant enough to warrant inclusion, which is the planned
+  Notability / Inclusion Threshold policy.
 
-- **Redirects and reviewed claims.** Section 3 resolves a dissolved compound label by redirecting
-  generic edges to the terminal node. Under Essay 9 an edge is a claim with its own groundings and
-  reviews, and re-pointing it changes what the claim says. Whether a redirect-induced endpoint
-  change resets reviews is [D2 outcome].
+## Open questions
 
-This essay fixes how decomposition is structurally represented and how open-ended macro-topics are
-handled at render time. It deliberately does not:
-
-- specify the clustering algorithm's parameters, edge-weighting scheme, or variance threshold —
-  these are implementation details, not content for this essay, though one substantive question is
-  flagged rather than answered: whether *mere influence* edges (Essay 6) should be weighted near
-  zero for clustering purposes, so a weak thematic connection (the Dartmouth Conference's link to
-  the technical lineages it never materially enabled) doesn't drag unrelated lineages into one
-  supercluster by connectivity alone,
-- decide whether cluster-pinning governance belongs in this essay or is better treated as an
-  addendum to Essay 10, which already owns the automated-check-plus-human-flag pattern being reused
-  here,
-- extend the sequential/compositional distinction to Essay 8's culture and social-systems layer,
-  though that extension looks likely to be needed there,
-- define the taxonomy tag vocabulary itself (Section 6) — only that it exists and is separate from
-  decomposition,
-- decide who is authorized to name a cluster or resolve a flagged variance — that is Essay 10's
-  permission-tier question, not a new one this essay introduces.
-
-## 9. Status and open threads
-
-This essay is **Proposed**, and narrower than its original draft thesis — the fire case study
-generalized into a universal decomposition template that did not survive contact with a second
-case (AI). Threads flagged rather than resolved:
-
-- The fire case study (sequential) and the AI case study (the open-ended failure case) are the only
-  two cases run through this so far. A clean **compositional** case with no open-endedness (a
-  single-inventor, fixed-date invention like the transistor or barbed wire) has not yet been tested
-  and is the natural next stress test, both for the compositional topology in Section 2 and as a
-  sanity check that the checklist in Section 7 doesn't over-fire on ordinary nodes.
-- The mere-influence edge-weighting question in Section 8 is substantive, not merely technical — it
-  effectively decides what "the same macro-topic" means — and is left for either this essay's
-  revision or Essay 6's.
-- Where cluster-pinning governance formally lives (here or Essay 10) is undecided.
-- Whether a named, pinned cluster should ever be allowed to earn any form of permanence stronger
-  than a bookmarkable slug is undecided; the current position is a firm no, but it has not been
-  stress-tested against a case where that might matter.
-- Reused by Essay 3. Essay 3's thin/thick threshold for deciding whether a candidate discovery-stage (Observation, Exploitation, Production, Explanation) deserves its own independently-named node, versus staying a modifier on its parent subject, reuses this essay's granularity checklist verbatim rather than defining a separate calibration. Confirm this reuse holds once Essay 3 is drafted in full; flagged here so a future editor knows the checklist is now serving two call sites, not one.
-- A new stress case for the split-vs-attest decision. Money's independent regional origins (Mesopotamian weighed metal, Chinese cowrie/bronze money, Mesoamerican cacao-bean currency) may be a case where this essay's checklist calls for separate nodes rather than multiple historical-attestation edges on one shared "Money" node (Essay 7's usual pattern for agriculture) — because the actual mechanisms differ by region, not just the dating and location of the same mechanism. Left as a candidate case for when this essay is next actively worked, not resolved here.
+- **A clean compositional case.** Fire (sequential) and AI (open-ended) are the cases worked through
+  so far. A compositional case with no open-endedness, such as the transistor or barbed wire, has not
+  been tested. It is the natural next test, both of the compositional shape and of whether the
+  checklist over-fires on ordinary nodes.
+- **Weighting mere-influence edges for clustering.** Should mere-influence edges be weighted near zero
+  when computing clusters, so that a weak thematic connection does not pull unrelated lineages into
+  one large cluster? The answer effectively decides what "the same macro-topic" means, so it is a
+  substantive question and not merely a technical one.
+- **Where cluster governance lives.** The pinning, drift-flagging, and merge rules could belong in
+  this policy or in Governance and Moderation for a Living Graph, which already owns the
+  flag-a-human pattern. This is undecided.
+- **Permanence for named clusters.** The current position is a firm no, that a named cluster never
+  earns anything stronger than a bookmarkable slug. It has not been tested against a case where that
+  might matter.
+- **Money.** Money arose independently as weighed metal in Mesopotamia, as cowrie and bronze money in
+  China, and as cacao-bean currency in Mesoamerica, and the mechanisms differ by region and not only
+  in date and place. It may pass the third checklist question and warrant separate nodes where
+  agriculture warrants one. This is left as a candidate case.
+- **Redirects and reviewed claims.** When a redirect re-points an edge to a narrower node, whether
+  that resets the edge's reviews is an open question, taken up in Governance and Moderation for a
+  Living Graph.
+- **Extension to institutions.** The sequential and compositional shapes are likely to apply to the
+  culture and social-systems layer as well, and The Culture / Social-Systems Layer begins that work.

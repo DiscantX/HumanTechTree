@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 
-Every [node](essay-00-about-the-project.md#glossary) on the graph is a discovery, an invention, or an
+Every [node](about-the-project.md#glossary) on the graph is a discovery, an invention, or an
 achievement, and this policy defines the three.
 
 - **Discovery** reveals something that already existed.
@@ -21,7 +21,7 @@ The project began with an intuition that the stratosphere jump of 2012 was somet
 history, and that it was a different kind of thing from the discovery of fire or the invention of a
 particular device. The graph needs a way to say what that difference is.
 
-The categories also do structural work. The second rule in [Founding Axioms](essay-01-founding-axioms.md)
+The categories also do structural work. The second rule in [Founding Axioms](founding-axioms.md)
 admits a candidate to the graph only if it is itself a discovery, invention, or achievement. That
 rule is only as clear as these definitions.
 
@@ -69,7 +69,7 @@ resembles one because both can be described as firsts.
 
 Out-degree remains useful, but only as a standing sanity check, using the same pattern of an
 automatic flag for human review that appears in
-[Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md). If a node
+[Governance and Moderation for a Living Graph](graph-governance-and-moderation.md). If a node
 tagged as an achievement later gains an incoming prerequisite edge, that does not show the category is
 broken. It signals one of two things: the node was misclassified when it was created, or it is a
 genuine case where the doing and the knowing turned out to be inseparable. That exception is examined
@@ -97,7 +97,7 @@ in the policy on whether an achievement can become a genuine prerequisite.
 The Dartmouth Conference exercised no capability at any degree and produced no technique. It is not a
 discovery, an invention, or an achievement, and so it is not a node. Its content becomes descriptive
 context on whichever real node it contributed to. This is the same treatment
-[Node Granularity](essay-02-node-granularity.md) gives a bare concept with no artifact behind it.
+[Node Granularity](node-granularity.md) gives a bare concept with no artifact behind it.
 
 A significant discovery or invention is never relabeled as an achievement to capture its importance.
 Magnitude and category are independent. The planned Spotlight / Feed Mechanism policy is the intended
@@ -105,7 +105,7 @@ home for "this is a big deal."
 
 ## Category is separate from stage
 
-[What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md) defines an optional *stage*
+[What Constitutes a Discovery?](what-constitutes-a-discovery.md) defines an optional *stage*
 for a subject with a phenomenon-mastery history: observation, exploitation, production, or
 explanation. Category is a separate field, applied independently and not read off which stage a
 subject has reached. Fire's own stage chain shows this.

@@ -15,7 +15,7 @@ its graph sound while anyone can edit it. The policy has five parts.
 - **Disputes are objections to a specific piece of support**, not open-ended arguments about a whole
   claim.
 
-The essay draws on the definitions in [About the Project](essay-00-about-the-project.md#glossary).
+The essay draws on the definitions in [About the Project](about-the-project.md#glossary).
 
 ## Why a graph needs its own governance
 
@@ -42,14 +42,14 @@ publication.
 
 - **Cycle check.** Logical-necessity edges must not form a cycle. Historical-attestation edges are
   dated and cannot form a problematic cycle in the same sense. Edges with an unspecified basis are
-  excluded, as the [Edge Schema](essay-06-edge-schema.md) provides.
+  excluded, as the [Edge Schema](edge-schema.md) provides.
 - **Dangling-edge check.** No edge may point at a node that no longer exists unless the identifier
   resolves through a redirect.
 - **Orphan check.** Flags nodes that plausibly should have a prerequisite and do not. This goes to
   patrollers for attention and never rejects an edit automatically.
 - **Basis-fit check.** Flags a historical-attestation claim supported only by an argument, since
   history is an external fact the wiki should not be inventing. It surfaces the mismatch to editors and
-  never blocks the edit. See [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  never blocks the edit. See [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 - **Premise-dependency check (proposed).** An argument can cite another claim in the graph as a
   premise. If that claim is later overturned or deleted, the argument silently breaks. The proposed
   check flags dependent arguments when a claim they rely on changes, in the same way the dangling-edge
@@ -58,9 +58,9 @@ publication.
 The same pattern of a computed check that flags something for a human, without blocking anyone,
 recurs elsewhere in the project. An Achievement node that later gains an incoming edge is flagged for
 review, as described in
-[Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md). A named
+[Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md). A named
 cluster whose algorithmic membership drifts from what an editor pinned is flagged to editors only, as
-described in [Node Granularity](essay-02-node-granularity.md). Automatic checks handle the mechanical
+described in [Node Granularity](node-granularity.md). Automatic checks handle the mechanical
 load, and human moderators are reserved for judgments a script cannot make, such as whether a claim
 records genuine necessity or mere sequence.
 
@@ -149,7 +149,7 @@ whole claim.
 - **The grounding standard depends on the basis.** Relationship-kind and historical-attestation
   disputes lean on ordinary verifiability. Logical-necessity disputes lean on argued soundness, since
   a citation frequently does not exist at all. See
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md).
 - **A resolved dispute over a logical-necessity claim is disclosed as this wiki's own argued
   position.** It is not presented as settled scholarship the literature has already agreed on. A fully
   grounded claim shows what it rests on. It does not certify that the claim is true.

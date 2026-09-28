@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 
-This policy decides how finely a topic is divided into [nodes](essay-00-about-the-project.md#glossary).
+This policy decides how finely a topic is divided into [nodes](about-the-project.md#glossary).
 It rests on three principles.
 
 1. **A topic becomes several nodes only when each part earns it.** Each part must be eligible on its
@@ -31,7 +31,7 @@ node at all.
 ## Two ways a compound topic divides
 
 A compound topic divides either sequentially or compositionally, and the two need different
-treatment. Neither needs a relationship type beyond those in the [Edge Schema](essay-06-edge-schema.md).
+treatment. Neither needs a relationship type beyond those in the [Edge Schema](edge-schema.md).
 
 **Sequential division** applies to *phenomenon-mastery* topics. These concern something that exists
 in nature before anyone touches it, where the division tracks humanity's deepening relationship to
@@ -40,7 +40,7 @@ explained. Fermentation and electricity plausibly share the shape. Each step is 
 action and each is a genuine prerequisite of the next. This is an ordinary chain of edges, with the
 kind of each link (material necessity or conceptual enablement) decided step by step. Once the topic
 is divided, nothing remains for the original label to be beyond that chain. The four stage names are
-defined in [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md).
+defined in [What Constitutes a Discovery?](what-constitutes-a-discovery.md).
 
 **Compositional division** applies to topics assembled from several independently developed lines
 that converge: an automobile from engine, chassis, wheels, and drivetrain, or a cryptocurrency from
@@ -56,7 +56,7 @@ does not, for a reason specific to each shape.
 
 - **Sequential division needs no container** because the compound label has no independent identity
   after the division. When a topic is split, the old identifier redirects to the new one, as
-  described in [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+  described in [Governance and Moderation for a Living Graph](graph-governance-and-moderation.md).
   An existing edge that cited "fire" as a prerequisite resolves to the terminal node of the chain,
   which is production of fire. That is the node representing the fully realized capability, since
   "requires fire" means "requires the ability to make it," not "requires having once seen it burn."
@@ -72,9 +72,9 @@ relationship type when a new case appears.
 Every proposed division is tested with three questions.
 
 1. **Is each part eligible on its own?** Each proposed node must clear both rules in
-   [Founding Axioms](essay-01-founding-axioms.md): human action is responsible for it, and it is
+   [Founding Axioms](founding-axioms.md): human action is responsible for it, and it is
    itself a discovery, invention, or achievement as defined in
-   [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md). A part that
+   [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md). A part that
    fails is not a node. It becomes descriptive context on whichever node it explains.
 2. **Does it have a history of its own?** A part is *thin* when it has no independent history or
    sourcing beyond being a phase of its parent's story, and it stays a stage of the parent subject.
@@ -97,10 +97,10 @@ Some applications:
   not one artificially preserved compound.
 - **Agriculture.** It arose independently in several regions by essentially the same mechanism, so it
   is one node with an attestation edge per region, as set out in
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md).
 - **Democracy.** Athenian direct democracy and modern representative democracy differ in mechanism
   and each has its own decomposable lead-up, so they are two subjects joined by a mere-influence edge,
-  as worked out in [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md).
+  as worked out in [The Culture / Social-Systems Layer](culture-social-systems-layer.md).
 - **A bare concept with no artifact behind it.** It fails the first question and stays out of the
   graph as a node.
 

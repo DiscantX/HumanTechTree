@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 
-Every line on the graph is an [edge](essay-00-about-the-project.md#glossary), and every edge is a
+Every line on the graph is an [edge](about-the-project.md#glossary), and every edge is a
 single claim about an ordered pair of nodes: that one was a prerequisite of, or an influence on, the
 other. Each edge is described by three independent fields.
 
@@ -14,8 +14,8 @@ other. Each edge is described by three independent fields.
 
 None of the three predicts the others, so each can vary without affecting the rest. This essay fixes
 the schema and defines the relationship-kind field. The other two fields are defined in
-[Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md) and
-[Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md). Two further rules
+[Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md) and
+[Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md). Two further rules
 apply throughout. However many edges join a pair of nodes, they are drawn as a single line, and no
 field ever has to be filled in for an edge to be valid.
 
@@ -67,9 +67,9 @@ been settled.
 
 Combination deserves a note. It describes several prerequisite edges converging on one node. Each
 component is its own edge, so combination does not need a separate container structure. That is what
-lets [Node Granularity](essay-02-node-granularity.md) treat compositional topics without any
+lets [Node Granularity](node-granularity.md) treat compositional topics without any
 parent-node concept. Mere influence is explored in
-[The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md), where the link from
+[The Culture / Social-Systems Layer](culture-social-systems-layer.md), where the link from
 Athenian to modern democracy is its first fully worked case.
 
 ## Who defines what
@@ -99,7 +99,7 @@ The rules for how many edges may join a pair are simple, because each edge is on
 - **Logical necessity is capped at one edge per pair.** It is a general, timeless proposition, not an
   instance of anything. Disagreement about it is handled by contesting and revising that single claim
   through the dispute process in
-  [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md), never
+  [Governance and Moderation for a Living Graph](graph-governance-and-moderation.md), never
   by adding a competing edge.
 - **Historical attestation may multiply, once per independent origin.** Each such edge carries an
   origin attribute (a region or instance) that distinguishes it. Agriculture arising separately in

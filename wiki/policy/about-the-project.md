@@ -39,7 +39,7 @@ Three questions come up at once, and most of the project's policy essays answer 
 
 1. **What counts as a point?** Not everything that exists belongs on the graph. Gravity, for
    instance, is a prerequisite of nearly everything, yet nobody made it. The rules for what belongs
-   are in [Founding Axioms](essay-01-founding-axioms.md).
+   are in [Founding Axioms](founding-axioms.md).
 2. **What counts as a line, and how do we know it is right?** Saying that one thing required another
    is a claim, and claims need support. Each line is stored with its kind, its basis, and the
    evidence or reasoning behind it, and readers can see how well supported it is.
@@ -53,29 +53,29 @@ its reasoning. They reference each other by name. They are grouped below by the 
 
 **What belongs on the graph**
 
-- [Founding Axioms](essay-01-founding-axioms.md): what never becomes a node.
-- [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md): the
+- [Founding Axioms](founding-axioms.md): what never becomes a node.
+- [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md): the
   categories a node can be.
-- [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md): the stages a single
+- [What Constitutes a Discovery?](what-constitutes-a-discovery.md): the stages a single
   subject can pass through, and the shapes those stages take.
 - Can an Achievement Become a Genuine Prerequisite?: the rare cases where doing something and
   knowing how to do it cannot be separated.
-- [Node Granularity](essay-02-node-granularity.md): what counts as one node, and when a topic should
+- [Node Granularity](node-granularity.md): what counts as one node, and when a topic should
   be split.
-- [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md): how writing, money,
+- [The Culture / Social-Systems Layer](culture-social-systems-layer.md): how writing, money,
   and political institutions fit into a graph built around technology.
 
 **How things connect**
 
-- [Edge Schema](essay-06-edge-schema.md): the fields every edge carries.
-- [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md):
+- [Edge Schema](edge-schema.md): the fields every edge carries.
+- [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md):
   whether an edge records what actually happened or what any civilization would have needed.
 
 **How claims are supported and kept correct**
 
-- [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md): grounding,
+- [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md): grounding,
   review, and the status shown to readers.
-- [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md):
+- [Governance and Moderation for a Living Graph](graph-governance-and-moderation.md):
   concurrent editing, protection for central nodes, deletion, and disputes.
 
 Several further policies are planned but not yet written: a notability threshold for deciding which
@@ -95,64 +95,64 @@ Terms are listed alphabetically. Where a term is defined by a specific essay, th
 - **Achievement.** An event in which an existing capability is exercised to a superlative degree,
   such as the fastest, highest, or first, without producing a technique anyone else can build on. The
   four-minute mile and the Moon landing are examples. See
-  [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md).
+  [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md).
 - **Argument.** A kind of grounding: a step-by-step deduction whose premises are each supported by a
   source or by a further argument. See
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 - **Axiom.** One of the founding rules that every candidate must satisfy before it can become a node.
-  See [Founding Axioms](essay-01-founding-axioms.md).
+  See [Founding Axioms](founding-axioms.md).
 - **Basis.** The kind of claim an edge makes: either *historical attestation* or *logical
   necessity*. See
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md).
 - **Blast radius.** A measure of how much depends on a node or edge, computed as the number of nodes
   downstream of it. It sets how heavily an item is protected and how many reviews it needs. See
-  [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+  [Governance and Moderation for a Living Graph](graph-governance-and-moderation.md).
 - **Citation.** A kind of grounding: a source that states the claim itself. See
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 - **Claim.** A single statement about how two nodes relate, which can be supported, reviewed, or
   disputed on its own. An edge is the stored form of a claim.
 - **Cluster.** A group of densely connected nodes, worked out by an algorithm when the graph is drawn.
   A cluster is never a node and never an edge endpoint. See
-  [Node Granularity](essay-02-node-granularity.md).
+  [Node Granularity](node-granularity.md).
 - **Discovery.** Something that already existed and was revealed by human effort, such as a natural
   law or a mathematical truth. Contrast *invention*. See
-  [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md).
+  [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md).
 - **Edge.** A line between two nodes. Each edge is one claim, and carries a relationship-kind, a
-  basis, and its grounding. See [Edge Schema](essay-06-edge-schema.md).
+  basis, and its grounding. See [Edge Schema](edge-schema.md).
 - **Floor.** The boundary below which nothing gets a node: natural phenomena and other things no
-  human action is responsible for. See [Founding Axioms](essay-01-founding-axioms.md).
+  human action is responsible for. See [Founding Axioms](founding-axioms.md).
 - **Grounding.** What backs a claim. Either a *citation* or an *argument*, and a claim can have
   several of either. See
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 - **Historical attestation.** A basis: a dated, sourced claim that one thing preceded and enabled
   another in the actual historical record. It can be true in one region and false in another. See
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md).
 - **Invention.** Something that did not exist before and was created by human effort, such as a
   device or a technique. Contrast *discovery*. See
-  [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md).
+  [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md).
 - **Logical necessity.** A basis: a timeless claim that something cannot exist, for any civilization,
   without something else having been achieved first. See
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md).
 - **Node.** A single discovery, invention, or achievement on the graph. See
-  [Founding Axioms](essay-01-founding-axioms.md).
+  [Founding Axioms](founding-axioms.md).
 - **Prerequisite.** Something a later thing depended on. This is the graph's central relationship,
   though an edge can also record a weaker connection, such as influence.
 - **Redirect.** A pointer left at a node's old identifier when it is moved, renamed, or merged, so
   that existing edges keep working. See
-  [Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+  [Governance and Moderation for a Living Graph](graph-governance-and-moderation.md).
 - **Relationship-kind.** The type of connection an edge records: *material necessity* (something
   physically required), *conceptual enablement* (knowledge or an idea required), *combination*
   (several independently developed lines converging on one thing), or *mere influence* (a real
-  connection short of necessity). See [Edge Schema](essay-06-edge-schema.md).
+  connection short of necessity). See [Edge Schema](edge-schema.md).
 - **Review.** A check by an independent party that a grounding does what it says. See
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 - **Shadow node.** A node for the human understanding of something that sits on the floor, such as the
   theory of gravity. The phenomenon has no node, but the discovery of how it works does. See
-  [Founding Axioms](essay-01-founding-axioms.md).
+  [Founding Axioms](founding-axioms.md).
 - **Stage.** An optional label on a node marking a phase in the history of one subject: *observation*,
   *exploitation*, *production*, or *explanation*. See
-  [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md).
+  [What Constitutes a Discovery?](what-constitutes-a-discovery.md).
 - **Status.** A computed label showing how well a claim is grounded and reviewed: *ungrounded*, *red*,
   *yellow*, or *green*. It describes what a claim rests on, not whether it is true. See
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 - **Subject.** What a node is about. Every node has a subject, and only some also have a stage.

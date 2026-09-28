@@ -3,11 +3,11 @@
 **Status:** Proposed
 
 The history of finding out about something is rarely a single event. This policy gives the graph a way
-to represent that without turning every [node](essay-00-about-the-project.md#glossary) into a
+to represent that without turning every [node](about-the-project.md#glossary) into a
 multi-part production. It rests on four points.
 
 1. **Most nodes have no stage.** A node has a required *subject* and an optional *stage*. Dividing a
-   subject into stages is earned by the tests in [Node Granularity](essay-02-node-granularity.md) and
+   subject into stages is earned by the tests in [Node Granularity](node-granularity.md) and
    is never owed by default.
 2. **The stage vocabulary is small and closed.** The four stages are observation, exploitation,
    production, and explanation.
@@ -19,7 +19,7 @@ multi-part production. It rests on four points.
 A note on the word "discovery." In this essay it is used in the broad, everyday sense of a subject's
 history of being found out and mastered. The narrower category of that name, distinguished from
 invention and achievement, is defined in
-[Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md).
+[Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md).
 
 ## The problem: practice before explanation, and other orders
 
@@ -42,7 +42,7 @@ needs a way to say so.
 > **A node has a required subject and an optional stage, drawn from a small, closed vocabulary. Most
 > nodes carry no stage at all.**
 
-This mirrors the principle in the [Edge Schema](essay-06-edge-schema.md) that richness is available
+This mirrors the principle in the [Edge Schema](edge-schema.md) that richness is available
 but never mandatory. In the great majority of cases, a subject is a single, undivided node. Only when
 its history genuinely contains several separable, datable actions does it become worth dividing into a
 chain of stages.
@@ -65,12 +65,12 @@ such as metallurgy and electricity.
   was needed to reach production.
 
 Each stage of a divided subject is a separate human action, so each is eligible under
-[Founding Axioms](essay-01-founding-axioms.md), while the phenomenon itself sits on the floor.
+[Founding Axioms](founding-axioms.md), while the phenomenon itself sits on the floor.
 
 A node's display title and slug are *derived* from its subject and stage, as in "Production of Fire."
 Stage is real structured data, not a naming convention, so it never has to be parsed back out of a
 title. This follows the general rule in
-[Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md) that
+[Governance and Moderation for a Living Graph](graph-governance-and-moderation.md) that
 identifiers are separate from display titles.
 
 **A boundary condition.** This vocabulary presumes a natural phenomenon being mastered. Purely formal
@@ -171,12 +171,12 @@ The details are in Achievement vs. Discovery vs. Invention.
 
 - Whether a candidate is a discovery, an invention, or an achievement.
 - How stages apply to culture and social systems. Writing, money, and democracy were tried here only
-  as exploratory cases. [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md)
+  as exploratory cases. [The Culture / Social-Systems Layer](culture-social-systems-layer.md)
   takes them up, adopts iterative abstraction as the expected default shape for institutions with no
   physical phenomenon behind them, and treats Athenian and modern democracy as two separate subjects
   joined by a mere-influence edge.
 - The citation standard for stage claims. Stages and dates are node content and not edges, so the review
-  mechanism in [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md) does
+  mechanism in [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md) does
   not cover them.
 
 ## Open questions
@@ -185,7 +185,7 @@ The details are in Achievement vs. Discovery vs. Invention.
   agriculture and money do, does each origin need its own stage chain, or should multi-origin subjects
   simply not be divided into stages? This is left open until the graph is populated and the interaction
   can be observed directly, not decided in the abstract. See
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md).
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md).
 - **Sourcing stage claims.** Since stages are node content, how they are grounded and reviewed is not
   yet settled.
 - **The anchor and the redirect target.** When a divided subject replaces a compound label, old edges

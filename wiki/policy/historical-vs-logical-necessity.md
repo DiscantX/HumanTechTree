@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 
-Every [edge](essay-00-about-the-project.md#glossary) on the graph makes one of two kinds of claim,
+Every [edge](about-the-project.md#glossary) on the graph makes one of two kinds of claim,
 called its *basis*.
 
 - **Historical attestation** is a dated, regionally located claim that one thing preceded and enabled
@@ -48,7 +48,7 @@ carries an *origin* attribute naming its region or instance.
 **Logical necessity** is a general proposition that Y cannot exist without X having been achieved
 first, whatever order any actual civilization discovered them in. It does not multiply. There is
 exactly one such claim per pair, contested and revised in place and never duplicated, as set out in the
-[Edge Schema](essay-06-edge-schema.md).
+[Edge Schema](edge-schema.md).
 
 The combinations are expressed entirely by which edges exist.
 
@@ -78,16 +78,16 @@ this by allowing a claim to rest on an argument whose premises are each sourced,
 exactly which premises lack support. That policy also treats the two bases differently in one respect:
 a logical-necessity claim resting only on an argument is normal, while a historical-attestation claim
 resting only on an argument is flagged as suspect, since history is an external fact the wiki should
-not be inventing. See [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+not be inventing. See [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 Disputes follow the same split: historical claims lean on ordinary verifiability, and necessity claims
 lean on argued soundness, as described in
-[Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+[Governance and Moderation for a Living Graph](graph-governance-and-moderation.md).
 
 ## Independent discovery without new machinery
 
 The general capacity is one thing even where its instances are many. This is the same move
-[Founding Axioms](essay-01-founding-axioms.md) and
-[The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) make for language and
+[Founding Axioms](founding-axioms.md) and
+[The Culture / Social-Systems Layer](culture-social-systems-layer.md) make for language and
 other institutions. A technology with several independent origins is **one node**, with **one
 logical-necessity edge** to a given prerequisite, if any, and **one historical-attestation edge per
 independently attested origin**.
@@ -110,7 +110,7 @@ permanently disconnected from a parallel lineage if no contact or diffusion ever
 
 Independent origin alone is never a reason to split a node. It is a reason to add a
 historical-attestation edge. A split requires the further conditions in
-[Node Granularity](essay-02-node-granularity.md): that the mechanisms themselves differ, and that each
+[Node Granularity](node-granularity.md): that the mechanisms themselves differ, and that each
 side has decomposable history of its own. Where a specific lineage does have such history, the
 subdivision is triggered by that history and not by the fact of independent origin. Oracle-bone
 script's evolution genuinely differs from cuneiform's, for example. The Culture / Social-Systems Layer
@@ -142,6 +142,6 @@ as an ordinary correction, not as an emergency.
 - **Few tested cases.** The two-basis model has mostly been tried on fire and smelting, agriculture,
   writing, and democracy. More concrete edge pairs are needed.
 - **Multiple origins and stages.** If a subject such as money or agriculture is also divided into stages
-  (see [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md)), does each
+  (see [What Constitutes a Discovery?](what-constitutes-a-discovery.md)), does each
   independently attested origin need its own stage chain, or should multi-origin subjects be left
   undivided? This is left open until the graph is populated.

@@ -24,7 +24,7 @@ Do abstract systems belong in a technology tree at all, and if so, under what ed
 was that they might need a parallel schema. A physical technology has a phenomenon to observe and a
 mechanism to explain, but a legal code or a currency does not sit in nature waiting to be noticed.
 
-The answer turned out to be narrower than the worry. [Founding Axioms](essay-01-founding-axioms.md)
+The answer turned out to be narrower than the worry. [Founding Axioms](founding-axioms.md)
 already splits language into a natural faculty for syntax, which is on the floor, and any specific
 language, which someone built and is eligible. The question was whether that split generalizes past
 language, and whether anything about these subjects then requires new machinery.
@@ -39,7 +39,7 @@ language, and whether anything about these subjects then requires new machinery.
   carry meaning is a natural capacity, like syntax. No human population lacks it, and it does not
   decompose into a taught technique the way any actual script does. **Writing itself** (cuneiform,
   Chinese script, Mesoamerican glyphs) is eligible, exactly as modeled in
-  [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md): one node,
+  [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md): one node,
   with an independent historical-attestation edge for each origin.
 - **Exchange and reciprocity.** The general tendency toward reciprocal exchange, documented in
   primates, is the natural layer. **Money**, meaning any specific system of representing and
@@ -54,7 +54,7 @@ policy, not a revision of it.
 
 ## Iterative abstraction as the default shape
 
-While testing its own stage vocabulary, [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md)
+While testing its own stage vocabulary, [What Constitutes a Discovery?](what-constitutes-a-discovery.md)
 found that writing and money have no meaningful observation or explanation stage in the sense of
 mastering a phenomenon. Neither has a natural phenomenon underneath it to be noticed or explained.
 Instead each progresses by *iterative abstraction*. Each refinement, whether tally marks to logograms to
@@ -74,7 +74,7 @@ purely iterative abstraction.
 Athenian democracy (Cleisthenes' reforms, 508 BCE) and modern representative democracy are connected,
 but not in the way most edges in this graph are. Later political thinkers read about Athens, often
 critically, and they did not inherit a continuously practiced technique from it. The checklist in
-[Node Granularity](essay-02-node-granularity.md) gives a clear verdict. These are **two separate
+[Node Granularity](node-granularity.md) gives a clear verdict. These are **two separate
 subjects, not one subject with two historical-attestation edges.** Athenian democracy is direct
 democracy with its own decomposable lead-up in tribal councils and earlier assemblies. Modern
 representative democracy has its own separate lead-up in Magna Carta and the slow constraining of
@@ -82,7 +82,7 @@ monarchical power, parliamentary evolution, and Enlightenment social-contract th
 differ enough, direct participation against elected representation, that the pair fails the "same
 mechanism, different region" test that agriculture passes.
 
-The connection between them is the [Edge Schema](essay-06-edge-schema.md)'s *mere influence*
+The connection between them is the [Edge Schema](edge-schema.md)'s *mere influence*
 relationship-kind, which democracy is the first fully worked case of. Modern democracy could in
 principle have arisen without anyone reading about Athens, just as agriculture arose independently in
 several places without contact. Influence, not necessity, is the honest claim.
@@ -119,7 +119,7 @@ simply the first case where it mattered enough to notice.
   direct influence is citation-grounded and ambient influence can only be argued. That is proposed and
   not decided. Claims in this domain lean harder on argued consensus than most physical-technology
   claims will, but they need no new grounding type. See
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 
 ## Open questions
 

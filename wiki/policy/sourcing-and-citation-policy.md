@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 
-An [edge](essay-00-about-the-project.md#glossary) on the graph is a claim, and a claim needs support.
+An [edge](about-the-project.md#glossary) on the graph is a claim, and a claim needs support.
 This policy sets out how support works and how readers can see how much of it a claim has. It rests on
 four points.
 
@@ -22,7 +22,7 @@ prerequisite claim, because an edge is usually original synthesis. No single sen
 says "smelting required controlled fire." Wikipedia's model, in which every statement traces to a source
 that makes it, assumes something that fails for much of this graph. That is especially true of
 logical-necessity claims (see
-[Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md)), where
+[Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md)), where
 nobody has published the argument at all.
 
 A schema that ranks kinds of support would not fit this graph either, for two reasons.
@@ -56,7 +56,7 @@ itself to a stricter standard of verification, especially with automated help.
 > Neither type outranks the other. What a reader sees is a computed status, never an editor-assigned
 > rank.**
 
-Because an edge is a single claim, the schema stays flat, as the [Edge Schema](essay-06-edge-schema.md)
+Because an edge is a single claim, the schema stays flat, as the [Edge Schema](edge-schema.md)
 sets out.
 
 - **Basis is single-valued.** An edge is either historical attestation or logical necessity. Both is
@@ -155,7 +155,7 @@ every basis. A logical-necessity claim grounded only by an argument is normal. A
 claim grounded only by an argument is a warning sign, since history is an external fact and the wiki
 should not be inventing it. This check surfaces the mismatch to editors and never blocks the edit,
 following the flag-a-human pattern in
-[Governance and Moderation for a Living Graph](essay-10-graph-governance-and-moderation.md).
+[Governance and Moderation for a Living Graph](graph-governance-and-moderation.md).
 
 ## Review
 
@@ -310,14 +310,14 @@ as its sources write it, and no special carve-out is needed.
 
 - **Sub-kinds of mere influence.** Documented direct influence, such as a founder who demonstrably read
   Cleisthenes, and ambient, undocumented diffusion may need distinguishing, as
-  [The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) observes. Under this
+  [The Culture / Social-Systems Layer](culture-social-systems-layer.md) observes. Under this
   model the grounding itself may carry that distinction, since direct influence is a citation-grounded
   claim and ambient influence can only be argued. If that holds, the relationship-kind vocabulary does
   not need sub-values. This is proposed and not decided.
 - **Node facts are out of scope.** This policy grounds edges. What a node contains beyond its
   description, including dates, category assignments (see
-  [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md)), and stage
-  claims (see [What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md)), is a separate
+  [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md)), and stage
+  claims (see [What Constitutes a Discovery?](what-constitutes-a-discovery.md)), is a separate
   question about node content and is not covered by this review mechanism.
 - **Notability.** Whether a candidate has enough grounding to warrant a node may overlap with the planned
   Notability / Inclusion Threshold policy. The two are treated as separate questions.

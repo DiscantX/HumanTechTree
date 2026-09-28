@@ -2,7 +2,7 @@
 
 **Status:** Proposed
 
-This project maps human technology as a graph. Each [node](essay-00-about-the-project.md#glossary)
+This project maps human technology as a graph. Each [node](about-the-project.md#glossary)
 is a discovery, invention, or achievement, and each edge
 records that one thing was a prerequisite of another. Two rules decide what can become a node at all.
 
@@ -69,7 +69,7 @@ human action is responsible for its existence.
 
 > **Axiom 2 — Candidate category.** A candidate that clears Axiom 1 still requires no node unless it
 > is itself a discovery, invention, or achievement, as defined in
-> [Achievement vs. Discovery vs. Invention](essay-04-achievement-discovery-invention.md) (which
+> [Achievement vs. Discovery vs. Invention](achievement-discovery-invention.md) (which
 > distinguishes the three by whether the thing already existed and whether it produced a technique
 > others can build on). A candidate that is merely the occasion, venue, or context in which one of
 > those three was produced, such as a conference, an announcement, or a publication venue, does not
@@ -146,9 +146,9 @@ A few of these need more than a table row.
 **Fire, split at the origin line.** Naturally occurring fire, from lightning or wildfire, is on the
 floor. Noticing that it behaves regularly, capturing it, producing it on demand, and explaining it
 are each human actions with their own histories. This boundary is where the stage-by-stage breakdown
-in [Node Granularity](essay-02-node-granularity.md) begins (an essay on when one topic should be
+in [Node Granularity](node-granularity.md) begins (an essay on when one topic should be
 split into several nodes), and the stages themselves are described in
-[What Constitutes a Discovery?](essay-03-what-constitutes-a-discovery.md).
+[What Constitutes a Discovery?](what-constitutes-a-discovery.md).
 
 **Mathematical truths.** A theorem holds whether or not anyone has proved it, so the truth itself is
 a natural feature of the world in the relevant sense and sits on the floor. Discovering it, proving
@@ -159,7 +159,7 @@ distinction that a mathematician *discovers* a theorem because it was always tru
 the product of any action, so the faculty is excluded. A specific language, script, or literacy is
 the opposite: someone built it, it is taught, it can be lost (dead languages), and it decomposes
 historically. That split between a natural faculty and a built instance is generalized in
-[The Culture / Social-Systems Layer](essay-08-culture-social-systems-layer.md) to writing, money, and
+[The Culture / Social-Systems Layer](culture-social-systems-layer.md) to writing, money, and
 democracy.
 
 **Colorblindness.** It affects roughly 1 in 12 men and might seem to suggest that color vision is
@@ -193,7 +193,7 @@ floor. Nothing like that exists today, but it means the floor is not a metaphysi
 Some of the floor is also a fact about who is building the tree. Physical law and mathematical truth
 plausibly hold for any civilization, while the natural traits of the human body do not. The question
 of whether the graph should record human history or the prerequisites any civilization would face is
-taken up in [Historical Attestation vs. Logical Necessity](essay-07-historical-vs-logical-necessity.md),
+taken up in [Historical Attestation vs. Logical Necessity](historical-vs-logical-necessity.md),
 and this point bears on it: not only is the historical *order* of discovery contingent, some of the
 floor itself may depend on which species is doing the building.
 
@@ -210,9 +210,9 @@ eligible, not guaranteed a node. They deliberately leave four things to other po
 - **Granularity.** How finely an eligible topic is divided into nodes, covered in
   Node Granularity.
 - **Relationships.** What kind of edge connects one node to another, covered in
-  [Edge Schema](essay-06-edge-schema.md).
+  [Edge Schema](edge-schema.md).
 - **Sourcing.** What evidence justifies a node or a prerequisite claim, covered in
-  [Sourcing and Citation Policy for Edges](essay-09-sourcing-and-citation-policy.md).
+  [Sourcing and Citation Policy for Edges](sourcing-and-citation-policy.md).
 
 ## Open questions
 

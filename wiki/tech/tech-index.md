@@ -16,25 +16,28 @@ it, and what renders it.
 - **Proposed.** A position is written and awaiting testing against a real prototype.
 - **Ratified.** The position is settled and binds the implementation.
 
-At present every tech essay is Open. Drafting will proceed roughly in the order listed under
-"Suggested drafting order" below, since several later essays depend on positions taken in earlier
-ones.
+Architecture Overview, Database Choice, Editing Model, and Data Model are Proposed; every other tech
+essay is still Open. Drafting proceeds roughly in the order listed under "Suggested drafting order"
+below, since several later essays depend on positions taken in earlier ones.
 
 ## Architecture and data
 
-- **Architecture Overview** (Open). What the system is, what it must support, and how the problem
-  divides into layers (data, version control, wiki mechanics, presentation). The tech counterpart of
-  About the Project; holds the glossary and cross-references for this set of essays.
-- **Database Choice** (Open). TerminusDB against Postgres with a graph extension (or another graph
-  store), and whether the project needs one store or two — a graph-and-history store versus a
-  conventional store for accounts, talk pages, and search.
-- **Editing Model** (Open). Branch-and-merge against Wikidata-style atomic, independently addressable
-  statements. Left open by Governance and Moderation for a Living Graph; the sourcing policy's
-  claim-level reviews, each bound to one version of one claim, sit more naturally with the atomic
-  model, but the two trade off editing friction against consistency guarantees differently.
-- **Data Model** (Open). How nodes, claims (edges), groundings, reviews, objections, stages,
-  categories, and origins are represented, including stable identifiers separate from display titles,
-  and how redirects work. The schema the policy essays imply but do not themselves specify as data.
+- **[Architecture Overview](architecture-overview.md)** (Proposed). What the system is, what it must
+  support, and how the problem divides into four layers: data and version control, wiki mechanics,
+  presentation, and delivery. Wiki mechanics fold into the data layer under the current direction;
+  presentation stays a separate, still-open concern.
+- **[Database Choice](database-choice.md)** (Proposed). TerminusDB for the graph and, pending one open
+  test, for talk pages, policy pages, and argument pages as well. Records the rejection of MediaWiki
+  alongside TerminusDB, Wikibase alone, Blazegraph, QLever, and two git-backed wiki engines (Gollum,
+  Wiki.js), each for a distinct reason. Blocked from Ratified on a prose-merge-conflict test.
+- **[Editing Model](editing-model.md)** (Proposed). Branch-and-merge, using TerminusDB's native
+  commit/branch/diff/merge model, is adopted. The atomic-statement model's collision-reduction benefit
+  is captured separately, by storing each claim as its own document rather than nesting claims inside
+  node documents. Soft-flag-versus-hard-block for cycles stays open, deferred to The Validation Gate.
+- **[Data Model](data-model.md)** (Proposed). The concrete node, edge/claim, grounding, review, and
+  objection schema implied by the policy essays, plus the one-claim-per-document storage decision
+  Editing Model depends on. Cluster membership is confirmed as computed, never stored, apart from a
+  thin pinned-cluster record.
 - **Computed Values** (Open). Blast radius, the computed anchor stage, the review-count requirement,
   claim status, and clusters are all derived from the graph rather than edited directly. When each is
   computed (on write, cached, or on read) and how it is invalidated as the graph changes.
@@ -92,10 +95,10 @@ ones.
 Several essays depend on positions taken earlier. A reasonable order for a first pass, aimed at
 getting a prototype running:
 
-1. Architecture Overview
-2. Editing Model
-3. Database Choice
-4. Data Model
+1. ~~Architecture Overview~~ — drafted
+2. ~~Editing Model~~ — drafted, but leans heavily on Database Choice rather than its own independent debate; worth stress-testing
+3. ~~Database Choice~~ — drafted, blocked from Ratified on the prose-merge test
+4. ~~Data Model~~ — drafted, largely transcription of decisions already made elsewhere
 5. The Validation Gate
 6. Computed Values
 7. Graph Rendering

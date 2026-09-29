@@ -1,0 +1,23 @@
+{
+  "name": "tech-tree-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "First-pass prototype for the Human Tech Tree Wiki: TerminusDB connectivity, schema push, and a basic Node/Edge smoke test.",
+  "scripts": {
+    "build": "tsc",
+    "init-db": "ts-node src/scripts/init-db.ts",
+    "smoke-test": "ts-node src/scripts/smoke-test.ts",
+    "concurrent-edit-test": "ts-node src/scripts/concurrent-edit-test.ts",
+    "reset-db": "ts-node src/scripts/reset-db.ts"
+  },
+  "dependencies": {
+    "@terminusdb/terminusdb-client": "^12.0.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

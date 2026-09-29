@@ -5,3 +5,5 @@ snapshots/
 
 # Qdrant Local Isolated Database
 .qdrant_storage/
+node_modules/
+

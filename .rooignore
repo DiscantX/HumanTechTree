@@ -2,3 +2,4 @@
 .qdrant-initialized
 storage/
 snapshots/
+node_modules/

@@ -45,12 +45,16 @@ Choice](database-choice.md), showed that most candidate tools are strong at one 
 actively wrong for another, and that the layers genuinely vary independently:
 
 - **Data and version control.** What stores a node, an edge, and the history of both. This is the
-  layer [Database Choice](database-choice.md) settles.
+  layer [Database Choice](database-choice.md) settles, and [Editing Model](editing-model.md) sets out
+  what the application must build around it (a merge queue that serializes landings and translates the
+  store's errors).
 - **Wiki mechanics.** Talk pages, policy pages, argument pages, accounts, and permissions. The current
   direction folds most of this into the same store as the data layer, discussed below, with accounts
-  as the one piece that stays separate.
-- **Presentation.** The curated tech-tree rendering, node and edge cards, and the achievement/spotlight
-  treatment. This layer is still Open; see [Graph Rendering](tech-index.md) in the tech index.
+  as the one piece that stays separate. Long-form prose is the exception that needs application-level
+  help, covered in [Prose Merging](prose-merging.md).
+- **Presentation.** The curated tech-tree rendering, node and edge cards, the achievement/spotlight
+  treatment, and the text editor used for long-form content. This layer is still Open; see [Graph
+  Rendering](tech-index.md) and Text Editor in the tech index.
 - **Delivery.** The application framework serving the presentation layer against the data layer, plus
   hosting and operations. Also Open.
 
@@ -76,10 +80,11 @@ watchlist becomes one query over one commit log instead of a federation of two. 
 its premises, inference steps, and ungrounded-premise list, arguably fits better here than it would
 have in a wikitext template, since it can be real structured data instead of simulated structure.
 
-This is provisional in one specific way: it depends on the store's diff and merge behavior holding up
-on ordinary prose edited concurrently by several people, not just on structured graph documents. That
-test is named as the blocking open question in [Database Choice](database-choice.md) and is not
-assumed here.
+This was provisional on one test, and the test has now been run. The store does not merge text inside a
+field: two edits to different paragraphs of one description still conflict. The fold-in survives, but
+with a condition. Most wiki-mechanic content does not need text merging at all, since talk-page comments
+are separate append-only documents and argument pages are structured data. Long-form prose, chiefly
+policy and essay pages, is merged in the application, as [Prose Merging](prose-merging.md) sets out.
 
 ## What stays outside the unified store
 
@@ -103,27 +108,36 @@ Schema) already assumes a rendering layer that computes a curated, collapsed vie
 graph. That rendering layer, the library it is built on, and its layout approach remain fully open
 questions, tracked separately in the tech index.
 
+The same holds for the text editor. A rich-text editor is worth having for long-form content, and
+ProseMirror and Lexical are both serious candidates, but the choice is independent of how prose is
+stored and merged. The one constraint the storage side places on it is that content is stored as
+markdown.
+
 ## What this essay does not decide
 
 - Which specific database and query language fill the data layer. That is [Database
   Choice](database-choice.md).
-- Branch-and-merge versus atomic-statement editing. That is the tech index's Editing Model entry,
-  deliberately left for its own essay since it is still genuinely contested.
-- The rendering library, layout approach, and application framework. Both remain Open in the tech
-  index.
+- How concurrency and conflicts are handled on top of the store. That is [Editing
+  Model](editing-model.md), which adopted branch-and-merge.
+- How long-form prose is merged. That is [Prose Merging](prose-merging.md).
+- The rendering library, layout approach, text editor, and application framework. All remain Open in
+  the tech index.
 - How accounts and permissions are implemented, beyond the position that they sit outside the unified
   store.
 
 ## Open questions
 
-- **The prose-merge test.** Whether the chosen store's diff and merge model produces an acceptable
-  conflict-resolution experience on ordinary concurrently-edited prose, not only on structured graph
-  documents, is unresolved and is the specific gate before wiki mechanics can be folded into the data
-  layer with confidence.
+- **The application-level prose merge.** The store's own merge model was tested and does not merge
+  prose, so the gate before wiki mechanics can be folded into the data layer with confidence is now a
+  working three-way merge in the application. That has not been built.
 - **Where the line between "data layer" and "wiki mechanics" actually falls.** Argument pages lean
-  structured enough to belong unambiguously with the graph. Long-form talk-page discussion leans more
-  like ordinary prose. Whether these need different treatment, or whether one store handles both
-  adequately, is open pending the prose-merge test above.
+  structured enough to belong unambiguously with the graph. Talk pages are separate append-only
+  comments and behave like structured data too. Only long-form policy and essay pages behave like
+  prose, and whether they belong in the store at all depends on the open question of whether they stay a
+  markdown repository.
 - **How much of the presentation layer's needs should feed back into the data-layer choice.** A
-  rendering library's appetite for bulk reads, mentioned in passing during the database discussion, has
-  not been tested against real query patterns yet.
+  rendering library's appetite for bulk reads has not been tested against real query patterns yet. The
+  prototype's bulk reads were fast at small scale (all edges of a 300-node graph in 0.15 seconds), but
+  that is not the rendering layer's own access pattern.
+- **Server stability.** The intermittent server errors seen in the prototype are unexplained and bear on
+  every layer that sits on the data layer. See Database Choice.

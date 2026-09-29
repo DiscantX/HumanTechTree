@@ -16,9 +16,9 @@ of nodes and the edges between them") as an ordinary access pattern, not an exce
 
 ## The position
 
-> **TerminusDB is the data layer, for the graph and, pending one open test, for talk pages, policy
-> pages, and argument pages as well. A small side-store, outside TerminusDB, handles accounts and,
-> later, search indexing.**
+> **TerminusDB is the data layer, for the graph and, conditional on application-level prose merging
+> (see [Prose Merging](prose-merging.md)), for talk pages, policy pages, and argument pages as well. A
+> small side-store, outside TerminusDB, handles accounts and, later, search indexing.**
 
 TerminusDB is a version-controlled document-graph database: every write is a commit, branching and
 merging work roughly the way they do in git, and it is queryable through GraphQL or its own
@@ -141,24 +141,47 @@ It is a real, acknowledged gap for the higher-volume prose that talk, policy, an
 eventually carry, and is tracked as a deferred question rather than solved here; see the tech index's
 Search entry.
 
+## What the prototype has shown
+
+A prototype (`src/scripts/`) now runs against TerminusDB 12.0.7, and a broad test suite exercised the
+store's behavior. The editing-related findings are in [Editing Model](editing-model.md). The ones that
+bear on this choice are these.
+
+- **Schema enforcement is strong.** Missing required fields, invalid enum values, unknown properties,
+  and edges pointing at nonexistent nodes were all rejected, and the store refused to delete a node that
+  still had dependent edges. This is the kind of guarantee a generic triple store would have left to the
+  application.
+- **The store does not catch everything.** Cycles, self-loops, and duplicate claims were all accepted,
+  so the validation gate remains necessary.
+- **Prose does not merge natively.** See the open question below and [Prose Merging](prose-merging.md).
+- **Performance is comfortable at prototype scale.** Bulk inserts of 300 nodes and about 600 edges took
+  roughly a second and a half, and reading all edges back took 0.15 seconds.
+- **The server fails intermittently.** A generic server error (an HTTP 500 with the message "Unexpected
+  failure in request handler") appeared on rebase operations in several scenarios, on a bare sync, on
+  one merge, and in three of five parallel landings. It also appears on requests to nonexistent
+  branches, with a different body. No data was lost or duplicated in any case, but the cause is unknown.
+
 ## What this essay does not decide
 
 - Whether the eventual side-store for accounts is Postgres, SQLite, or something else, and whether it
   later doubles as a search index. That belongs to Accounts, Permissions, and Bots and to Search.
-- Branch-and-merge versus atomic-statement editing on top of TerminusDB. That is Editing Model,
-  deliberately kept separate since TerminusDB supports something closer to the former today but does
-  not foreclose emulating the latter.
+- The concrete editing workflow on top of TerminusDB. Editing Model has since adopted branch-and-merge
+  and set out what the application must build around it.
 - The rendering and application-framework layers, which do not depend on this choice beyond needing a
   client that can query TerminusDB's GraphQL or WOQL interface.
 
 ## Open questions
 
-- **The prose-merge test.** Whether TerminusDB's diff and merge model gives an acceptable
-  conflict-resolution experience on ordinary, concurrently-edited prose fields, and not only on
-  structured graph documents, is untested. This is the specific, named gate before this essay moves
-  from Proposed to Ratified: a small experiment (two branches making conflicting edits to the same
-  paragraph of a talk-page-style document) is planned before wiki-mechanic content is committed to this
-  store with confidence.
+- **The prose-merge test, now run.** Native merging fails on prose: string fields are atomic, so two
+  edits to different paragraphs of one field still conflict. This was the specific gate before this
+  essay could move from Proposed to Ratified. It does not overturn the choice, because the merge can be
+  done in the application (see [Prose Merging](prose-merging.md)), and most wiki-mechanic content is
+  either append-only comments or structured data that never needed it. The remaining gate is a working
+  application-level merge, and, if block storage is ever adopted, the untested list-field behavior.
+- **Server stability.** The intermittent server errors need characterizing before the store is treated
+  as production-ready: repeated runs to get a failure rate, the server's own log, and a retest after
+  upgrading past 12.0.7. If they turn out to be a defect in this version, a fix or a workaround is
+  probably enough. If they turn out to be structural, this choice needs revisiting.
 - **QLever as a future secondary index.** Whether a fast, purpose-built query or search layer is ever
   worth adding alongside TerminusDB, once real content volume makes the current search position
   insufficient, is left open rather than decided now.

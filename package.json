@@ -6,8 +6,7 @@
   "scripts": {
     "build": "tsc",
     "init-db": "ts-node src/scripts/init-db.ts",
-    "smoke-test": "ts-node src/scripts/smoke-test.ts",
-    "concurrent-edit-test": "ts-node src/scripts/concurrent-edit-test.ts",
+    "concurrent-suite": "ts-node src/scripts/concurrent-suite.ts",
     "reset-db": "ts-node src/scripts/reset-db.ts"
   },
   "dependencies": {

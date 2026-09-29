@@ -65,6 +65,13 @@ async function scenarioUnrelatedEdits(client: any) {
   });
   console.log('Result:', resultA);
 
+  console.log(`Updating ${branchB} with the latest changes from main first...`);
+  await rebaseBranch({
+    sourceBranch: 'main',
+    targetBranch: branchB,
+    message: `Bring main into ${branchB}`,
+  });
+
   console.log(`Rebasing ${branchB} onto main (main has already moved)...`);
   const resultB = await rebaseBranch({
     sourceBranch: branchB,

@@ -134,7 +134,7 @@ patches continue.
 Because the current direction folds wiki-mechanic content into TerminusDB, its native search
 capability was checked rather than assumed. TerminusDB offers regex matching, a fuzzy string-similarity
 comparison, and ordinary substring queries through WOQL, all evaluated at query time. It has no
-inverted index, no tokenization, no stemming, and no relevance ranking — nothing that amounts to
+inverted index, no tokenization, no stemming, and no relevance ranking, nothing that amounts to
 indexed full-text search. Given that node content is deliberately light (a short borrowed description,
 structured fields for stage, category, and dates), this is treated as sufficient for the graph itself.
 It is a real, acknowledged gap for the higher-volume prose that talk, policy, and argument pages will
@@ -143,23 +143,50 @@ Search entry.
 
 ## What the prototype has shown
 
-A prototype (`src/scripts/`) now runs against TerminusDB 12.0.7, and a broad test suite exercised the
-store's behavior. The editing-related findings are in [Editing Model](editing-model.md). The ones that
-bear on this choice are these.
+A prototype (`src/scripts/`) runs against TerminusDB 12.0.7, and a broad test suite has exercised the
+store's behavior twice. The editing-related findings are in [Editing Model](editing-model.md). The ones
+that bear on this choice are these.
 
 - **Schema enforcement is strong.** Missing required fields, invalid enum values, unknown properties,
   and edges pointing at nonexistent nodes were all rejected, and the store refused to delete a node that
   still had dependent edges. This is the kind of guarantee a generic triple store would have left to the
   application.
 - **The store does not catch everything.** Cycles, self-loops, and duplicate claims were all accepted,
-  so the validation gate remains necessary.
+  so the validation gate remains necessary. The duplicates are a consequence of the prototype's random
+  key strategy, not of the store: the documented deterministic strategies could prevent them, at a cost
+  discussed in [Data Model](data-model.md).
 - **Prose does not merge natively.** See the open question below and [Prose Merging](prose-merging.md).
 - **Performance is comfortable at prototype scale.** Bulk inserts of 300 nodes and about 600 edges took
-  roughly a second and a half, and reading all edges back took 0.15 seconds.
-- **The server fails intermittently.** A generic server error (an HTTP 500 with the message "Unexpected
-  failure in request handler") appeared on rebase operations in several scenarios, on a bare sync, on
-  one merge, and in three of five parallel landings. It also appears on requests to nonexistent
-  branches, with a different body. No data was lost or duplicated in any case, but the cause is unknown.
+  between one and three seconds across the two runs, and reading all edges back took under 0.3 seconds.
+  The second run was slower than the first for reasons not yet identified.
+- **The server fails intermittently, and the failure is not explained by our usage.** A generic server
+  error (an HTTP 500 with the message "Unexpected failure in request handler") appears on rebase
+  operations in several scenarios, on syncs, on merges, and in three of five parallel landings, and it
+  persisted after the prototype moved from a hand-written HTTP call to the official client. A second,
+  differently worded 500 is returned for requests that name a nonexistent branch, where the API
+  specification says 404. No data was lost or duplicated in any case, but the cause is unknown and the
+  documentation does not mention it.
+
+### What the documentation and client turned out to say
+
+The first version of this essay leaned on the prototype alone. Reading the official documentation, the
+OpenAPI spec, and the client packages afterwards changed some of what was assumed.
+
+- **Rebase is the documented merge.** The server has no merge endpoint. Its version-control operations
+  are rebase, apply, squash, reset, diff, patch, and log, and the docs' own quickstart merges with
+  rebase. The details, including apply's unresolved status, are in [Editing Model](editing-model.md).
+- **Rebase's error behavior is undocumented.** The spec lists no conflict or server-error response for
+  it, so the conflict shape and the 500s seen so far have no documented contract to check them against.
+- **The official client package is `terminusdb`, not the one the prototype started with.** The docs
+  install `terminusdb` (12.0.5), which is built from the same repository as `@terminusdb/terminusdb-client`
+  (12.0.0) but is newer, and which the docs site badges as its JavaScript SDK version. The package ships
+  its own type declarations and exports the client class by name, so the `require()` and untyped
+  workaround was unnecessary. Both packages already had a rebase method, so the raw HTTP wrapper was
+  never needed either. Most client methods are still typed loosely (`Promise<any>`), so the types help
+  less than they might.
+- **Some documented methods do not exist.** The commit-history method shown on the docs' reset page is
+  absent from both packages, and the spec marks the log endpoint as not implemented in the JavaScript
+  client. The prototype keeps a small HTTP helper for it.
 
 ## What this essay does not decide
 
@@ -177,15 +204,22 @@ bear on this choice are these.
   essay could move from Proposed to Ratified. It does not overturn the choice, because the merge can be
   done in the application (see [Prose Merging](prose-merging.md)), and most wiki-mechanic content is
   either append-only comments or structured data that never needed it. The remaining gate is a working
-  application-level merge, and, if block storage is ever adopted, the untested list-field behavior.
+  application-level merge, and, if block storage is ever adopted, the untested collection-field
+  behavior. One further observation belongs here: in the second run, two edits to the *same* paragraph
+  landed without a conflict where the first run reported one. Until that is explained, the claim that
+  same-field conflicts are always reported is not safe to rely on (see Editing Model).
 - **Server stability.** The intermittent server errors need characterizing before the store is treated
-  as production-ready: repeated runs to get a failure rate, the server's own log, and a retest after
-  upgrading past 12.0.7. If they turn out to be a defect in this version, a fix or a workaround is
-  probably enough. If they turn out to be structural, this choice needs revisiting.
+  as production-ready. Planned: repeated runs with and without the sync step to get failure rates, the
+  server's own log for the same window, and, if the errors persist, a report to the maintainers together
+  with the missing-branch 500. The project is already on the latest server release (12.0.7), so a retest
+  after an upgrade is not currently possible. If the errors turn out to be a defect in this version, a
+  fix or a workaround is probably enough. If they turn out to be structural, this choice needs revisiting.
 - **QLever as a future secondary index.** Whether a fast, purpose-built query or search layer is ever
   worth adding alongside TerminusDB, once real content volume makes the current search position
   insufficient, is left open rather than decided now.
 - **TerminusDB's own long-run health.** Its stewardship changed hands (now under DFRNT) and it is
   actively releasing, which is why it was treated as viable at all, but it does not have Wikipedia- or
-  Wikidata-scale institutional backing. This is worth periodically re-checking rather than assumed
-  permanently settled.
+  Wikidata-scale institutional backing. The official documentation is now published from a DFRNT
+  repository that GitHub shows as 299 commits ahead of an older copy under a different organization, which
+  fits that picture and suggests the prose docs are maintained more actively than the code they describe. This is worth
+  periodically re-checking rather than assumed permanently settled.

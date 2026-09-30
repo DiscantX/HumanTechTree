@@ -1,75 +1,104 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
-import { commitIds } from '../db/log';
 import { createClient } from '../db/client';
 import { rebaseBranch } from '../db/rebase';
+import { getCommitLog } from '../db/log';
 
 /**
- * Broad test suite for TerminusDB's branch-and-merge behavior, written to
- * answer many open questions in ONE run instead of editing code per test.
+ * Broad test suite for TerminusDB's branch-and-merge behavior.
  *
  * Verdicts:
- *   PASS      - a hypothesis we hold (from Editing Model, Data Model, or
- *               incident-summary.md) was confirmed.
- *   FAIL      - that hypothesis was NOT confirmed. This means "our
- *               assumption is wrong or the DB behaves differently", not
- *               necessarily "bug". Read the detail.
+ *   PASS      - a hypothesis we hold was confirmed.
+ *   FAIL      - that hypothesis was NOT confirmed ("our assumption is
+ *               wrong or the DB behaves differently", not necessarily a bug).
  *   OBSERVED  - purely informational; we recorded what happened.
- *   ERROR     - the scenario itself crashed (harness problem or an
- *               unexpected exception). Only these set a non-zero exit code.
+ *   ERROR     - the scenario itself crashed. Only these set a non-zero exit.
  *
- * Usage (add an npm script mirroring your others, e.g.
- * "concurrent-suite": "ts-node src/scripts/concurrent-suite.ts"):
+ * Usage (npm script: "concurrent-suite": "ts-node src/scripts/concurrent-suite.ts"):
  *   npm run concurrent-suite
- *   npm run concurrent-suite -- --only=C,P        (id prefixes)
- *   npm run concurrent-suite -- --skip-slow       (skips the X* scale tests)
+ *   npm run concurrent-suite -- --only=C,P          (scenario id prefixes)
+ *   npm run concurrent-suite -- --skip-slow         (skips the X* scale tests)
+ *   npm run concurrent-suite -- --repeat=20         (repeat selected scenarios)
+ *   npm run concurrent-suite -- --no-sync           (never sync main into a
+ *                                                    branch before landing it)
  *
- * Every branch/doc name carries a run ID, so re-running is safe. Output:
- * console log plus test-results/concurrent-suite-<runid>.{json,md}. Paste
- * the .md back into chat for analysis.
+ * Failure-rate workflow for the intermittent HTTP 500s: run the same
+ * scenarios with and without --no-sync, e.g.
+ *   --only=C4,C6,C8,E4,M9,P2 --repeat=20
+ *   --only=C4,C6,C8,E4,M9,P2 --repeat=20 --no-sync
+ * and compare the "Rebase calls" table in the two reports. Also capture the
+ * server log for the same window (in the VM: docker logs --since <time>
+ * <container>); the JSON output has per-scenario start and end timestamps
+ * so the two can be lined up.
  *
- * Note: newBranch() uses the same client.branch(name, 'main') call as
- * concurrent-edit-test.ts. Scenario M0 checks the new branch actually
- * inherits main's documents, in case that second argument is misread by
- * the client.
+ * Every branch/doc name carries a run ID and repeat index, so re-running is
+ * safe. Output: test-results/concurrent-suite-<runid>.{json,md}. With
+ * --repeat > 1 the .md holds aggregate tables only (the full detail is in
+ * the .json), so it stays small enough to paste back into chat.
+ *
+ * Scenarios K* and L* add scratch classes to throwaway branches, never to
+ * main. Nothing they create is merged.
  */
 
 const RUN_ID = Date.now();
 let seq = 0;
 const uid = (p: string) => `${p}-${RUN_ID}-${++seq}`;
 
+const args = process.argv.slice(2);
+const argVal = (name: string): string | undefined => {
+  const a = args.find((x) => x.startsWith(`--${name}=`));
+  return a ? a.slice(name.length + 3) : undefined;
+};
+const REPEAT = Math.max(1, parseInt(argVal('repeat') ?? '1', 10) || 1);
+const USE_SYNC = !args.includes('--no-sync');
+
 // ---------------------------------------------------------------- findings
 
 type Verdict = 'PASS' | 'FAIL' | 'OBSERVED' | 'ERROR';
 interface Finding {
   scenario: string;
+  run: number;
   label: string;
   verdict: Verdict;
   detail: string;
 }
+interface ErrorLogEntry {
+  scenario: string;
+  run: number;
+  kind: string;
+  theirCommit?: string;
+  body: string;
+}
 const findings: Finding[] = [];
+const errorLog: ErrorLogEntry[] = [];
 let currentScenario = '';
+let currentRun = 1;
 
 function record(verdict: Verdict, label: string, detail = '') {
-  findings.push({ scenario: currentScenario, label, verdict, detail });
-  console.log(`  [${verdict}] ${label}${detail ? ` — ${detail}` : ''}`);
+  findings.push({ scenario: currentScenario, run: currentRun, label, verdict, detail });
+  console.log(`  [${verdict}] ${label}${detail ? ` - ${detail}` : ''}`);
 }
 const expectThat = (label: string, cond: boolean, detail = '') =>
   record(cond ? 'PASS' : 'FAIL', label, detail);
-const observe = (label: string, detail = '') =>
-  record('OBSERVED', label, detail);
+const observe = (label: string, detail = '') => record('OBSERVED', label, detail);
+
+// Rebase call statistics, split by stage, for the failure-rate comparison.
+const rebaseStats = {
+  sync: { calls: 0, fivexx: 0, other: 0 },
+  land: { calls: 0, fivexx: 0, other: 0 },
+};
 
 // ---------------------------------------------------------------- helpers
 
-function shorten(err: any): string {
+function shorten(err: any, limit = 400): string {
   let s: string;
   try {
     s = JSON.stringify(err?.response ?? err?.data ?? err?.message ?? String(err));
   } catch {
     s = String(err);
   }
-  return (s ?? '').slice(0, 400);
+  return (s ?? '').slice(0, limit);
 }
 
 function classify(err: any): string {
@@ -91,53 +120,93 @@ interface Attempt<T> {
   kind?: string;
   body?: string;
 }
-async function attempt<T>(fn: () => Promise<T>): Promise<Attempt<T>> {
+/**
+ * Runs fn, converting a thrown error into a result. Every failure is also
+ * written to errorLog with its full body (and the rebase's api:their_commit
+ * when present). `quiet` skips the log, for probes where failure is expected
+ * (reading a document that may not exist).
+ */
+async function attempt<T>(fn: () => Promise<T>, quiet = false): Promise<Attempt<T>> {
   try {
     return { ok: true, value: await fn() };
   } catch (err: any) {
-    return { ok: false, kind: classify(err), body: shorten(err) };
+    const kind = classify(err);
+    if (!quiet) {
+      const full = shorten(err, 6000);
+      const m = /"api:their_commit":"([^"]+)"/.exec(full);
+      errorLog.push({
+        scenario: currentScenario,
+        run: currentRun,
+        kind,
+        theirCommit: m ? m[1] : undefined,
+        body: full,
+      });
+    }
+    return { ok: false, kind, body: shorten(err) };
   }
 }
 const desc = (a: { ok: boolean; kind?: string; body?: string }) =>
   a.ok ? 'ok' : `${a.kind} ${a.body ?? ''}`.trim();
 
-const sync = (b: string) =>
-  attempt(() =>
-    rebaseBranch({
-      sourceBranch: 'main',
-      targetBranch: b,
-      message: `sync main into ${b}`,
-    }),
-  );
-const land = (b: string) =>
-  attempt(() =>
-    rebaseBranch({
-      sourceBranch: b,
-      targetBranch: 'main',
-      message: `merge ${b}`,
-    }),
-  );
-async function mergeWithSync(
-  b: string,
-): Promise<{ ok: boolean; stage: string; kind?: string; body?: string }> {
-  const s = await sync(b);
-  if (!s.ok) return { ok: false, stage: 'sync', kind: s.kind, body: s.body };
-  const l = await land(b);
-  return { ok: l.ok, stage: 'land', kind: l.kind, body: l.body };
+function countRebase(stage: 'sync' | 'land', a: Attempt<any>) {
+  const s = rebaseStats[stage];
+  s.calls++;
+  if (!a.ok) {
+    if (/^HTTP_5/.test(a.kind ?? '')) s.fivexx++;
+    else s.other++;
+  }
 }
 
-async function newBranch(c: any, name: string): Promise<string> {
-  c.checkout('main');
-  await c.branch(name, 'main');
+/** Sync `base` (default main) into branch b: rebases base's commits onto b. */
+const sync = async (b: string, base = 'main') => {
+  const r = await attempt(() =>
+    rebaseBranch({ sourceBranch: base, targetBranch: b, message: `sync ${base} into ${b}` }),
+  );
+  countRebase('sync', r);
+  return r;
+};
+/** Land branch b on `target` (default main). */
+const land = async (b: string, target = 'main') => {
+  const r = await attempt(() =>
+    rebaseBranch({ sourceBranch: b, targetBranch: target, message: `merge ${b}` }),
+  );
+  countRebase('land', r);
+  return r;
+};
+interface MergeOutcome {
+  ok: boolean;
+  stage: string;
+  kind?: string;
+  body?: string;
+  value?: any;
+}
+/** Sync (unless --no-sync) then land. */
+async function mergeWithSync(b: string, target = 'main'): Promise<MergeOutcome> {
+  if (USE_SYNC) {
+    const s = await sync(b, target);
+    if (!s.ok) return { ok: false, stage: 'sync', kind: s.kind, body: s.body };
+  }
+  const l = await land(b, target);
+  return { ok: l.ok, stage: 'land', kind: l.kind, body: l.body, value: l.value };
+}
+
+/** New branch off `base`. branch() always forks from the client's current checkout. */
+async function newBranch(c: any, name: string, base = 'main'): Promise<string> {
+  c.checkout(base);
+  await c.branch(name);
   return name;
 }
 async function insertOn(c: any, branch: string, docs: any[]): Promise<string[]> {
   c.checkout(branch);
   return c.addDocument(docs);
 }
+async function addSchemaOn(c: any, branch: string, docs: any[]) {
+  c.checkout(branch);
+  return c.addDocument(docs, { graph_type: 'schema' });
+}
 async function getOn(c: any, branch: string, id: string): Promise<any | null> {
   c.checkout(branch);
-  const r = await attempt(() => c.getDocument({ id }));
+  const r = await attempt(() => c.getDocument({ id }), true);
   return r.ok ? r.value : null;
 }
 async function updateOn(c: any, branch: string, id: string, patch: any) {
@@ -151,7 +220,10 @@ async function deleteOn(c: any, branch: string, id: string) {
 }
 async function listDocs(c: any, branch: string, type: string): Promise<any[]> {
   c.checkout(branch);
-  const r = await attempt(() => c.getDocument({ type, as_list: true, count: 100000 }));
+  const r = await attempt(
+    () => c.getDocument({ type, as_list: true, count: 100000 }),
+    true,
+  );
   return r.ok && Array.isArray(r.value) ? r.value : [];
 }
 
@@ -172,41 +244,41 @@ const edgeDoc = (s: string, t: string, extra: any = {}) => ({
 });
 
 async function seedPair(c: any, tag: string, withEdge = true, edgeExtra: any = {}) {
-  const [s, t] = await insertOn(c, 'main', [
-    nodeDoc(`${tag} source`),
-    nodeDoc(`${tag} target`),
-  ]);
+  const [s, t] = await insertOn(c, 'main', [nodeDoc(`${tag} source`), nodeDoc(`${tag} target`)]);
   let e = '';
   if (withEdge) {
-    [e] = await insertOn(c, 'main', [
-      edgeDoc(s, t, { statement: `${tag} baseline`, ...edgeExtra }),
-    ]);
+    [e] = await insertOn(c, 'main', [edgeDoc(s, t, { statement: `${tag} baseline`, ...edgeExtra })]);
   }
   return { s, t, e };
 }
 
 /** Two branches edit the same doc; A lands first; B is merged (with or without sync). */
-async function twoBranchEdit(
-  c: any,
-  id: string,
-  patchA: any,
-  patchB: any,
-  syncB: boolean,
-) {
+async function twoBranchEdit(c: any, id: string, patchA: any, patchB: any, syncB: boolean) {
   const a = await newBranch(c, uid('a'));
   const b = await newBranch(c, uid('b'));
   await updateOn(c, a, id, patchA);
   await updateOn(c, b, id, patchB);
   const ra = await land(a);
-  const rb = syncB ? await mergeWithSync(b) : { ...(await land(b)), stage: 'land' };
+  const rb: MergeOutcome = syncB
+    ? await mergeWithSync(b)
+    : { ...(await land(b)), stage: 'land' };
   const mainDoc = await getOn(c, 'main', id);
   const bDoc = await getOn(c, b, id);
   return { a, b, ra, rb, mainDoc, bDoc };
 }
 
+/** All commit identifiers on a branch (count is set high so the log is not paginated). */
+async function logIds(branch: string): Promise<string[] | null> {
+  const log = await getCommitLog(branch, { count: 100000 });
+  if (!log) return null;
+  return log.map((x) => x.identifier ?? x['@id'] ?? JSON.stringify(x));
+}
+
 // --------------------------------------------------- mini validation gate
 
-const refId = (x: any): string => (typeof x === 'string' ? x : x?.['@id']);
+/** Inserted IDs come back as full IRIs while reads return short IDs; compare short. */
+const shortId = (x: string): string => x.replace(/^terminusdb:\/\/\/data\//, '');
+const refId = (x: any): string => shortId(typeof x === 'string' ? x : x?.['@id']);
 
 function analyze(edges: any[]) {
   const adj = new Map<string, string[]>();
@@ -264,7 +336,12 @@ function blastRadii(edges: any[]): Map<string, number> {
 }
 
 const paragraphs = (n: number, marker = '') =>
-  Array.from({ length: n }, (_, i) => `Paragraph ${i + 1}${marker && i === 0 ? ' ' + marker : ''}. ` + 'Lorem ipsum dolor sit amet. '.repeat(5)).join('\n\n');
+  Array.from(
+    { length: n },
+    (_, i) =>
+      `Paragraph ${i + 1}${marker && i === 0 ? ' ' + marker : ''}. ` +
+      'Lorem ipsum dolor sit amet. '.repeat(5),
+  ).join('\n\n');
 
 // ---------------------------------------------------------------- scenarios
 
@@ -284,8 +361,11 @@ add('M0', 'sanity: new branch inherits main documents', async (c, tag) => {
   const [id] = await insertOn(c, 'main', [nodeDoc(`${tag} seed`)]);
   const b = await newBranch(c, uid('m0'));
   const seen = await getOn(c, b, id);
-  expectThat('new branch sees documents that existed on main at branch time', !!seen,
-    seen ? '' : 'branch() may be creating EMPTY branches: every later result is suspect');
+  expectThat(
+    'new branch sees documents that existed on main at branch time',
+    !!seen,
+    seen ? '' : 'branch() may be creating EMPTY branches: every later result is suspect',
+  );
 });
 
 add('M1', 'unrelated inserts merge cleanly (with sync)', async (c, tag) => {
@@ -296,8 +376,11 @@ add('M1', 'unrelated inserts merge cleanly (with sync)', async (c, tag) => {
   const ra = await land(a);
   const rb = await mergeWithSync(b);
   expectThat('A lands', ra.ok, desc(ra));
-  expectThat('B syncs then lands', rb.ok, `${rb.stage} ${desc(rb)}`);
-  expectThat('both nodes present on main', !!(await getOn(c, 'main', na)) && !!(await getOn(c, 'main', nb)));
+  expectThat('B merges', rb.ok, `${rb.stage} ${desc(rb)}`);
+  expectThat(
+    'both nodes present on main',
+    !!(await getOn(c, 'main', na)) && !!(await getOn(c, 'main', nb)),
+  );
 });
 
 add('M2', 'unrelated inserts WITHOUT sync (does the 500 reproduce?)', async (c, tag) => {
@@ -308,8 +391,11 @@ add('M2', 'unrelated inserts WITHOUT sync (does the 500 reproduce?)', async (c, 
   await land(a);
   const rb = await land(b);
   observe('direct land of B after main moved', desc(rb));
-  expectThat('summary theory: direct rebase after main moved gives HTTP 500', rb.kind === 'HTTP_500',
-    rb.ok ? 'it SUCCEEDED, so the ordering theory is wrong or version-dependent' : `got ${rb.kind}`);
+  expectThat(
+    'summary theory: direct rebase after main moved gives HTTP 500',
+    rb.kind === 'HTTP_500',
+    rb.ok ? 'it SUCCEEDED, so the ordering theory is wrong or version-dependent' : `got ${rb.kind}`,
+  );
   if (!rb.ok) {
     expectThat('failed merge left main untouched', !(await getOn(c, 'main', nb)));
     const rec = await mergeWithSync(b);
@@ -353,7 +439,9 @@ add('M6', 'landing the same branch twice', async (c, tag) => {
   const second = await land(a);
   observe('second land of an already-merged branch', desc(second));
   expectThat('first land ok', first.ok, desc(first));
-  const before = (await listDocs(c, 'main', 'Node')).filter((n) => String(n.subject).startsWith(tag)).length;
+  const before = (await listDocs(c, 'main', 'Node')).filter((n) =>
+    String(n.subject).startsWith(tag),
+  ).length;
   expectThat('node not duplicated on main by second land', before === 1, `${before} matching nodes`);
 });
 
@@ -382,7 +470,11 @@ add('M8', 'race: main moves between sync and land; then retry', async (c, tag) =
   expectThat('a stale sync is enough (no 5xx after main moved again)', lb.ok, desc(lb));
   if (!lb.ok) {
     const retry = await mergeWithSync(b);
-    expectThat('retry with fresh sync succeeds (a retry loop is viable)', retry.ok, `${retry.stage} ${desc(retry)}`);
+    expectThat(
+      'retry with fresh sync succeeds (a retry loop is viable)',
+      retry.ok,
+      `${retry.stage} ${desc(retry)}`,
+    );
   }
   expectThat('B eventually on main', !!(await getOn(c, 'main', nb)));
 });
@@ -399,16 +491,26 @@ add('M9', 'parallel lands of 5 branches (lost-write check)', async (c, tag) => {
   }
   const results = await Promise.all(branches.map((b) => land(b)));
   observe('parallel land outcomes', results.map((r) => (r.ok ? 'ok' : r.kind)).join(', '));
-  const onMain = (await listDocs(c, 'main', 'Node')).filter((n) => String(n.subject).startsWith(`${tag} par`));
+  const onMain = (await listDocs(c, 'main', 'Node')).filter((n) =>
+    String(n.subject).startsWith(`${tag} par`),
+  );
   const okCount = results.filter((r) => r.ok).length;
-  expectThat('no lost writes: every reported success is actually on main', onMain.length >= okCount,
-    `${okCount} reported ok, ${onMain.length} on main`);
-  expectThat('no phantom writes: nothing on main that was reported failed', onMain.length <= okCount,
-    `${okCount} reported ok, ${onMain.length} on main`);
+  expectThat(
+    'no lost writes: every reported success is actually on main',
+    onMain.length >= okCount,
+    `${okCount} reported ok, ${onMain.length} on main`,
+  );
+  expectThat(
+    'no phantom writes: nothing on main that was reported failed',
+    onMain.length <= okCount,
+    `${okCount} reported ok, ${onMain.length} on main`,
+  );
   for (let i = 0; i < N; i++) {
     if (!results[i].ok) await mergeWithSync(branches[i]);
   }
-  const after = (await listDocs(c, 'main', 'Node')).filter((n) => String(n.subject).startsWith(`${tag} par`));
+  const after = (await listDocs(c, 'main', 'Node')).filter((n) =>
+    String(n.subject).startsWith(`${tag} par`),
+  );
   expectThat('sequential retries land the rest', after.length === N, `${after.length}/${N} on main`);
 });
 
@@ -419,7 +521,7 @@ add('M10', 'three branches from one base, sync+land in sequence', async (c, tag)
     bs.push(b);
     await insertOn(c, b, [nodeDoc(`${tag} seq${i}`)]);
   }
-  const outs = [];
+  const outs: MergeOutcome[] = [];
   for (const b of bs) outs.push(await mergeWithSync(b));
   expectThat('all three merge', outs.every((o) => o.ok), outs.map(desc).join(' | '));
 });
@@ -430,7 +532,11 @@ add('C1', 'same field (string) conflict, with sync', async (c, tag) => {
   const { e } = await seedPair(c, tag);
   const r = await twoBranchEdit(c, e, { statement: `${tag} from A` }, { statement: `${tag} from B` }, true);
   observe('B merge outcome', `${r.rb.stage}: ${desc(r.rb)}`);
-  expectThat('surfaces as cardinality error (summary claim)', r.rb.kind === 'CARDINALITY_CONFLICT', `got ${r.rb.kind}`);
+  expectThat(
+    'surfaces as cardinality error (summary claim)',
+    r.rb.kind === 'CARDINALITY_CONFLICT',
+    `got ${r.rb.kind}`,
+  );
   expectThat('main kept A value (failed merge is atomic)', r.mainDoc?.statement === `${tag} from A`);
   expectThat('B branch still has its own value (not corrupted)', r.bDoc?.statement === `${tag} from B`);
 });
@@ -445,9 +551,19 @@ add('C2', 'same field conflict, WITHOUT sync', async (c, tag) => {
 
 add('C3', 'same enum field conflict (relationship_kind)', async (c, tag) => {
   const { e } = await seedPair(c, tag);
-  const r = await twoBranchEdit(c, e, { relationship_kind: 'MaterialNecessity' }, { relationship_kind: 'ConceptualEnablement' }, true);
+  const r = await twoBranchEdit(
+    c,
+    e,
+    { relationship_kind: 'MaterialNecessity' },
+    { relationship_kind: 'ConceptualEnablement' },
+    true,
+  );
   observe('outcome', `${r.rb.stage}: ${desc(r.rb)}`);
-  expectThat('enum conflict also surfaces as cardinality error', r.rb.kind === 'CARDINALITY_CONFLICT', `got ${r.rb.kind}`);
+  expectThat(
+    'enum conflict also surfaces as cardinality error',
+    r.rb.kind === 'CARDINALITY_CONFLICT',
+    `got ${r.rb.kind}`,
+  );
 });
 
 add('C4', 'same field, same new value (convergent edit)', async (c, tag) => {
@@ -460,17 +576,29 @@ add('C4', 'same field, same new value (convergent edit)', async (c, tag) => {
 
 add('C5', 'different fields of the same document', async (c, tag) => {
   const { e } = await seedPair(c, tag);
-  const r = await twoBranchEdit(c, e, { statement: `${tag} A statement` }, { relationship_kind: 'MaterialNecessity' }, true);
+  const r = await twoBranchEdit(
+    c,
+    e,
+    { statement: `${tag} A statement` },
+    { relationship_kind: 'MaterialNecessity' },
+    true,
+  );
   expectThat('field-level merge: no conflict', r.rb.ok, desc(r.rb));
   if (r.rb.ok) {
-    expectThat('main has BOTH changes', r.mainDoc?.statement === `${tag} A statement` && r.mainDoc?.relationship_kind === 'MaterialNecessity',
-      JSON.stringify(r.mainDoc));
+    expectThat(
+      'main has BOTH changes',
+      r.mainDoc?.statement === `${tag} A statement` &&
+        r.mainDoc?.relationship_kind === 'MaterialNecessity',
+      JSON.stringify(r.mainDoc),
+    );
   }
 });
 
 add('C6', 'different claims on the same node pair (collision-reduction, real case)', async (c, tag) => {
   const { s, t, e } = await seedPair(c, tag);
-  const [e2] = await insertOn(c, 'main', [edgeDoc(s, t, { statement: `${tag} second claim`, basis: 'HistoricalAttestation', origin: 'Region X' })]);
+  const [e2] = await insertOn(c, 'main', [
+    edgeDoc(s, t, { statement: `${tag} second claim`, basis: 'HistoricalAttestation', origin: 'Region X' }),
+  ]);
   const a = await newBranch(c, uid('a'));
   const b = await newBranch(c, uid('b'));
   await updateOn(c, a, e, { statement: `${tag} edited claim 1` });
@@ -488,11 +616,19 @@ add('C7', 'edit vs delete of the same document', async (c, tag) => {
   await deleteOn(c, a, e);
   await updateOn(c, b, e, { statement: `${tag} edited` });
   const ra = await land(a);
-  const rb = await mergeWithSync(b);
   observe('delete lands', desc(ra));
+  // Distinguishes a real behavior from a timing flaw: is the document gone
+  // from main immediately after the delete landed, before B is merged?
+  const goneAfterDelete = !(await getOn(c, 'main', e));
+  expectThat('document is gone from main right after the delete landed', ra.ok && goneAfterDelete,
+    `delete ok=${ra.ok}, gone=${goneAfterDelete}`);
+  const rb = await mergeWithSync(b);
   observe('edit-after-delete merge', `${rb.stage}: ${desc(rb)}`);
   const final = await getOn(c, 'main', e);
-  observe('main afterwards', final ? 'document still exists (edit resurrected it?)' : 'document gone');
+  observe(
+    'main afterwards',
+    final ? `document exists: ${JSON.stringify(final).slice(0, 200)}` : 'document gone',
+  );
 });
 
 add('C8', 'delete vs delete of the same document', async (c, tag) => {
@@ -521,19 +657,20 @@ add('C10', 'conflict resolution path: replay the losing edit on a fresh branch',
   const { e } = await seedPair(c, tag);
   const r = await twoBranchEdit(c, e, { statement: `${tag} A` }, { statement: `${tag} B` }, true);
   expectThat('precondition: B conflicted', !r.rb.ok, desc(r.rb));
-  // Application-level resolution: throw away B's branch, replay B's intended edit on a fresh branch.
   const fresh = await newBranch(c, uid('resolved'));
   await updateOn(c, fresh, e, { statement: `${tag} B (replayed)` });
   const rf = await land(fresh);
   expectThat('replayed edit lands cleanly (a viable "resolve conflict" UX)', rf.ok, desc(rf));
-  expectThat('main shows the replayed value', (await getOn(c, 'main', e))?.statement === `${tag} B (replayed)`);
-  // Can the ORIGINAL conflicted branch be repaired in place?
-  await updateOn(c, r.b, e, { statement: `${tag} A` }); // set to main's current-ish value
+  expectThat(
+    'main shows the replayed value',
+    (await getOn(c, 'main', e))?.statement === `${tag} B (replayed)`,
+  );
+  await updateOn(c, r.b, e, { statement: `${tag} A` });
   const rr = await mergeWithSync(r.b);
   observe('can the conflicted branch be fixed in place by matching main?', `${rr.stage}: ${desc(rr)}`);
 });
 
-// ===== P: prose merging (the Database Choice blocker) =====
+// ===== P: prose merging =====
 
 add('P1', 'prose: different paragraphs of one field', async (c, tag) => {
   const [id] = await insertOn(c, 'main', [nodeDoc(`${tag} prose`, { description: paragraphs(5) })]);
@@ -542,16 +679,39 @@ add('P1', 'prose: different paragraphs of one field', async (c, tag) => {
   const editB = base.replace('Paragraph 5.', 'Paragraph 5 (edited by B).');
   const r = await twoBranchEdit(c, id, { description: editA }, { description: editB }, true);
   observe('non-overlapping paragraph edits', `${r.rb.stage}: ${desc(r.rb)}`);
-  expectThat('text-level auto-merge of non-overlapping paragraphs', r.rb.ok,
-    r.rb.ok ? '' : 'string fields are atomic: no line-level merge (bad sign for folding talk pages into TerminusDB)');
+  const finalDesc = String(r.mainDoc?.description ?? '');
+  observe(
+    'final text on main',
+    `hasA=${finalDesc.includes('edited by A')} hasB=${finalDesc.includes('edited by B')}`,
+  );
+  expectThat(
+    'text-level auto-merge of non-overlapping paragraphs',
+    r.rb.ok,
+    r.rb.ok ? '' : 'string fields are atomic: no line-level merge',
+  );
 });
 
 add('P2', 'prose: same paragraph edited twice', async (c, tag) => {
   const [id] = await insertOn(c, 'main', [nodeDoc(`${tag} prose`, { description: paragraphs(3) })]);
   const base = paragraphs(3);
-  const r = await twoBranchEdit(c, id, { description: base.replace('Paragraph 2.', 'Paragraph 2 by A.') }, { description: base.replace('Paragraph 2.', 'Paragraph 2 by B.') }, true);
+  const r = await twoBranchEdit(
+    c,
+    id,
+    { description: base.replace('Paragraph 2.', 'Paragraph 2 by A.') },
+    { description: base.replace('Paragraph 2.', 'Paragraph 2 by B.') },
+    true,
+  );
   observe('overlapping paragraph edits', `${r.rb.stage}: ${desc(r.rb)}`);
-  expectThat('overlapping edit is reported as a conflict', !r.rb.ok);
+  const finalDesc = String(r.mainDoc?.description ?? '');
+  const hasA = finalDesc.includes('Paragraph 2 by A.');
+  const hasB = finalDesc.includes('Paragraph 2 by B.');
+  observe('final paragraph 2 on main', `hasA=${hasA} hasB=${hasB}`);
+  expectThat('overlapping edit is reported as a conflict', !r.rb.ok, desc(r.rb));
+  expectThat(
+    'no silent overwrite: A landed first and its text is still on main',
+    hasA && !hasB,
+    `hasA=${hasA} hasB=${hasB}`,
+  );
 });
 
 add('P3', 'large prose field round trip (200 KB)', async (c, tag) => {
@@ -572,7 +732,11 @@ add('E1', 'two independent edges form a cycle after both merge', async (c, tag) 
   await insertOn(c, b, [edgeDoc(t, s, { statement: `${tag} Y to X`, basis: 'LogicalNecessity' })]);
   const ra = await land(a);
   const rb = await mergeWithSync(b);
-  expectThat('DB itself accepts both (so a post-merge validation gate is required)', ra.ok && rb.ok, `${desc(ra)} | ${rb.stage} ${desc(rb)}`);
+  expectThat(
+    'DB itself accepts both (so a post-merge validation gate is required)',
+    ra.ok && rb.ok,
+    `${desc(ra)} | ${rb.stage} ${desc(rb)}`,
+  );
   const edges = (await listDocs(c, 'main', 'Edge')).filter((e) => String(e.statement).startsWith(tag));
   const g = analyze(edges);
   expectThat('script-level cycle check detects the cycle', g.hasCycle);
@@ -590,15 +754,24 @@ add('E2', 'delete node on A while B adds an edge to it', async (c, tag) => {
   observe('edge-to-deleted-node merge', `${rb.stage}: ${desc(rb)}`);
   const edge = await getOn(c, 'main', eb);
   const node = await getOn(c, 'main', t);
-  expectThat('main never ends up with an edge pointing at a missing node', !(edge && !node),
-    edge && !node ? 'DANGLING EDGE on main: dangling-edge check is essential' : 'DB enforced referential integrity');
+  expectThat(
+    'main never ends up with an edge pointing at a missing node',
+    !(edge && !node),
+    edge && !node ? 'DANGLING EDGE on main: dangling-edge check is essential' : 'DB enforced referential integrity',
+  );
 });
 
 add('E3', 'direct delete of a node that still has a dependent edge', async (c, tag) => {
   const { t } = await seedPair(c, tag);
   const r = await attempt(() => deleteOn(c, 'main', t));
-  expectThat('DB refuses to delete a node with dependents (matches Governance rule)', !r.ok,
-    r.ok ? 'deleted anyway: the rule must be enforced by application code' : r.kind);
+  expectThat(
+    'DB refuses to delete a node with dependents (matches Governance rule)',
+    !r.ok,
+    r.ok ? 'deleted anyway: the rule must be enforced by application code' : r.kind,
+  );
+  // The classifier labels this as a cardinality conflict; record the body so
+  // it can get its own label once we have seen what it looks like.
+  if (!r.ok) observe('blocked-delete error body', r.body ?? '');
 });
 
 add('E4', 'two logical-necessity edges for one pair from different branches', async (c, tag) => {
@@ -609,8 +782,14 @@ add('E4', 'two logical-necessity edges for one pair from different branches', as
   await insertOn(c, b, [edgeDoc(s, t, { statement: `${tag} LN B`, basis: 'LogicalNecessity' })]);
   await land(a);
   const rb = await mergeWithSync(b);
-  const n = (await listDocs(c, 'main', 'Edge')).filter((e) => String(e.statement).startsWith(`${tag} LN`)).length;
-  expectThat('DB does not enforce one-LN-edge-per-pair (validation gate must)', rb.ok && n === 2, `merge ${desc(rb)}, ${n} LN edges on main`);
+  const n = (await listDocs(c, 'main', 'Edge')).filter((e) =>
+    String(e.statement).startsWith(`${tag} LN`),
+  ).length;
+  expectThat(
+    'DB does not enforce one-LN-edge-per-pair (validation gate must)',
+    rb.ok && n === 2,
+    `merge ${desc(rb)}, ${n} LN edges on main`,
+  );
 });
 
 add('E5', 'duplicate identical claims', async (c, tag) => {
@@ -626,7 +805,9 @@ add('E6', 'self-loop edge', async (c, tag) => {
   const { s } = await seedPair(c, tag, false);
   const r = await attempt(() => insertOn(c, 'main', [edgeDoc(s, s, { statement: `${tag} self` })]));
   expectThat('DB accepts a self-loop (gate must reject)', r.ok, r.ok ? '' : desc(r));
-  const edges = (await listDocs(c, 'main', 'Edge')).filter((e) => String(e.statement).startsWith(`${tag} self`));
+  const edges = (await listDocs(c, 'main', 'Edge')).filter((e) =>
+    String(e.statement).startsWith(`${tag} self`),
+  );
   if (edges.length) expectThat('script check finds the self-loop', analyze(edges).selfLoops === 1);
 });
 
@@ -634,7 +815,11 @@ add('E6', 'self-loop edge', async (c, tag) => {
 
 add('S1', 'edge missing required field (statement)', async (c) => {
   const [s, t] = await insertOn(c, 'main', [nodeDoc('S1 a'), nodeDoc('S1 b')]);
-  const r = await attempt(() => insertOn(c, 'main', [{ '@type': 'Edge', source_node: s, target_node: t, relationship_kind: 'Unspecified', status: 'Ungrounded' }]));
+  const r = await attempt(() =>
+    insertOn(c, 'main', [
+      { '@type': 'Edge', source_node: s, target_node: t, relationship_kind: 'Unspecified', status: 'Ungrounded' },
+    ]),
+  );
   expectThat('rejected', !r.ok, r.ok ? 'accepted!' : `${r.kind}`);
 });
 
@@ -654,7 +839,11 @@ add('S4', 'bare edge: optional fields absent', async (c) => {
   const [s, t] = await insertOn(c, 'main', [nodeDoc('S4 a'), nodeDoc('S4 b')]);
   const [e] = await insertOn(c, 'main', [edgeDoc(s, t)]);
   const back = await getOn(c, 'main', e);
-  expectThat('round-trips without basis/origin', !!back && back.basis === undefined && back.origin === undefined, JSON.stringify(back));
+  expectThat(
+    'round-trips without basis/origin',
+    !!back && back.basis === undefined && back.origin === undefined,
+    JSON.stringify(back),
+  );
 });
 
 add('S5', 'unicode, newlines, quotes in text', async (c, tag) => {
@@ -674,26 +863,158 @@ add('S7', 'invalid stage enum', async (c, tag) => {
   expectThat('rejected', !r.ok, r.ok ? 'accepted!' : `${r.kind}`);
 });
 
+// ===== K: key strategies (throwaway branches; nothing is merged) =====
+
+add('K1', 'schema probe: Lexical key over an OPTIONAL field', async (c) => {
+  const b = await newBranch(c, uid('k1'));
+  const r = await attempt(() =>
+    addSchemaOn(c, b, [
+      {
+        '@type': 'Class',
+        '@id': 'KeyOpt',
+        '@key': { '@type': 'Lexical', '@fields': ['a'] },
+        a: { '@type': 'Optional', '@class': 'xsd:string' },
+      },
+    ]),
+  );
+  observe('schema push with an optional key field', desc(r));
+  if (r.ok) {
+    const d = await attempt(() => insertOn(c, b, [{ '@type': 'KeyOpt' }]));
+    observe('insert with the key field absent', d.ok ? JSON.stringify(d.value) : desc(d));
+  }
+});
+
+add('K2', 'schema probe: Lexical key over two node references, then a duplicate', async (c, tag) => {
+  const b = await newBranch(c, uid('k2'));
+  const sr = await attempt(() =>
+    addSchemaOn(c, b, [
+      {
+        '@type': 'Class',
+        '@id': 'KeyRef',
+        '@key': { '@type': 'Lexical', '@fields': ['src', 'dst'] },
+        src: 'Node',
+        dst: 'Node',
+        note: { '@type': 'Optional', '@class': 'xsd:string' },
+      },
+    ]),
+  );
+  observe('schema push with reference key fields', desc(sr));
+  if (!sr.ok) return;
+  const [s, t] = await insertOn(c, b, [nodeDoc(`${tag} s`), nodeDoc(`${tag} t`)]);
+  const d1 = await attempt(() => insertOn(c, b, [{ '@type': 'KeyRef', src: s, dst: t }]));
+  observe('first insert', d1.ok ? JSON.stringify(d1.value) : desc(d1));
+  const d2 = await attempt(() => insertOn(c, b, [{ '@type': 'KeyRef', src: s, dst: t, note: 'second' }]));
+  expectThat(
+    'a second document with the same key fields is rejected',
+    !d2.ok,
+    d2.ok ? `accepted: ${JSON.stringify(d2.value)}` : desc(d2),
+  );
+});
+
+add('K3', 'schema probe: editing a key field on an existing document', async (c) => {
+  const b = await newBranch(c, uid('k3'));
+  const sr = await attempt(() =>
+    addSchemaOn(c, b, [
+      {
+        '@type': 'Class',
+        '@id': 'KeyEdit',
+        '@key': { '@type': 'Lexical', '@fields': ['label'] },
+        label: 'xsd:string',
+        note: { '@type': 'Optional', '@class': 'xsd:string' },
+      },
+    ]),
+  );
+  if (!sr.ok) {
+    observe('schema push failed', desc(sr));
+    return;
+  }
+  const [id] = await insertOn(c, b, [{ '@type': 'KeyEdit', label: 'x', note: 'n' }]);
+  observe('id minted from the key field', id);
+  const u = await attempt(() => updateOn(c, b, id, { label: 'y' }));
+  observe('update that changes the key field, same @id', desc(u));
+  const all = await listDocs(c, b, 'KeyEdit');
+  observe('KeyEdit documents afterwards', JSON.stringify(all).slice(0, 300));
+});
+
+// ===== L: concurrent appends to collections (throwaway base branch) =====
+
+add('L1', 'concurrent appends to Set / Array / List fields', async (c) => {
+  const types = ['Set', 'Array', 'List'];
+  const base = await newBranch(c, uid('l1base'));
+  const sr = await attempt(() =>
+    addSchemaOn(
+      c,
+      base,
+      types.map((t) => ({
+        '@type': 'Class',
+        '@id': `Probe${t}`,
+        '@key': { '@type': 'Random' },
+        items: { '@type': t, '@class': 'xsd:string' },
+      })),
+    ),
+  );
+  if (!sr.ok) {
+    observe('schema push failed', desc(sr));
+    return;
+  }
+  const docIds: Record<string, string> = {};
+  for (const t of types) {
+    [docIds[t]] = await insertOn(c, base, [{ '@type': `Probe${t}`, items: ['base'] }]);
+  }
+  // One type at a time, so a conflict in one does not hide the others.
+  for (const t of types) {
+    const a = await newBranch(c, uid(`l1a${t}`), base);
+    const b = await newBranch(c, uid(`l1b${t}`), base);
+    await updateOn(c, a, docIds[t], { items: ['base', 'from-a'] });
+    await updateOn(c, b, docIds[t], { items: ['base', 'from-b'] });
+    const ra = await land(a, base);
+    const rb = await mergeWithSync(b, base);
+    const final = await getOn(c, base, docIds[t]);
+    const items = Array.isArray(final?.items) ? final.items : final?.items;
+    observe(
+      `${t}: A lands, then B`,
+      `A ${desc(ra)} | B ${rb.stage} ${desc(rb)} | final items ${JSON.stringify(items)}`,
+    );
+    if (t === 'Set') {
+      const arr: string[] = Array.isArray(items) ? items : [];
+      expectThat(
+        'Set: both concurrent appends survive the merge',
+        rb.ok && arr.includes('from-a') && arr.includes('from-b'),
+        `final ${JSON.stringify(items)}`,
+      );
+    }
+  }
+});
+
 // ===== H: history =====
 
-add('H1', 'are commit IDs stable across a rebase-merge?', async (c, tag) => {
+add('H1', "does a branch keep its own commit IDs across a rebase-merge?", async (c, tag) => {
   const a = await newBranch(c, uid('a'));
+  const mainAtBranch = await logIds('main');
   await insertOn(c, a, [nodeDoc(`${tag} h1a`)]);
   await insertOn(c, a, [nodeDoc(`${tag} h1b`)]);
-  const before = await commitIds(a);
+  const before = await logIds(a);
   const b = await newBranch(c, uid('b'));
   await insertOn(c, b, [nodeDoc(`${tag} h1c`)]);
   await land(b); // main moves so A's merge is a true replay
-  await mergeWithSync(a);
-  const mainLog = await commitIds('main');
-  if (!before || !mainLog) {
-    observe('commit log endpoint unavailable or unexpected shape', 'adjust commitIds() path; needed to decide how reviews bind to versions');
+  const m = await mergeWithSync(a);
+  const mainLog = await logIds('main');
+  if (!before || !mainLog || !mainAtBranch) {
+    observe('commit log unavailable', 'GET /api/log returned an error or an unexpected shape');
     return;
   }
-  const kept = before.filter((id) => mainLog.includes(id)).length;
-  observe('branch commit IDs that survive on main', `${kept}/${before.length}`);
-  expectThat('commit IDs are stable (reviews could bind to them)', kept === before.length,
-    'if false: bind reviews to a content hash of the claim, not a commit ID');
+  // Only the commits A itself made count: everything already on main when A was created is shared.
+  const own = before.filter((id) => !mainAtBranch.includes(id));
+  const kept = own.filter((id) => mainLog.includes(id)).length;
+  observe('log sizes', `A ${before.length}, main at branch time ${mainAtBranch.length}, main after ${mainLog.length}`);
+  observe('A merge outcome', `${m.stage}: ${desc(m)}`);
+  const report = m.value?.['api:rebase_report'];
+  if (report) observe('api:rebase_report (origin -> applied)', JSON.stringify(report).slice(0, 400));
+  expectThat(
+    "a branch's own commits keep their IDs after rebase (reviews could bind to them)",
+    own.length > 0 && kept === own.length,
+    `${kept}/${own.length} of the branch's own commits found on main`,
+  );
 });
 
 add('H2', 'app-level revert of a bad edit that others built on', async (c, tag) => {
@@ -710,75 +1031,175 @@ add('H2', 'app-level revert of a bad edit that others built on', async (c, tag) 
   const rf = await land(fix);
   expectThat('field-level revert lands', rf.ok, desc(rf));
   const d = await getOn(c, 'main', e);
-  expectThat('revert restored statement without losing the later good edit',
-    d?.statement === `${tag} baseline` && d?.relationship_kind === 'MaterialNecessity', JSON.stringify(d));
+  expectThat(
+    'revert restored statement without losing the later good edit',
+    d?.statement === `${tag} baseline` && d?.relationship_kind === 'MaterialNecessity',
+    JSON.stringify(d),
+  );
 });
 
 // ===== X: scale =====
 
-add('X1', 'bulk insert 300 nodes / ~600 edges, read back, cycle check, blast radius', async (c, tag) => {
-  const N = 300;
-  let t0 = Date.now();
-  const ids = await insertOn(c, 'main', Array.from({ length: N }, (_, i) => nodeDoc(`${tag}-n${i}`)));
-  const tNodes = Date.now() - t0;
-  const edges: any[] = [];
-  for (let i = 1; i < N; i++) {
-    edges.push(edgeDoc(ids[i - 1], ids[i], { statement: `${tag}-e${i}-a` }));
-    const j = Math.floor(Math.random() * (i - 1));
-    if (j !== i - 1) edges.push(edgeDoc(ids[j], ids[i], { statement: `${tag}-e${i}-b` }));
-  }
-  t0 = Date.now();
-  await insertOn(c, 'main', edges);
-  const tEdges = Date.now() - t0;
-  t0 = Date.now();
-  const read = (await listDocs(c, 'main', 'Edge')).filter((e) => String(e.statement).startsWith(tag));
-  const tRead = Date.now() - t0;
-  observe('timings (ms)', `insert nodes ${tNodes}, insert ${edges.length} edges ${tEdges}, read edges ${tRead}`);
-  expectThat('all edges read back', read.length === edges.length, `${read.length}/${edges.length}`);
-  t0 = Date.now();
-  const g = analyze(read);
-  const radii = blastRadii(read);
-  const tCalc = Date.now() - t0;
-  expectThat('generated DAG has no cycle', !g.hasCycle);
-  expectThat('root blast radius = N-1', radii.get(ids[0]) === N - 1, `${radii.get(ids[0])}`);
-  observe('client-side cycle check + all blast radii (ms)', `${tCalc}`);
-}, true);
+add(
+  'X1',
+  'bulk insert 300 nodes / ~600 edges, read back, cycle check, blast radius',
+  async (c, tag) => {
+    const N = 300;
+    let t0 = Date.now();
+    const ids = await insertOn(c, 'main', Array.from({ length: N }, (_, i) => nodeDoc(`${tag}-n${i}`)));
+    const tNodes = Date.now() - t0;
+    const edges: any[] = [];
+    for (let i = 1; i < N; i++) {
+      edges.push(edgeDoc(ids[i - 1], ids[i], { statement: `${tag}-e${i}-a` }));
+      const j = Math.floor(Math.random() * (i - 1));
+      if (j !== i - 1) edges.push(edgeDoc(ids[j], ids[i], { statement: `${tag}-e${i}-b` }));
+    }
+    t0 = Date.now();
+    await insertOn(c, 'main', edges);
+    const tEdges = Date.now() - t0;
+    t0 = Date.now();
+    const read = (await listDocs(c, 'main', 'Edge')).filter((e) => String(e.statement).startsWith(tag));
+    const tRead = Date.now() - t0;
+    observe('timings (ms)', `insert nodes ${tNodes}, insert ${edges.length} edges ${tEdges}, read edges ${tRead}`);
+    expectThat('all edges read back', read.length === edges.length, `${read.length}/${edges.length}`);
+    t0 = Date.now();
+    const g = analyze(read);
+    const radii = blastRadii(read);
+    const tCalc = Date.now() - t0;
+    expectThat('generated DAG has no cycle', !g.hasCycle);
+    expectThat('root blast radius = N-1', radii.get(shortId(ids[0])) === N - 1, `${radii.get(shortId(ids[0]))}`);
+    observe('client-side cycle check + all blast radii (ms)', `${tCalc}`);
+  },
+  true,
+);
 
-add('X2', '15 branches merged sequentially with sync (does sync cost grow?)', async (c, tag) => {
-  const bs: string[] = [];
-  for (let i = 0; i < 15; i++) {
-    const b = await newBranch(c, uid(`x${i}`));
-    bs.push(b);
-    await insertOn(c, b, [nodeDoc(`${tag} many${i}`)]);
-  }
-  const times: number[] = [];
-  let fails = 0;
-  for (const b of bs) {
+add(
+  'X2',
+  '15 branches merged sequentially with sync (does sync cost grow?)',
+  async (c, tag) => {
+    const bs: string[] = [];
+    for (let i = 0; i < 15; i++) {
+      const b = await newBranch(c, uid(`x${i}`));
+      bs.push(b);
+      await insertOn(c, b, [nodeDoc(`${tag} many${i}`)]);
+    }
+    const times: number[] = [];
+    let fails = 0;
+    for (const b of bs) {
+      const t0 = Date.now();
+      const r = await mergeWithSync(b);
+      times.push(Date.now() - t0);
+      if (!r.ok) fails++;
+    }
+    observe('per-merge ms', times.join(', '));
+    expectThat('all 15 merged', fails === 0, `${fails} failed`);
+  },
+  true,
+);
+
+add(
+  'X3',
+  'large branch (200 docs) merges after main has moved',
+  async (c, tag) => {
+    const big = await newBranch(c, uid('big'));
+    const small = await newBranch(c, uid('small'));
+    await insertOn(c, big, Array.from({ length: 200 }, (_, i) => nodeDoc(`${tag}-big${i}`)));
+    await insertOn(c, small, [nodeDoc(`${tag} small`)]);
+    await land(small);
     const t0 = Date.now();
-    const r = await mergeWithSync(b);
-    times.push(Date.now() - t0);
-    if (!r.ok) fails++;
-  }
-  observe('per-merge ms', times.join(', '));
-  expectThat('all 15 merged', fails === 0, `${fails} failed`);
-}, true);
+    const r = await mergeWithSync(big);
+    expectThat('large branch merges', r.ok, `${r.stage} ${desc(r)} in ${Date.now() - t0} ms`);
+  },
+  true,
+);
 
-add('X3', 'large branch (200 docs) merges after main has moved', async (c, tag) => {
-  const big = await newBranch(c, uid('big'));
-  const small = await newBranch(c, uid('small'));
-  await insertOn(c, big, Array.from({ length: 200 }, (_, i) => nodeDoc(`${tag}-big${i}`)));
-  await insertOn(c, small, [nodeDoc(`${tag} small`)]);
-  await land(small);
-  const t0 = Date.now();
-  const r = await mergeWithSync(big);
-  expectThat('large branch merges', r.ok, `${r.stage} ${desc(r)} in ${Date.now() - t0} ms`);
-}, true);
+// ---------------------------------------------------------------- report
+
+const esc = (s: string) => s.replace(/\|/g, '/').replace(/\n/g, ' ');
+
+function buildReport(
+  names: Map<string, string>,
+  timings: { scenario: string; run: number; startedAt: string; endedAt: string; ms: number }[],
+): string {
+  const count = (v: Verdict) => findings.filter((f) => f.verdict === v).length;
+  const lines: string[] = [
+    `# Concurrent suite run ${RUN_ID}`,
+    '',
+    `Mode: sync ${USE_SYNC ? 'ON' : 'OFF (--no-sync)'}, repeat ${REPEAT}. Server: ${config.endpoint}`,
+    '',
+    `${count('PASS')} pass, ${count('FAIL')} fail, ${count('OBSERVED')} observed, ${count('ERROR')} error.`,
+    '',
+    '## Rebase calls',
+    '',
+    '| Stage | Calls | HTTP 5xx | Other errors | 5xx rate |',
+    '| --- | --- | --- | --- | --- |',
+    ...(['sync', 'land'] as const).map((k) => {
+      const s = rebaseStats[k];
+      const rate = s.calls ? `${((100 * s.fivexx) / s.calls).toFixed(1)}%` : 'n/a';
+      return `| ${k} | ${s.calls} | ${s.fivexx} | ${s.other} | ${rate} |`;
+    }),
+    '',
+  ];
+
+  if (REPEAT > 1) {
+    // Aggregate by scenario + check across runs.
+    const groups = new Map<string, { scenario: string; label: string; c: Record<Verdict, number>; details: Set<string> }>();
+    for (const f of findings) {
+      const key = `${f.scenario}\u0000${f.label}`;
+      let g = groups.get(key);
+      if (!g) {
+        g = { scenario: f.scenario, label: f.label, c: { PASS: 0, FAIL: 0, OBSERVED: 0, ERROR: 0 }, details: new Set() };
+        groups.set(key, g);
+      }
+      g.c[f.verdict]++;
+      if ((f.verdict === 'FAIL' || f.verdict === 'ERROR') && g.details.size < 3) {
+        g.details.add(f.detail.slice(0, 160));
+      }
+    }
+    lines.push(
+      '## Checks across runs (only checks that failed at least once, plus all PASS/FAIL checks summarized)',
+      '',
+      '| Scenario | Check | Pass | Fail | Error | Sample failing detail |',
+      '| --- | --- | --- | --- | --- | --- |',
+    );
+    for (const g of groups.values()) {
+      if (g.c.PASS + g.c.FAIL + g.c.ERROR === 0) continue; // observation-only rows stay in the JSON
+      lines.push(
+        `| ${g.scenario} ${esc(names.get(g.scenario) ?? '')} | ${esc(g.label)} | ${g.c.PASS} | ${g.c.FAIL} | ${g.c.ERROR} | ${esc([...g.details].join(' ; '))} |`,
+      );
+    }
+    lines.push('', '## Server errors by scenario and kind', '', '| Scenario | Kind | Count | Sample their_commit |', '| --- | --- | --- | --- |');
+    const eg = new Map<string, { n: number; commit?: string; scenario: string; kind: string }>();
+    for (const e of errorLog) {
+      const key = `${e.scenario}\u0000${e.kind}`;
+      const g = eg.get(key) ?? { n: 0, commit: undefined, scenario: e.scenario, kind: e.kind };
+      g.n++;
+      if (!g.commit && e.theirCommit) g.commit = e.theirCommit;
+      eg.set(key, g);
+    }
+    for (const g of eg.values()) lines.push(`| ${g.scenario} | ${g.kind} | ${g.n} | ${g.commit ?? ''} |`);
+  } else {
+    lines.push('| Scenario | Verdict | Check | Detail |', '| --- | --- | --- | --- |');
+    for (const f of findings) {
+      lines.push(
+        `| ${f.scenario} ${esc(names.get(f.scenario) ?? '')} | ${f.verdict} | ${esc(f.label)} | ${esc(f.detail).slice(0, 300)} |`,
+      );
+    }
+    const withCommit = errorLog.filter((e) => e.theirCommit);
+    if (withCommit.length) {
+      lines.push('', '## Errors that named a failing commit (api:their_commit)', '');
+      for (const e of withCommit) lines.push(`- ${e.scenario}: ${e.kind}, their_commit ${e.theirCommit}`);
+    }
+  }
+  const total = timings.reduce((a, t) => a + t.ms, 0);
+  lines.push('', `Total scenario time: ${(total / 1000).toFixed(1)} s. Per-scenario timestamps and full error bodies are in the JSON file.`);
+  return lines.join('\n');
+}
 
 // ---------------------------------------------------------------- runner
 
 async function main() {
-  const args = process.argv.slice(2);
-  const only = (args.find((a) => a.startsWith('--only=')) ?? '').replace('--only=', '').split(',').filter(Boolean);
+  const only = (argVal('only') ?? '').split(',').filter(Boolean);
   const skipSlow = args.includes('--skip-slow');
 
   const c = createClient();
@@ -787,41 +1208,57 @@ async function main() {
   const selected = scenarios.filter(
     (s) => (only.length === 0 || only.some((p) => s.id.startsWith(p))) && !(skipSlow && s.slow),
   );
-  console.log(`Running ${selected.length} scenarios (run ${RUN_ID})`);
+  console.log(
+    `Running ${selected.length} scenarios x ${REPEAT} (run ${RUN_ID}, sync ${USE_SYNC ? 'on' : 'OFF'})`,
+  );
 
-  const timings: Record<string, number> = {};
-  for (const s of selected) {
-    currentScenario = s.id;
-    console.log(`\n=== ${s.id}: ${s.name} ===`);
-    const t0 = Date.now();
-    try {
-      await s.fn(c, `${s.id}-${RUN_ID}`);
-    } catch (err: any) {
-      record('ERROR', 'scenario crashed', shorten(err) + ' ' + String(err?.stack ?? '').split('\n').slice(0, 3).join(' | '));
+  const timings: { scenario: string; run: number; startedAt: string; endedAt: string; ms: number }[] = [];
+  for (let run = 1; run <= REPEAT; run++) {
+    currentRun = run;
+    for (const s of selected) {
+      currentScenario = s.id;
+      console.log(`\n=== ${s.id}${REPEAT > 1 ? ` (run ${run}/${REPEAT})` : ''}: ${s.name} ===`);
+      const t0 = Date.now();
+      const startedAt = new Date().toISOString();
+      try {
+        await s.fn(c, `${s.id}-${RUN_ID}-r${run}`);
+      } catch (err: any) {
+        record(
+          'ERROR',
+          'scenario crashed',
+          shorten(err) + ' ' + String(err?.stack ?? '').split('\n').slice(0, 3).join(' | '),
+        );
+      }
+      timings.push({ scenario: s.id, run, startedAt, endedAt: new Date().toISOString(), ms: Date.now() - t0 });
     }
-    timings[s.id] = Date.now() - t0;
   }
 
   const count = (v: Verdict) => findings.filter((f) => f.verdict === v).length;
-  console.log(`\n=== SUMMARY: ${count('PASS')} pass, ${count('FAIL')} fail (hypothesis not confirmed), ${count('OBSERVED')} observed, ${count('ERROR')} error ===`);
-  for (const f of findings.filter((f) => f.verdict === 'FAIL' || f.verdict === 'ERROR')) {
-    console.log(`  [${f.verdict}] ${f.scenario}: ${f.label}${f.detail ? ` — ${f.detail}` : ''}`);
+  console.log(
+    `\n=== SUMMARY: ${count('PASS')} pass, ${count('FAIL')} fail (hypothesis not confirmed), ${count('OBSERVED')} observed, ${count('ERROR')} error ===`,
+  );
+  for (const k of ['sync', 'land'] as const) {
+    const s = rebaseStats[k];
+    console.log(`  rebase ${k}: ${s.calls} calls, ${s.fivexx} HTTP 5xx, ${s.other} other errors`);
+  }
+  if (REPEAT === 1) {
+    for (const f of findings.filter((f) => f.verdict === 'FAIL' || f.verdict === 'ERROR')) {
+      console.log(`  [${f.verdict}] ${f.scenario}: ${f.label}${f.detail ? ` - ${f.detail}` : ''}`);
+    }
   }
 
   const dir = path.resolve(process.cwd(), 'test-results');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, `concurrent-suite-${RUN_ID}.json`), JSON.stringify({ runId: RUN_ID, timings, findings }, null, 2));
+  fs.writeFileSync(
+    path.join(dir, `concurrent-suite-${RUN_ID}.json`),
+    JSON.stringify(
+      { runId: RUN_ID, repeat: REPEAT, sync: USE_SYNC, rebaseStats, timings, findings, errorLog },
+      null,
+      2,
+    ),
+  );
   const names = new Map(scenarios.map((s) => [s.id, s.name]));
-  const md = [
-    `# Concurrent suite run ${RUN_ID}`,
-    '',
-    `${count('PASS')} pass, ${count('FAIL')} fail, ${count('OBSERVED')} observed, ${count('ERROR')} error. Server: ${config.endpoint}`,
-    '',
-    '| Scenario | Verdict | Check | Detail |',
-    '| --- | --- | --- | --- |',
-    ...findings.map((f) => `| ${f.scenario} ${names.get(f.scenario) ?? ''} | ${f.verdict} | ${f.label.replace(/\|/g, '/')} | ${f.detail.replace(/\|/g, '/').replace(/\n/g, ' ').slice(0, 300)} |`),
-  ].join('\n');
-  fs.writeFileSync(path.join(dir, `concurrent-suite-${RUN_ID}.md`), md);
+  fs.writeFileSync(path.join(dir, `concurrent-suite-${RUN_ID}.md`), buildReport(names, timings));
   console.log(`\nReport written to test-results/concurrent-suite-${RUN_ID}.md`);
 
   process.exit(count('ERROR') > 0 ? 1 : 0);

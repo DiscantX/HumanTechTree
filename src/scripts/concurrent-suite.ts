@@ -207,7 +207,13 @@ async function addSchemaOn(c: any, branch: string, docs: any[]) {
 async function getOn(c: any, branch: string, id: string): Promise<any | null> {
   c.checkout(branch);
   const r = await attempt(() => c.getDocument({ id }), true);
-  return r.ok ? r.value : null;
+  if (!r.ok) return null;
+  // The client can hand back a 404 (or other error) body as a plain string or an
+  // api:error object instead of throwing, which made C7 read "gone" as "present".
+  const v: any = r.value;
+  if (typeof v === 'string' && /^Status: \d{3}/.test(v)) return null;
+  if (v && typeof v === 'object' && (v['api:error'] || /Error/.test(String(v['@type'] ?? '')))) return null;
+  return v;
 }
 async function updateOn(c: any, branch: string, id: string, patch: any) {
   c.checkout(branch);
@@ -985,6 +991,160 @@ add('L1', 'concurrent appends to Set / Array / List fields', async (c) => {
     }
   }
 });
+
+// ===== Q: isolating the intermittent 500 (quiet server, retry behavior) =====
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Logged runs showed: concurrent rebases onto one branch fail 4 in 5 (expected),
+ * but sequential, clean replays of a diverged branch also fail about 10-20% of the
+ * time, and never on the conflict path. Three arms separate the candidates:
+ *   ff       B forks AFTER A landed, so landing B is a fast-forward (no replay)
+ *   replay0  B forked before A landed, B lands immediately after A (replay)
+ *   replayP  same, but with a pause after A lands (a background job would finish)
+ * Every 500 is retried up to 3 times to measure whether a retry is enough, and each
+ * arm checks that every node ends up on main exactly once.
+ */
+add('Q1', 'sequential clean rebases: fast-forward vs replay vs replay after a pause', async (c, tag) => {
+  const N = Number(process.env.Q_N ?? 20);
+  const PAUSE = Number(process.env.Q_PAUSE_MS ?? 3000);
+  const arms: Array<{ name: string; diverged: boolean; pause: number }> = [
+    { name: 'ff', diverged: false, pause: 0 },
+    { name: 'replay0', diverged: true, pause: 0 },
+    { name: 'replayP', diverged: true, pause: PAUSE },
+  ];
+  for (const arm of arms) {
+    let first500 = 0;
+    let needed: number[] = [];
+    let gaveUp = 0;
+    const subjects: string[] = [];
+    for (let i = 0; i < N; i++) {
+      const subjA = `${tag} ${arm.name} a${i}`;
+      const subjB = `${tag} ${arm.name} b${i}`;
+      subjects.push(subjA, subjB);
+      const a = await newBranch(c, uid('qa'));
+      let b = '';
+      if (arm.diverged) b = await newBranch(c, uid('qb'));
+      await insertOn(c, a, [nodeDoc(subjA)]);
+      if (arm.diverged) await insertOn(c, b, [nodeDoc(subjB)]);
+      // A lands, retried until it is on main, so B's situation is the same every time.
+      for (let k = 0; k < 4; k++) {
+        if ((await land(a)).ok) break;
+        await sleep(500);
+      }
+      if (!arm.diverged) {
+        b = await newBranch(c, uid('qb'));
+        await insertOn(c, b, [nodeDoc(subjB)]);
+      }
+      if (arm.pause) await sleep(arm.pause);
+      let tries = 0;
+      let ok = false;
+      while (tries < 4 && !ok) {
+        tries++;
+        const r = await land(b);
+        ok = r.ok;
+        if (!ok && tries === 1 && /^HTTP_5/.test(r.kind ?? '')) first500++;
+        if (!ok) await sleep(500);
+      }
+      if (ok) needed.push(tries);
+      else gaveUp++;
+    }
+    const onMain = (await listDocs(c, 'main', 'Node')).filter((n) =>
+      subjects.includes(String(n.subject)),
+    );
+    const dup = onMain.length - new Set(onMain.map((n) => n.subject)).size;
+    observe(
+      `arm ${arm.name}: first-attempt 500s`,
+      `${first500}/${N} (${Math.round((100 * first500) / N)}%), attempts needed: ${JSON.stringify(
+        needed.reduce((m: Record<number, number>, t) => ((m[t] = (m[t] ?? 0) + 1), m), {}),
+      )}, gave up after 4 tries: ${gaveUp}`,
+    );
+    expectThat(
+      `arm ${arm.name}: every node is on main exactly once`,
+      onMain.length === subjects.length - gaveUp && dup === 0,
+      `${onMain.length} on main, ${subjects.length} expected, ${dup} duplicates`,
+    );
+  }
+}, true);
+
+// ===== K4: does a Lexical key over (src, dst, basis, origin) enforce the multiplicity rules? =====
+
+add('K4', 'schema probe: composite key with an enum and an optional origin', async (c, tag) => {
+  const b = await newBranch(c, uid('k4'));
+  const sr = await attempt(() =>
+    addSchemaOn(c, b, [
+      { '@type': 'Enum', '@id': 'ProbeBasis', '@value': ['Historical', 'Logical'] },
+      {
+        '@type': 'Class',
+        '@id': 'ProbeClaim',
+        '@key': { '@type': 'Lexical', '@fields': ['src', 'dst', 'basis', 'origin'] },
+        src: 'Node',
+        dst: 'Node',
+        basis: 'ProbeBasis',
+        origin: { '@type': 'Optional', '@class': 'xsd:string' },
+        statement: { '@type': 'Optional', '@class': 'xsd:string' },
+      },
+    ]),
+  );
+  observe('schema push (reference + enum + optional origin in one key)', desc(sr));
+  if (!sr.ok) return;
+  const [s, t] = await insertOn(c, b, [nodeDoc(`${tag} s`), nodeDoc(`${tag} t`)]);
+  const doc = (basis: string, origin?: string, statement = 'x') => ({
+    '@type': 'ProbeClaim', src: s, dst: t, basis, statement, ...(origin ? { origin } : {}),
+  });
+  const ln1 = await attempt(() => insertOn(c, b, [doc('Logical')]));
+  observe('first logical-necessity claim', ln1.ok ? JSON.stringify(ln1.value) : desc(ln1));
+  const ln2 = await attempt(() => insertOn(c, b, [doc('Logical', undefined, 'a competing claim')]));
+  expectThat('second logical claim for the same pair is rejected', !ln2.ok, ln2.ok ? `accepted ${JSON.stringify(ln2.value)}` : desc(ln2));
+  const h1 = await attempt(() => insertOn(c, b, [doc('Historical', 'Fertile Crescent')]));
+  expectThat('historical claim with an origin is accepted alongside the logical one', h1.ok, desc(h1));
+  const h2 = await attempt(() => insertOn(c, b, [doc('Historical', 'China')]));
+  expectThat('historical claim with a different origin is accepted', h2.ok, desc(h2));
+  const h3 = await attempt(() => insertOn(c, b, [doc('Historical', 'China', 'dup')]));
+  expectThat('historical claim repeating an origin is rejected', !h3.ok, h3.ok ? `accepted ${JSON.stringify(h3.value)}` : desc(h3));
+  if (ln1.ok) {
+    // Changing basis changes the key, so it cannot be an in-place edit.
+    const id = (ln1.value as string[])[0];
+    const u = await attempt(() => updateOn(c, b, id, { basis: 'Historical' }));
+    observe('editing basis in place', desc(u));
+  }
+});
+
+// ===== L2: Set of sub-documents, the shape groundings and objections would take =====
+
+add('L2', 'concurrent appends to a Set of sub-documents', async (c) => {
+  const base = await newBranch(c, uid('l2base'));
+  const sr = await attempt(() =>
+    addSchemaOn(c, base, [
+      { '@type': 'Class', '@id': 'ProbeSub', '@subdocument': [], '@key': { '@type': 'ValueHash' }, text: 'xsd:string' },
+      { '@type': 'Class', '@id': 'ProbeSubHolder', '@key': { '@type': 'Random' }, items: { '@type': 'Set', '@class': 'ProbeSub' } },
+    ]),
+  );
+  if (!sr.ok) {
+    observe('schema push failed', desc(sr));
+    return;
+  }
+  const [id] = await insertOn(c, base, [{ '@type': 'ProbeSubHolder', items: [{ '@type': 'ProbeSub', text: 'base' }] }]);
+  const a = await newBranch(c, uid('l2a'), base);
+  const b = await newBranch(c, uid('l2b'), base);
+  for (const [br, text] of [[a, 'from-a'], [b, 'from-b']] as const) {
+    c.checkout(br);
+    const d = await c.getDocument({ id });
+    await c.updateDocument({ ...d, items: [...(d.items ?? []), { '@type': 'ProbeSub', text }] });
+  }
+  const ra = await land(a, base);
+  const rb = await mergeWithSync(b, base);
+  const final = await getOn(c, base, id);
+  const texts = (final?.items ?? []).map((i: any) => i.text).sort();
+  observe('A lands, then B', `A ${desc(ra)} | B ${rb.stage} ${desc(rb)} | final ${JSON.stringify(texts)}`);
+  expectThat(
+    'Set of sub-documents: both concurrent appends survive, nothing duplicated',
+    rb.ok && JSON.stringify(texts) === JSON.stringify(['base', 'from-a', 'from-b']),
+    `final ${JSON.stringify(texts)}`,
+  );
+});
+
 
 // ===== H: history =====
 

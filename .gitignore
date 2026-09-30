@@ -6,4 +6,9 @@ snapshots/
 # Qdrant Local Isolated Database
 .qdrant_storage/
 node_modules/
+.roo/rules-terminusdb/
+*.code-workspace
 
+.roomodes
+.env
+test-results/

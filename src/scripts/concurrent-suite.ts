@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import axios from 'axios';
 import { config } from '../config';
+import { commitIds } from '../db/log';
 import { createClient } from '../db/client';
 import { rebaseBranch } from '../db/rebase';
 
@@ -202,22 +202,6 @@ async function twoBranchEdit(
   const mainDoc = await getOn(c, 'main', id);
   const bDoc = await getOn(c, b, id);
   return { a, b, ra, rb, mainDoc, bDoc };
-}
-
-async function commitIds(branch: string): Promise<string[] | null> {
-  try {
-    const r = await axios.get(
-      `${config.endpoint}/api/log/${config.organization}/${config.db}/local/branch/${branch}`,
-      {
-        auth: { username: config.user, password: config.key },
-        validateStatus: () => true,
-      },
-    );
-    if (r.status >= 400 || !Array.isArray(r.data)) return null;
-    return r.data.map((x: any) => x.identifier ?? x['@id'] ?? JSON.stringify(x));
-  } catch {
-    return null;
-  }
 }
 
 // --------------------------------------------------- mini validation gate

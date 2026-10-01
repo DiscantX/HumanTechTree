@@ -198,7 +198,7 @@ what the validation gate has to be written to catch.
 | No unknown properties | Yes | An extra field was rejected |
 | Edge endpoints exist on insert | Yes | An edge to a nonexistent node was rejected |
 | No node deletion with dependents | Yes | A direct delete was refused |
-| No dangling edge after concurrent delete and add | Yes | The merge failed and main stayed consistent |
+| No dangling edge after concurrent delete and add | **No** | An edge added on one branch landed on main after another branch had deleted its target, and the rebase report called the replay valid. Replaying main's delete onto the edge branch fails instead, with `instance_not_of_class`, so only one direction is enforced |
 | No cycles among logical-necessity edges | **No** | Two independently added edges formed a cycle and both merged |
 | No self-loops | **No** | A self-loop edge was accepted |
 | No duplicate claims | **Yes, under the composite edge key** (no under random keys) | Under random keys two identical claims were accepted. Under the key, a second is rejected with `DocumentIdAlreadyExists` |

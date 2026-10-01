@@ -133,9 +133,11 @@ results below are counted as such. Everything else is one or two observations.
   `instance_not_cardinality_one` and optional fields report `instance_has_wrong_cardinality`. The shape
   was identical through the official client, and it is undocumented (see above).
 - **Edit against delete has a different signature.** An edit to a claim another branch had deleted failed
-  with `subject_has_no_type`, and an edge added to a node another branch had deleted failed with
-  `instance_not_of_class`. The second is the database enforcing referential integrity, which is good,
-  but it is a third and fourth error shape the translation layer has to map.
+  with `subject_has_no_type`. Replaying a node's deletion onto a branch that had added an edge to that node
+  failed with `instance_not_of_class`, which is a third error shape for the translation layer to map. This
+  enforcement runs in one direction only. Landing the edge branch onto main after the deletion succeeded, the
+  rebase report called the replay a valid commit, and main was left with an edge whose target did not exist.
+  The failing direction can be mistaken for the store protecting main, which it does not.
 - **A conflicted branch cannot be repaired in place.** Setting the losing field back to main's value
   and syncing again produced the same conflict. What worked was a fresh branch from current main with the
   intended edit replayed on it, which means the losing editor's branch history is abandoned.
@@ -144,7 +146,7 @@ results below are counted as such. Everything else is one or two observations.
   string instead of throwing, and the helper read it as "present". The delete works.
 - **The 500s are real, intermittent, and tied to replaying onto a branch that has just changed.** They are
   not caused by the sync step, the raw HTTP wrapper, or conflicts. The evidence:
-  - **Sync is irrelevant.** Across 20 repeats of the flaky scenarios, 17 scenario runs outside the parallel
+  - **Sync is irrelevant to the server errors.** Across 20 repeats of the flaky scenarios, 17 scenario runs outside the parallel
     case hit a server error with the sync step and 17 without it, and the landing step's error rate was
     24.5 percent with sync and 26.9 percent without, both dominated by the parallel case.
   - **Parallel landings onto one branch always fail four in five.** This is write contention, and the
@@ -201,18 +203,25 @@ a single-writer operation.
   at most about once a second costs little for a wiki that edits by review.
 - **Use the official client.** Rebase is a single `client.rebase` call on a client whose current branch
   is the target. Each landing uses a fresh client so no branch state leaks between calls.
+- **Land through a staging branch and the validation gate.** Branch staging off the target, replay the source
+  onto it, run the gate there, and only then replay staging onto the target, which is a fast-forward when
+  nothing else has written to main. Main therefore only ever moves to a state that passed the gate, and a
+  failing edit never reaches it. This depends on the queue being the only writer to main. The staging
+  branch is deleted afterward, and a retry starts from a fresh one.
 - **Preflight.** Check that the source branch exists before calling, since a missing branch returns a
   server error indistinguishable from a real fault.
 - **Translate errors.** Map cardinality and `subject_has_no_type` witnesses to a user-facing conflict,
   `instance_not_of_class` to "a node this edit refers to was deleted", and other 5xx responses to a
   transient failure. A duplicate claim added on two branches arrives as an ordinary cardinality conflict
   on the statement (see [Data Model](data-model.md)). Anything unrecognized is surfaced, not retried
-  forever.
+  forever. A failure of the gate is reported with its violations and is never retried.
 - **Retry transient failures with a pause and a cap.** Retry a 5xx up to three times with at least half a
   second before each attempt, growing on each try. Every retry that waited succeeded, and back-to-back
   retries did not always.
-- **Skip the sync step.** Landing without a preceding sync succeeded as often as landing with one, and sync
-  added rebase calls that could themselves fail. Keep it as a switch in the queue, off by default.
+- **Do not rely on the sync step.** Landing without a preceding sync succeeded as often as landing with one,
+  and sync added rebase calls that could themselves fail. A sync that fails with `instance_not_of_class`
+  catches one kind of dangling edge by accident, but a sync that passes proves nothing, so the queue does
+  not use it as a guard. The validation gate does that job.
 - **Resolve conflicts on a fresh branch.** When the user resolves a conflict, the resolved content is
   written to a new branch off current main and landed through the same queue.
 - **Reading back what landed is optional.** The same-paragraph result that motivated it did not
@@ -228,8 +237,8 @@ directly.
 What fine granularity does not touch is **emergent invalidity**: two edits, each individually valid, on
 different documents, that combine into an invalid graph. The prototype sorted these into two groups.
 
-- **The store catches some.** It refuses to delete a node that still has dependent edges, it refuses an
-  edge that points at a node that does not exist, and it rejected missing required fields, invalid enum
+- **The store catches some.** It refuses to delete a node that still has dependent edges, it refuses a directly
+  inserted edge that points at a node that does not exist, and it rejected missing required fields, invalid enum
   values, and unknown properties in every case tried.
 - **The store catches the multiplicity rules when edges are keyed deterministically.** With the
   composite edge key set out in [Data Model](data-model.md), a second logical-necessity edge for a pair, or
@@ -237,10 +246,12 @@ different documents, that combine into an invalid graph. The prototype sorted th
   branches fails at merge as a conflict. Under random keys, two edges for one pair both merged.
 - **The store misses the rest.** Two edges added on separate branches that together form a cycle both
   merged cleanly. A self-loop was accepted. Nothing stops an origin being set on a logical-necessity edge,
-  which would escape the one-per-pair rule.
+  which would escape the one-per-pair rule. An edge added on one branch landed on main after another
+  branch had deleted its target, leaving a dangling edge, even though the reverse replay fails.
 
-Governance and Moderation already assigns the second group to a post-merge validation gate, and nothing
-here changes that division of labor. The prototype's script-level cycle and self-loop checks worked and
+Governance and Moderation already assigns the second group to a validation gate, and nothing here changes
+that division of labor. The queue runs the gate on a staging branch before main moves, which also removes
+the window in which main would hold an invalid graph. The prototype's script-level cycle and self-loop checks worked and
 are a starting point for that gate.
 
 ## Branch-and-merge also fits the protection-tier model already adopted
@@ -297,6 +308,7 @@ natural place for that gate to sit.
 
 The full backlog is in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
 this essay are a test of apply with an explicit merge base, a check of what a conflicting rebase returns
-through the client in full, the merge queue itself once it is written (concurrent landings, forced
-failures, and retry caps), and, if the server-error pattern matters after the queue exists, a repeat of
+through the client in full, the staged-landing queue against the live database (the first live run covered
+concurrent landings, conflicts, the missing-branch check, and duplicate claims, while forced server failures
+and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of
 the pause measurement under a realistically sized database.

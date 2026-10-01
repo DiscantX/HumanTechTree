@@ -148,11 +148,11 @@ store's behavior in several rounds, including repeated runs. The editing-related
 that bear on this choice are these.
 
 - **Schema enforcement is strong.** Missing required fields, invalid enum values, unknown properties,
-  and edges pointing at nonexistent nodes were all rejected, and the store refused to delete a node that
+  and directly inserted edges pointing at nonexistent nodes were all rejected, and the store refused to delete a node that
   still had dependent edges. This is the kind of guarantee a generic triple store would have left to the
   application.
-- **The store does not catch everything.** Cycles and self-loops were accepted, so the validation gate
-  remains necessary. Duplicate claims and the edge multiplicity rules were accepted under the prototype's
+- **The store does not catch everything.** Cycles and self-loops were accepted, and an edge landed on main
+  after another branch had deleted its target node, so the validation gate remains necessary. Duplicate claims and the edge multiplicity rules were accepted under the prototype's
   random keys, but a deterministic composite key over an edge's pair, basis, and origin makes the store
   refuse them, at a cost set out in [Data Model](data-model.md).
 - **Nested collections merge correctly if the right type is used.** A `Set` of sub-documents takes

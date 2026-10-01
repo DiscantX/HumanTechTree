@@ -46,7 +46,7 @@ ones.
   conflicts are always reported (40 of 40 repeated same-paragraph runs) as schema-validation errors the API
   does not document, a conflicted branch cannot be repaired in place, and landings need an
   application-side merge queue that serializes, spaces them about a second apart, retries with a pause, and
-  skips the sync step. Apply is documented but unverified as an alternative. Soft-flag-versus-hard-block for cycles stays open, deferred to The
+  lands each edit through a staging branch and the validation gate. Apply is documented but unverified as an alternative. Soft-flag-versus-hard-block for cycles stays open, deferred to The
   Validation Gate.
 - **[Data Model](data-model.md)** (Proposed). The concrete node, edge/claim, grounding, review, and
   objection schema implied by the policy essays, the one-claim-per-document storage decision Editing
@@ -69,11 +69,12 @@ ones.
 - **The Validation Gate** (Open). Where the cycle, dangling-edge, orphan, basis-fit, and (proposed)
   premise-dependency checks run against the merged graph, and whether a detected cycle hard-blocks a
   merge or is flagged for human review, per Governance and Moderation's open question. Prototype
-  findings: the store accepts cycles and self-loops, and it cannot require an origin to be empty on a
+  findings: the store accepts cycles and self-loops, lets an edge land after its target was deleted on another
+  branch, and it cannot require an origin to be empty on a
   logical-necessity edge, so the gate is required for those. Duplicate claims and the one-per-pair and
   one-per-origin rules are enforced by the store under the composite edge key in Data Model. Script-level
-  cycle and self-loop checks worked. The gate will most likely sit inside the merge queue described in
-  Editing Model.
+  cycle and self-loop checks worked. The gate runs on a staging branch inside the merge queue described in
+  Editing Model, before main moves.
 - **Versioning and Reviews** (Open). How a review binds to a specific version of a claim, how a
   "substantive change" is computed from a diff rather than self-flagged by an editor, and how a
   redirect that re-points an edge interacts with the reviews already on it. Data Model has fixed the
@@ -204,7 +205,12 @@ section lists what those runs settled, so it is not repeated, and what remains.
   and the first editor's text stayed on main. The earlier silent landing did not reproduce.
 - **Edit against delete.** The apparent surviving document was a flaw in the test, which read a 404 body as
   a document. The helper is fixed, and the delete works.
-- **The sync step.** It makes no difference to the server-error rate and is skipped by default.
+- **The sync step.** It makes no difference to the server-error rate. It happens to fail in one dangling-edge
+  case, but a passing sync guarantees nothing, so the queue does not use it.
+- **Dangling edges across branches.** An edge added on one branch landed on main after another branch had
+  deleted its target, and the rebase report called the replay valid. Replaying the deletion onto the edge
+  branch fails with `instance_not_of_class`. The gate checks for dangling edges, and the queue lands through
+  a staging branch.
 - **The server errors, characterized.** Parallel landings onto one branch fail four in five, and sequential
   replays fail about one in seven when issued immediately, falling to none at one second. A fast-forward
   never fails. Retries after a pause succeeded in every case.
@@ -221,13 +227,18 @@ section lists what those runs settled, so it is not repeated, and what remains.
 **Server and merge queue**
 
 1. **Report the server errors upstream.** Include the minimal reproduction (a replay landed immediately
-   after another landing on main), the parallel-landing result, and the missing-branch 500, which
-   contradicts the spec's 404.
+   after another landing on main), the parallel-landing result, the missing-branch 500, which
+   contradicts the spec's 404, and the dangling-edge landing, which is reported as a valid commit although the
+   reverse replay is rejected.
 2. **Server version.** Retesting after an upgrade is not currently possible, since 12.0.7 is the latest
    release. Confirm what the running server reports as its version, and check whether the specification's
    12.0.5 label is simply behind.
-3. **The merge queue itself.** It is a design position, not yet code. Once written, test it against
-   concurrent landings, forced failures, the one-second spacing, and the retry caps.
+3. **The merge queue, live.** The queue, the staged landing, and the gate's first four checks are written, and
+   their logic is tested without a server. Live runs passed concurrent landings, same-field conflicts,
+   fresh-branch resolution, the missing-branch check, and composite-key duplicates. The refusal of a dangling
+   edge (Q3) and of an edge that closes a cycle (Q7) through the staged path are written but not yet run.
+   Still to test: forced server failures, the retry caps, the effect of staging on landing time, and a
+   growing database.
 
 **Merge semantics**
 
@@ -254,16 +265,15 @@ section lists what those runs settled, so it is not repeated, and what remains.
 11. **Error classification.** The blocked delete of a node with dependents is still labeled as a
     cardinality conflict; the rewritten test records its body so it can get its own label.
 12. **Commit counting.** Count only the branch's own commits when checking whether IDs survive a rebase.
-13. **Conflict-catching in the original concurrent-edit test.** Its catch block treats any error as a
-    conflict, so a server error would be reported as one. That older script has not been changed.
 
 **Application-level work the tests point to**
 
-14. **A working three-way merge** with conflict regions on markdown, to exercise Prose Merging's
+13. **A working three-way merge** with conflict regions on markdown, to exercise Prose Merging's
     position on real text.
-15. **The validation gate's first checks,** starting from the prototype's script-level cycle and
-    self-loop detection, plus a check that `origin` is empty on every logical-necessity edge.
-16. **WOQL path queries** for cycle detection and blast radius. Check the correct syntax for traversing
+14. **The validation gate's first checks.** Dangling edges, self-loops, logical-necessity cycles, and an origin
+    on a logical-necessity edge are written (`src/db/validation-gate.ts`) and tested on in-memory graphs. They
+    have yet to be run against a real branch.
+15. **WOQL path queries** for cycle detection and blast radius. Check the correct syntax for traversing
     edges stored as documents, and compare with the client-side computation that already takes about
     15 to 17 milliseconds at 300 nodes.
 

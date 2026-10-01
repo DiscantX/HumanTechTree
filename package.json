@@ -7,7 +7,9 @@
     "build": "tsc",
     "init-db": "ts-node src/scripts/init-db.ts",
     "concurrent-suite": "ts-node src/scripts/concurrent-suite.ts",
-    "reset-db": "ts-node src/scripts/reset-db.ts"
+    "reset-db": "ts-node src/scripts/reset-db.ts",
+    "merge-queue-test": "ts-node src/scripts/merge-queue-test.ts",
+    "merge-queue-live": "ts-node src/scripts/merge-queue-live.ts"
   },
   "dependencies": {
     "axios": "^1.7.2",

@@ -1009,11 +1009,19 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 add('Q1', 'sequential clean rebases: fast-forward vs replay vs replay after a pause', async (c, tag) => {
   const N = Number(process.env.Q_N ?? 20);
   const PAUSE = Number(process.env.Q_PAUSE_MS ?? 3000);
-  const arms: Array<{ name: string; diverged: boolean; pause: number }> = [
+  const allArms: Array<{ name: string; diverged: boolean; pause: number }> = [
     { name: 'ff', diverged: false, pause: 0 },
     { name: 'replay0', diverged: true, pause: 0 },
     { name: 'replayP', diverged: true, pause: PAUSE },
+    // Only run when named in Q_ARMS, to find how long the pause has to be.
+    { name: 'replay100', diverged: true, pause: 100 },
+    { name: 'replay250', diverged: true, pause: 250 },
+    { name: 'replay500', diverged: true, pause: 500 },
+    { name: 'replay1000', diverged: true, pause: 1000 },
   ];
+  // Default: the original three. Q_ARMS=replay0,replay100,replay250,replay500,replay1000 picks others.
+  const wanted = (process.env.Q_ARMS ?? 'ff,replay0,replayP').split(',').map((x) => x.trim());
+  const arms = allArms.filter((a) => wanted.includes(a.name));
   for (const arm of arms) {
     let first500 = 0;
     let needed: number[] = [];
@@ -1108,6 +1116,48 @@ add('K4', 'schema probe: composite key with an enum and an optional origin', asy
     const id = (ln1.value as string[])[0];
     const u = await attempt(() => updateOn(c, b, id, { basis: 'Historical' }));
     observe('editing basis in place', desc(u));
+  }
+});
+
+// ===== K5: the same deterministic-key claim added on two branches =====
+
+add('K5', 'composite key: two branches add the same claim concurrently', async (c, tag) => {
+  const base = await newBranch(c, uid('k5base'));
+  const sr = await attempt(() =>
+    addSchemaOn(c, base, [
+      { '@type': 'Enum', '@id': 'ProbeBasis', '@value': ['Historical', 'Logical'] },
+      {
+        '@type': 'Class',
+        '@id': 'ProbeClaim',
+        '@key': { '@type': 'Lexical', '@fields': ['src', 'dst', 'basis', 'origin'] },
+        src: 'Node',
+        dst: 'Node',
+        basis: 'ProbeBasis',
+        origin: { '@type': 'Optional', '@class': 'xsd:string' },
+        statement: { '@type': 'Optional', '@class': 'xsd:string' },
+      },
+    ]),
+  );
+  if (!sr.ok) {
+    observe('schema push failed', desc(sr));
+    return;
+  }
+  for (const variant of ['different statements', 'identical statements']) {
+    const [s, t] = await insertOn(c, base, [nodeDoc(`${tag} ${variant} s`), nodeDoc(`${tag} ${variant} t`)]);
+    const a = await newBranch(c, uid('k5a'), base);
+    const b = await newBranch(c, uid('k5b'), base);
+    const claim = (statement: string) => ({ '@type': 'ProbeClaim', src: s, dst: t, basis: 'Logical', statement });
+    await insertOn(c, a, [claim('from a')]);
+    await insertOn(c, b, [claim(variant === 'identical statements' ? 'from a' : 'from b')]);
+    const ra = await land(a, base);
+    const rb = await mergeWithSync(b, base);
+    const tail = s.split('/').pop() as string;
+    const onBase = (await listDocs(c, base, 'ProbeClaim')).filter((d) => String(d.src).endsWith(tail));
+    observe(
+      `${variant}: A lands, then B`,
+      `A ${desc(ra)} | B ${rb.stage} ${desc(rb)} | on base: ${JSON.stringify(onBase.map((d) => d.statement))}`,
+    );
+    expectThat(`${variant}: at most one claim for the pair ends up on base`, onBase.length <= 1, `${onBase.length} on base`);
   }
 });
 

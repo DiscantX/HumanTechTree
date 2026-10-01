@@ -139,5 +139,6 @@ markdown.
   rendering library's appetite for bulk reads has not been tested against real query patterns yet. The
   prototype's bulk reads were fast at small scale (all edges of a 300-node graph in 0.15 seconds), but
   that is not the rendering layer's own access pattern.
-- **Server stability.** The intermittent server errors seen in the prototype are unexplained and bear on
-  every layer that sits on the data layer. See Database Choice.
+- **Server stability.** The intermittent server errors seen in the prototype have a characterized pattern
+  and a workaround in the merge queue, but an unknown cause, and they bear on every layer that sits on the
+  data layer. See Database Choice.

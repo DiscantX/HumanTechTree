@@ -7,9 +7,10 @@ question open from the start: should the graph stay branch-and-merge, or move to
 Wikidata's, where each statement is independently addressable and contested claims coexist without a
 resolved merge? [Database Choice](database-choice.md) did not settle this directly, but it removed one
 of the two live options from serious contention, which is where this essay picks up. A prototype now
-exists (`src/scripts/concurrent-suite.ts`) and has been run twice, and the official documentation, the
-OpenAPI spec, and the client package have since been read for what they actually say. This revision
-keeps three things apart: what was assumed, what was observed, and what the documentation states.
+exists (`src/scripts/concurrent-suite.ts`) and has been run in several rounds, including repeated runs
+with and without the sync step, and the official documentation, the OpenAPI spec, and the client package
+have been read for what they actually say. This revision keeps three things apart: what was assumed, what
+was observed, and what the documentation states.
 
 ## The position
 
@@ -18,8 +19,9 @@ keeps three things apart: what was assumed, what was observed, and what the docu
 > operation is rebase, called through the official client (`client.rebase`), because rebase is what
 > the documentation itself calls merging and the server has no separate merge endpoint. Because the
 > store reports rebase conflicts in a form its API does not document, and fails intermittently with
-> opaque server errors, every merge goes through an application-side merge queue that serializes
-> landings, translates errors, retries transient failures, and resolves conflicts on a fresh branch.**
+> opaque server errors that fade when landings are spaced out, every merge goes through an
+> application-side merge queue that serializes landings, spaces them, translates errors, retries
+> transient failures, and resolves conflicts on a fresh branch.**
 
 This is a narrower conclusion than it looks. It does not resolve every open question Governance and
 Moderation left on the table (soft-flag versus hard-block for cycles, for instance, stays open below).
@@ -97,25 +99,30 @@ examples marked as tested; prose pages have proved less reliable (see the tech i
 
 ## What testing showed
 
-The suite has run twice against TerminusDB 12.0.7 on a local instance. The first run used direct HTTP
-calls for rebase (37 scenarios: 55 checks passed, 7 did not confirm a hypothesis, 26 were observations,
-none crashed). The second ran after the prototype moved to the official client package (51 passed, 11 did
-not confirm, 26 observations, none crashed). Each is a single run, so everything below is "observed
-once or twice", not "established". A patched suite with repeat and no-sync modes, error logging, and
-new scenarios (46 in all) exists and is waiting for its first runs.
+The suite has run in several rounds against TerminusDB 12.0.7 on a local instance. The first two were
+single passes of 37 scenarios, the first with direct HTTP calls for rebase and the second after the
+prototype moved to the official client package. The third round used the rewritten suite, which repeats
+scenarios, can skip the sync step, logs every error body, and now has 50 scenarios. It ran the probe set
+once, then the scenarios that had failed intermittently 20 times each with sync and 20 times without, and
+then targeted runs on the server errors, the key strategy, and concurrent appends to collections. Repeated
+results below are counted as such. Everything else is one or two observations.
 
-**What held up in both runs.**
+**What held up in every round.**
 
 - **Field-level merging works.** Two branches editing different fields of the same claim merged cleanly
   and the result carried both changes. A node edited on one branch and its edge edited on another merged
-  cleanly. Identical concurrent edits to one field converged without a conflict in the first run.
-- **Real conflicts are atomic.** When two branches changed the same field of a claim, the merge failed
-  and left both main and the losing branch exactly as they were. There were no partial writes.
+  cleanly. Identical concurrent edits to one field converged without a conflict in every run that reached the
+  merge, and identical concurrent additions of the same claim converged to a single document.
+- **Real conflicts are atomic, and always reported.** When two branches changed the same field of a
+  claim, the merge failed and left both main and the losing branch exactly as they were. There were no
+  partial writes. Two branches editing the same paragraph of one text field were reported as a conflict
+  in 40 of 40 repeated runs, with and without the sync step, and in every one of them the first editor's
+  text was still on main afterwards. A conflict never produced a server error.
 - **Reverts compose.** A bad edit that landed, followed by a good-faith edit to a different field, could
   be undone by a new field-level edit that restored the old value without discarding the later change.
-- **Nothing was lost under parallel load.** Five simultaneous landings produced two successes and three
-  server errors in each run, but every reported success was on main, nothing reported as failed was on
-  main, and sequential retries landed all five.
+- **Nothing was lost under parallel load.** Five simultaneous landings onto one branch produced exactly
+  one success and four server errors in each of 40 repeated runs. Every reported success was on main and
+  nothing reported as failed was on main, so the failures are clean refusals.
 
 **What differed from the assumption.**
 
@@ -132,27 +139,46 @@ new scenarios (46 in all) exists and is waiting for its first runs.
 - **A conflicted branch cannot be repaired in place.** Setting the losing field back to main's value
   and syncing again produced the same conflict. What worked was a fresh branch from current main with the
   intended edit replayed on it, which means the losing editor's branch history is abandoned.
-- **The 500s are not explained by merge ordering, by sync, or by the raw HTTP wrapper.** The original
-  theory was that landing a branch directly after main had moved caused the server error. Landing
-  without a preceding sync succeeded in both runs, so the sync step is very likely unnecessary. The
-  same generic error (`Unexpected failure in request handler`) then appeared in other scenarios, three
-  of them at the sync step (a convergent edit and two claims on one node pair, both of which had
-  succeeded in the first run, and a double delete), and it kept appearing after the move to the official client, so the client wrapper was
-  not the cause. A second, distinct 500 body (`api:UnhandledErrorResponse`, "An internal server error
-  occurred") is returned when a request names a nonexistent branch. The spec promises a 404 there, so
-  that one is a plain server defect. The honest record is that the failure is intermittent, its cause is
-  unknown, and it was seen on 12.0.7.
-- **A landing that should have conflicted did not, in one run.** Two branches edited the same paragraph
-  of one text field. The first run reported a conflict. In the second run the second branch landed with
-  no conflict, and the test did not record what main held afterwards, so a silent overwrite of the first
-  editor's text cannot be ruled out. This matters more than any of the 500s, because the atomic-conflict
-  guarantee above depends on it. The patched suite records the final value. Related and also unexplained:
-  in both runs one test left main holding a deleted claim after the delete had landed, which is either
-  real behavior or a flaw in the test's timing.
+- **Edit against delete behaves correctly.** The apparent oddity, where a test left main holding a
+  deleted claim after the delete had landed, was a flaw in the test: the client returns a 404 body as a
+  string instead of throwing, and the helper read it as "present". The delete works.
+- **The 500s are real, intermittent, and tied to replaying onto a branch that has just changed.** They are
+  not caused by the sync step, the raw HTTP wrapper, or conflicts. The evidence:
+  - **Sync is irrelevant.** Across 20 repeats of the flaky scenarios, 17 scenario runs outside the parallel
+    case hit a server error with the sync step and 17 without it, and the landing step's error rate was
+    24.5 percent with sync and 26.9 percent without, both dominated by the parallel case.
+  - **Parallel landings onto one branch always fail four in five.** This is write contention, and the
+    clean refusals above show it does no damage.
+  - **Sequential replays fail less often, and less the longer the wait.** Landing a branch that had fallen
+    behind main, straight after another landing, failed on its first attempt about one time in seven. A
+    branch created after the previous landing, which merges as a fast-forward with nothing to replay,
+    never failed.
+
+    | Pause before the replay lands | First-attempt server errors |
+    | --- | --- |
+    | none (measured twice) | 7 of 50 (14 percent) |
+    | 100 ms | 3 of 30 (10 percent) |
+    | 250 ms | 1 of 30 (3 percent) |
+    | 500 ms | 1 of 30 (3 percent) |
+    | 1 second | 0 of 30 |
+    | 3 seconds | 0 of 20 |
+    | fast-forward, no replay | 0 of 20 |
+
+  - **Retries work when they wait.** Every branch that hit an error landed on its second attempt, 12 of 12,
+    with half a second between attempts, and nothing was duplicated or lost. Back-to-back retries in the
+    parallel scenario did not always work: 4 to 6 runs in 20 still left a branch unlanded.
+  - **The cause is unknown.** The server's log records only the status code. The pattern fits background
+    work on main that finishes within about a second of a landing, and the only related log lines are two
+    `Optimization ... failed: database_not_finalized` errors seen right after a database was recreated.
+    That is a lead and not a finding.
+  - **A second, distinct 500** (`api:UnhandledErrorResponse`, "An internal server error occurred") is
+    returned when a request names a nonexistent branch. The spec promises a 404 there, so that one is a
+    plain server defect.
 - **Rebase rewrites a branch's own commits.** In the second run 194 of the 196 commit IDs in a branch's
   log before landing survived on main, which matches the branch's two own commits being the ones
-  rewritten. Commit IDs are therefore not a stable name for "this version of a claim", which bears on
-  how reviews bind (see [Data Model](data-model.md)). Apply squashes, so neither operation preserves them.
+  rewritten, and in the third round none of a branch's two own commits were found on main after landing.
+  Commit IDs are therefore not a stable name for "this version of a claim", which bears on how reviews
+  bind (see [Data Model](data-model.md)). Apply squashes, so neither operation preserves them.
 
 **Performance was not a concern at prototype scale.** In the first run a bulk insert of 300 nodes took
 about 0.45 seconds and 597 edges about 1.1 seconds; reading all edges back took 0.15 seconds, a cycle
@@ -168,24 +194,29 @@ The findings add up to a requirement the earlier version of this essay did not h
 a single-writer operation.
 
 - **Serialize landings.** Editing on branches can happen in parallel, but the step that moves main
-  goes through one queue. Parallel landings failed three times in five with no data damage, which is a
-  reason to avoid them, not a reason to fear them.
+  goes through one queue. Parallel landings succeed one in five and fail cleanly, which is a reason to
+  avoid them, not a reason to fear them.
+- **Space landings.** Wait about a second after a landing before replaying the next branch onto main. The
+  server errors fell from about one in seven with no wait to none in 30 at one second. A queue that lands
+  at most about once a second costs little for a wiki that edits by review.
 - **Use the official client.** Rebase is a single `client.rebase` call on a client whose current branch
   is the target. Each landing uses a fresh client so no branch state leaks between calls.
 - **Preflight.** Check that the source branch exists before calling, since a missing branch returns a
   server error indistinguishable from a real fault.
 - **Translate errors.** Map cardinality and `subject_has_no_type` witnesses to a user-facing conflict,
   `instance_not_of_class` to "a node this edit refers to was deleted", and other 5xx responses to a
-  transient failure. Anything unrecognized is surfaced, not retried forever.
-- **Retry transient failures with a cap.** A retry succeeded in every case where an earlier attempt hit a
-  server error. Whether to sync before each landing is left open: it is probably unnecessary, and three
-  of the new server errors occurred at the sync step itself, so it may be harmful. The queue should be
-  written so this can be changed, and the sync-on and sync-off comparison planned in the tech index will
-  decide it.
+  transient failure. A duplicate claim added on two branches arrives as an ordinary cardinality conflict
+  on the statement (see [Data Model](data-model.md)). Anything unrecognized is surfaced, not retried
+  forever.
+- **Retry transient failures with a pause and a cap.** Retry a 5xx up to three times with at least half a
+  second before each attempt, growing on each try. Every retry that waited succeeded, and back-to-back
+  retries did not always.
+- **Skip the sync step.** Landing without a preceding sync succeeded as often as landing with one, and sync
+  added rebase calls that could themselves fail. Keep it as a switch in the queue, off by default.
 - **Resolve conflicts on a fresh branch.** When the user resolves a conflict, the resolved content is
   written to a new branch off current main and landed through the same queue.
-- **Verify what landed.** Given the unexplained same-paragraph result, the queue should read back a
-  landed document and compare it with what was submitted, at least until that result is understood.
+- **Reading back what landed is optional.** The same-paragraph result that motivated it did not
+  reproduce, so it is no longer required. It remains a cheap safeguard.
 
 ## Where real conflicts still happen, and how they resolve
 
@@ -200,11 +231,13 @@ different documents, that combine into an invalid graph. The prototype sorted th
 - **The store catches some.** It refuses to delete a node that still has dependent edges, it refuses an
   edge that points at a node that does not exist, and it rejected missing required fields, invalid enum
   values, and unknown properties in every case tried.
+- **The store catches the multiplicity rules when edges are keyed deterministically.** With the
+  composite edge key set out in [Data Model](data-model.md), a second logical-necessity edge for a pair, or
+  a second historical-attestation edge repeating an origin, is refused, and the same claim added on two
+  branches fails at merge as a conflict. Under random keys, two edges for one pair both merged.
 - **The store misses the rest.** Two edges added on separate branches that together form a cycle both
-  merged cleanly. A self-loop was accepted. Two identical claims were accepted, because the current key
-  strategy is random (the documented key strategies that would prevent this, and their cost, are
-  discussed in [Data Model](data-model.md)). Whether a second logical-necessity edge for the same pair is
-  accepted is still unknown, because both attempts to test it hit a server error.
+  merged cleanly. A self-loop was accepted. Nothing stops an origin being set on a logical-necessity edge,
+  which would escape the one-per-pair rule.
 
 Governance and Moderation already assigns the second group to a post-merge validation gate, and nothing
 here changes that division of labor. The prototype's script-level cycle and self-loop checks worked and
@@ -243,25 +276,19 @@ natural place for that gate to sit.
   which rebase's are not, but its examples contradict its description, it squashes commits, and there is
   no documented way to obtain a merge base. If a merge base can be found, apply might give a cleaner
   conflict contract than rebase's schema-validation errors. Untested.
-- **The same-paragraph result.** Whether a conflicting edit to one text field can land silently, and
-  what main holds afterwards. This is the most important unexplained result and needs repeated runs with
-  the final value recorded.
-- **The cause of the intermittent server errors.** Unknown, and absent from the documentation. It needs
-  repeated runs with and without the sync step, the server's own log for the same window, and, if it
-  persists, a report to the maintainers together with the missing-branch 500, which contradicts the spec.
-  The project is already on the latest server release, so an upgrade retest is not currently available.
+- **The cause of the intermittent server errors.** Unknown, and absent from the documentation. The
+  pattern is characterized and the workaround is spacing and retrying, but a report to the maintainers
+  should include the minimal reproduction (a replay landed immediately after another landing on main) and
+  the missing-branch 500, which contradicts the spec. The project is already on the latest server release,
+  so an upgrade retest is not currently available.
 - **Branch workflow.** Whether low-permission editors work in individual branches merged by reviewers,
   or something closer to Wikipedia's direct-edit-with-revert model layered on top of TerminusDB's
   branches, is not decided. The fresh-branch conflict resolution path adds a consideration: an editor's
   branch is disposable when it conflicts.
-- **Whether one-claim-per-document holds up under real load.** Supported in every case tried, all of
-  them on small graphs and simulated edits. It has not been tested against collection fields, such as
-  groundings or objections stored inside a claim, where two editors appending at the same time might
-  collide even though they touch different entries. Scenarios for `Set`, `Array`, and `List` are written
-  but not yet run.
-- **Edit against delete.** One test left main with the deleted claim still present after the delete had
-  landed, in both runs. That is either a real behavior or a flaw in the test's timing, and it is not
-  understood yet.
+- **Whether one-claim-per-document holds up under real load.** Supported in every case tried, including
+  concurrent appends to groundings and objections nested in a claim (see [Data Model](data-model.md)). All
+  of it was on small graphs with simulated edits, and two branches editing the same nested entry have not
+  been tested.
 - **This essay's own depth.** The position still follows more from a prior decision (TerminusDB) than
   from an independent debate. The prototype has stress-tested it in the ways listed above, but not yet
   under real concurrent editors.
@@ -269,7 +296,7 @@ natural place for that gate to sit.
 ## Tests not yet run
 
 The full backlog is in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
-this essay are the repeated sync-on and sync-off runs of the failing scenarios with server logs, the
-first run of the new probes (same-paragraph and delete outcomes recorded, collection appends, key
-strategies), a test of apply with an explicit merge base, and a check of what a conflicting rebase
-returns through the client.
+this essay are a test of apply with an explicit merge base, a check of what a conflicting rebase returns
+through the client in full, the merge queue itself once it is written (concurrent landings, forced
+failures, and retry caps), and, if the server-error pattern matters after the queue exists, a repeat of
+the pause measurement under a realistically sized database.

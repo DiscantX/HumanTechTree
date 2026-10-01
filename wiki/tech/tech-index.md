@@ -17,10 +17,12 @@ it, and what renders it.
 - **Ratified.** The position is settled and binds the implementation.
 
 Architecture Overview, Database Choice, Editing Model, Data Model, and Prose Merging are Proposed; every
-other tech essay is still Open. A prototype exists (`src/`) and its test suite has run twice. Beyond
-the tests, the official documentation, the OpenAPI spec, and the client packages have now been read
-against the essays, which changed several positions; those results are folded into the essays, and what
-remains untested is listed under "Prototype test backlog" below. Drafting proceeds roughly in the order
+other tech essay is still Open. A prototype exists (`src/`) and its test suite has run in several rounds,
+including repeated runs with and without the sync step. Beyond the tests, the official documentation, the
+OpenAPI spec, and the client packages have been read against the essays, which changed several positions;
+those results are folded into the essays, and what remains untested is listed under "Prototype test
+backlog" below. The database questions that were open through the first rounds are now answered, and the
+data layer is settled enough to build the application on. Drafting proceeds roughly in the order
 listed under "Suggested drafting order", since several later essays depend on positions taken in earlier
 ones.
 
@@ -34,23 +36,25 @@ ones.
   application-level prose merging, for talk pages, policy pages, and argument pages as well. Records the
   rejection of MediaWiki alongside TerminusDB, Wikibase alone, Blazegraph, QLever, and two git-backed
   wiki engines (Gollum, Wiki.js), each for a distinct reason, and what the prototype has shown about the
-  store. The prose-merge test has been run and native merging failed; the remaining gates are a working
-  application-level merge and an explanation for the store's intermittent server errors, which persisted
-  through the official client and are not covered by the documentation.
+  store. The prose-merge test has been run and native merging failed. The remaining gates are a working
+  application-level merge and a report to the maintainers about the store's intermittent server errors,
+  whose pattern is now characterized (they fade when landings are spaced about a second apart and retried)
+  but whose cause is unknown.
 - **[Editing Model](editing-model.md)** (Proposed). Branch-and-merge, with rebase as the merge operation
   (it is the documented one; the server has no merge endpoint), called through the official client, and
   one claim per document to keep unrelated edits apart. Testing showed field-level merging works,
-  conflicts arrive as schema-validation errors the API does not document, a conflicted branch cannot be
-  repaired in place, and landings need an application-side merge queue. One result is unexplained and
-  serious: a same-paragraph edit landed without a conflict in the second run. Apply is documented but
-  unverified as an alternative. Soft-flag-versus-hard-block for cycles stays open, deferred to The
+  conflicts are always reported (40 of 40 repeated same-paragraph runs) as schema-validation errors the API
+  does not document, a conflicted branch cannot be repaired in place, and landings need an
+  application-side merge queue that serializes, spaces them about a second apart, retries with a pause, and
+  skips the sync step. Apply is documented but unverified as an alternative. Soft-flag-versus-hard-block for cycles stays open, deferred to The
   Validation Gate.
 - **[Data Model](data-model.md)** (Proposed). The concrete node, edge/claim, grounding, review, and
   objection schema implied by the policy essays, the one-claim-per-document storage decision Editing
-  Model depends on, reviews bound to a content hash instead of a commit ID (now supported by the
-  documentation as well as by testing), a new section on deterministic keys and why the obvious one
-  conflicts with the policies, and a table of which rules the store enforces and which the validation
-  gate must. Cluster membership is confirmed as computed, never stored, apart from a thin pinned-cluster
+  Model depends on, reviews bound to a content hash instead of a commit ID (supported by the
+  documentation and by testing), a composite edge key over pair, basis, and origin that makes the store
+  enforce the multiplicity rules, `Set` collections for groundings and objections (`Array` is never
+  safe), and a table of which rules the store enforces and which the validation gate must. Cluster
+  membership is confirmed as computed, never stored, apart from a thin pinned-cluster
   record.
 - **Computed Values** (Open). Blast radius, the computed anchor stage, the review-count requirement,
   claim status, and clusters are all derived from the graph rather than edited directly. When each is
@@ -65,14 +69,17 @@ ones.
 - **The Validation Gate** (Open). Where the cycle, dangling-edge, orphan, basis-fit, and (proposed)
   premise-dependency checks run against the merged graph, and whether a detected cycle hard-blocks a
   merge or is flagged for human review, per Governance and Moderation's open question. Prototype
-  findings: the store accepts cycles, self-loops, and duplicate claims (the last a consequence of random
-  keys), so the gate is required, and script-level cycle and self-loop checks worked. It will most likely
-  sit inside the merge queue described in Editing Model, which should also read back what it landed.
+  findings: the store accepts cycles and self-loops, and it cannot require an origin to be empty on a
+  logical-necessity edge, so the gate is required for those. Duplicate claims and the one-per-pair and
+  one-per-origin rules are enforced by the store under the composite edge key in Data Model. Script-level
+  cycle and self-loop checks worked. The gate will most likely sit inside the merge queue described in
+  Editing Model.
 - **Versioning and Reviews** (Open). How a review binds to a specific version of a claim, how a
   "substantive change" is computed from a diff rather than self-flagged by an editor, and how a
   redirect that re-points an edge interacts with the reviews already on it. Data Model has fixed the
   starting point: bind to a content hash, since rebase rewrites a branch's own commit IDs and no merge
-  operation preserves them.
+  operation preserves them. It also notes that a physical re-pointing of an edge is a new document under
+  the composite key, while a display-time redirect leaves the stored edge untouched.
 
 ## Wiki mechanics
 
@@ -129,9 +136,9 @@ Several essays depend on positions taken earlier. A reasonable order for a first
 getting a prototype running:
 
 1. ~~Architecture Overview~~ — drafted, revised after the prototype's prose-merge result
-2. ~~Editing Model~~ — drafted and revised twice; still to be tested under repeated runs and real concurrent editors
-3. ~~Database Choice~~ — drafted and revised; server stability is the remaining question
-4. ~~Data Model~~ — drafted and revised; review binding changed to a content hash, key strategy added as an open question
+2. ~~Editing Model~~ — drafted and revised; tested under repeated runs, still to be tested against a real merge queue and concurrent editors
+3. ~~Database Choice~~ — drafted and revised; the server-error cause is the one remaining question
+4. ~~Data Model~~ — drafted and revised; reviews bind to a content hash, edges use a composite key, groundings are Sets
 5. ~~Prose Merging~~ — drafted, pending a working application-level merge
 6. The Validation Gate
 7. Computed Values
@@ -172,10 +179,12 @@ each.
 
 ## Prototype tooling
 
-- **The concurrency suite** (`src/scripts/concurrent-suite.ts`, 46 scenarios). Now supports repeating
+- **The concurrency suite** (`src/scripts/concurrent-suite.ts`, 50 scenarios). Supports repeating
   scenarios, running without the sync step, and failure-rate tables for rebase calls by stage; logs every
   error body with the failing commit the server reports; and includes probes for key strategies and for
-  collection appends. Nothing it creates in those probes touches main.
+  collection appends, plus Q1 (sequential rebases by pause length, selectable with `Q_N`, `Q_PAUSE_MS`,
+  and `Q_ARMS`), K4 and K5 (the composite edge key, and the same claim added on two branches), and L2 (a Set of
+  sub-documents). Nothing it creates in the probes touches main.
 - **The experiment runner** (`tools/run-experiments.js`). Runs the probe scenarios once and the flaky
   scenarios repeated with sync on and again with sync off, resetting the database between the repeated
   runs, capturing the server's log over ssh with each line stamped by the local clock, and bundling the
@@ -184,73 +193,77 @@ each.
 
 ## Prototype test backlog
 
-The prototype's suite ran 37 scenarios once against TerminusDB 12.0.7 and produced the findings first
-recorded in the essays; after the move to the official client it ran again, and its results are folded
-into them too. The suite has since been rewritten (see above) but has not yet been run in its new form.
-The following were identified but not yet run, or need fixing before the result can be trusted. They are
-collected here so nothing is lost.
+The prototype's suite ran 37 scenarios twice, then, rewritten, ran the probe set once and the scenarios
+that had failed intermittently 20 times each with and without the sync step, followed by targeted runs on
+the server errors, composite keys, and collection appends. The results are folded into the essays. This
+section lists what those runs settled, so it is not repeated, and what remains.
 
-**Stability**
+**Settled**
 
-1. **Repeated runs of the failing scenarios, with and without the sync step.** The suite now has the
-   options for this. Run the convergent-edit, two-claims-one-pair, double-delete, two-logical-necessity,
-   parallel-landing, and same-paragraph cases about twenty times each in each mode, capturing the server
-   log for the same window, and compare the 5xx rates by stage. Editing Model and Database Choice both
-   depend on this.
+- **The same-paragraph result.** Two edits to one text field were reported as a conflict in 40 of 40 runs,
+  and the first editor's text stayed on main. The earlier silent landing did not reproduce.
+- **Edit against delete.** The apparent surviving document was a flaw in the test, which read a 404 body as
+  a document. The helper is fixed, and the delete works.
+- **The sync step.** It makes no difference to the server-error rate and is skipped by default.
+- **The server errors, characterized.** Parallel landings onto one branch fail four in five, and sequential
+  replays fail about one in seven when issued immediately, falling to none at one second. A fast-forward
+  never fails. Retries after a pause succeeded in every case.
+- **Key strategies.** Optional and reference key fields work, an enum can be a key field, a duplicate is
+  rejected, editing a key field in place is rejected, and a composite key over pair, basis, and origin
+  enforces both multiplicity rules. The same claim on two branches conflicts at merge or converges.
+- **Collection fields.** `Set` and a `Set` of sub-documents merge concurrent appends, `List` conflicts, and
+  `Array` silently produces a wrong result.
+- **The second logical-necessity edge for one pair.** Accepted under random keys, rejected under the
+  composite key.
+- **Rebase and commit IDs.** A branch's own commits did not survive a rebase in the third round either, and
+  the rebase report was empty.
+
+**Server and merge queue**
+
+1. **Report the server errors upstream.** Include the minimal reproduction (a replay landed immediately
+   after another landing on main), the parallel-landing result, and the missing-branch 500, which
+   contradicts the spec's 404.
 2. **Server version.** Retesting after an upgrade is not currently possible, since 12.0.7 is the latest
    release. Confirm what the running server reports as its version, and check whether the specification's
    12.0.5 label is simply behind.
-3. **Report the missing-branch 500 upstream.** The spec promises a 404. Include the two distinct 500
-   bodies seen and the fact that they persist through the official client.
-4. **Merge-queue behavior under parallel load.** The queue is a design position, not yet code. Once
-   written, test it against concurrent landings, forced failures, and retry caps.
+3. **The merge queue itself.** It is a design position, not yet code. Once written, test it against
+   concurrent landings, forced failures, the one-second spacing, and the retry caps.
 
 **Merge semantics**
 
-5. **The same-paragraph result.** Run the prose scenarios repeatedly with the final value recorded, to
-   find out whether a conflicting text edit can land silently. This is the most important open result.
-6. **Apply as a merge.** Test apply with the target's current tip as `before` after main has moved, to see
+4. **Apply as a merge.** Test apply with the target's current tip as `before` after main has moved, to see
    whether it reverts newer changes, and, if a merge base can be obtained, with that base. Also
    confirm what a conflicting rebase returns through the client, in full.
-7. **Concurrent appends to `Set`, `List`, and `Array` fields.** Two branches each appending a different
-   entry to the same field. This decides whether groundings and objections can stay nested in the claim
-   or must become their own documents (Data Model). The scenario is written.
-8. **Key strategies.** Whether a key can be optional, whether it can be node references, and what
-   editing a key field does. The three probes are written.
-9. **A proper test of the second logical-necessity edge for one pair.** Both attempts so far hit a server
-   error before they could answer, so whether the store accepts it is unknown.
-10. **Fractional-position block inserts**, and **block edit against block delete**, for the deferred block
-    storage option (Prose Merging).
-11. **Edit against delete, explained.** One test leaves main with the deleted claim still present after
-    the delete has landed, in both runs. The rewritten test asserts immediately after the delete lands, to
-    tell a real behavior from a flaw in the test's timing.
+5. **Nested collections beyond the tested case.** Two branches editing the same sub-document, reviews
+   nested inside a grounding, and a `List` of sub-documents for an argument's premises.
+6. **Fractional-position block inserts**, and **block edit against block delete**, for the deferred block
+   storage option (Prose Merging).
 
 **History**
 
-12. **Reading a document as of a past commit.** Documented, untested. Needed to fetch the merge base for
-    application-level prose merging, if the base is not stored with the editing session (Prose Merging).
-13. **The per-document history endpoint.** Reported to list the commits that touched a document; read what
-    it returns and whether it helps with review binding or with the base text.
-14. **Confirm that the commit-log helper is not paginated.** The rewritten suite asks for a large count,
-    but the server's limit is unchecked. Also confirm that rebase rewrites only a branch's own commits; the
-    second run's 194-of-196 result is consistent with that, and the rewritten test counts them directly.
+7. **Reading a document as of a past commit.** Documented, untested. Needed to fetch the merge base for
+   application-level prose merging, if the base is not stored with the editing session (Prose Merging).
+8. **The per-document history endpoint.** Reported to list the commits that touched a document; read what
+   it returns and whether it helps with review binding or with the base text.
+9. **Confirm that the commit-log helper is not paginated.** The rewritten suite asks for a large count,
+   but the server's limit is unchecked.
 
-**Harness fixes** (all made in the rewritten suite, pending its first run)
+**Harness fixes** (made in the rewritten suite; the scenarios that exercise them have not been run again)
 
-15. **Blast-radius check.** IDs are normalized before comparing.
-16. **Error classification.** The blocked delete of a node with dependents is still labeled as a
+10. **Blast-radius check.** IDs are normalized before comparing.
+11. **Error classification.** The blocked delete of a node with dependents is still labeled as a
     cardinality conflict; the rewritten test records its body so it can get its own label.
-17. **Commit counting.** Count only the branch's own commits when checking whether IDs survive a rebase.
-18. **Conflict-catching in the original concurrent-edit test.** Its catch block treats any error as a
+12. **Commit counting.** Count only the branch's own commits when checking whether IDs survive a rebase.
+13. **Conflict-catching in the original concurrent-edit test.** Its catch block treats any error as a
     conflict, so a server error would be reported as one. That older script has not been changed.
 
 **Application-level work the tests point to**
 
-19. **A working three-way merge** with conflict regions on markdown, to exercise Prose Merging's
+14. **A working three-way merge** with conflict regions on markdown, to exercise Prose Merging's
     position on real text.
-20. **The validation gate's first checks,** starting from the prototype's script-level cycle and
-    self-loop detection.
-21. **WOQL path queries** for cycle detection and blast radius. Check the correct syntax for traversing
+15. **The validation gate's first checks,** starting from the prototype's script-level cycle and
+    self-loop detection, plus a check that `origin` is empty on every logical-necessity edge.
+16. **WOQL path queries** for cycle detection and blast radius. Check the correct syntax for traversing
     edges stored as documents, and compare with the client-side computation that already takes about
     15 to 17 milliseconds at 300 nodes.
 

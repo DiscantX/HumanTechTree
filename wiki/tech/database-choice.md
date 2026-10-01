@@ -144,28 +144,33 @@ Search entry.
 ## What the prototype has shown
 
 A prototype (`src/scripts/`) runs against TerminusDB 12.0.7, and a broad test suite has exercised the
-store's behavior twice. The editing-related findings are in [Editing Model](editing-model.md). The ones
+store's behavior in several rounds, including repeated runs. The editing-related findings are in [Editing Model](editing-model.md). The ones
 that bear on this choice are these.
 
 - **Schema enforcement is strong.** Missing required fields, invalid enum values, unknown properties,
   and edges pointing at nonexistent nodes were all rejected, and the store refused to delete a node that
   still had dependent edges. This is the kind of guarantee a generic triple store would have left to the
   application.
-- **The store does not catch everything.** Cycles, self-loops, and duplicate claims were all accepted,
-  so the validation gate remains necessary. The duplicates are a consequence of the prototype's random
-  key strategy, not of the store: the documented deterministic strategies could prevent them, at a cost
-  discussed in [Data Model](data-model.md).
+- **The store does not catch everything.** Cycles and self-loops were accepted, so the validation gate
+  remains necessary. Duplicate claims and the edge multiplicity rules were accepted under the prototype's
+  random keys, but a deterministic composite key over an edge's pair, basis, and origin makes the store
+  refuse them, at a cost set out in [Data Model](data-model.md).
+- **Nested collections merge correctly if the right type is used.** A `Set` of sub-documents takes
+  concurrent appends without loss. A `List` reports a conflict. An `Array` silently produces a wrong
+  result and is never to be used.
 - **Prose does not merge natively.** See the open question below and [Prose Merging](prose-merging.md).
 - **Performance is comfortable at prototype scale.** Bulk inserts of 300 nodes and about 600 edges took
-  between one and three seconds across the two runs, and reading all edges back took under 0.3 seconds.
+  between one and three seconds in the early runs, and reading all edges back took under 0.3 seconds.
   The second run was slower than the first for reasons not yet identified.
-- **The server fails intermittently, and the failure is not explained by our usage.** A generic server
-  error (an HTTP 500 with the message "Unexpected failure in request handler") appears on rebase
-  operations in several scenarios, on syncs, on merges, and in three of five parallel landings, and it
-  persisted after the prototype moved from a hand-written HTTP call to the official client. A second,
-  differently worded 500 is returned for requests that name a nonexistent branch, where the API
-  specification says 404. No data was lost or duplicated in any case, but the cause is unknown and the
-  documentation does not mention it.
+- **The server fails intermittently, and the pattern is now characterized.** A generic server error (an
+  HTTP 500 with the message "Unexpected failure in request handler") appears when rebases are issued
+  concurrently onto one branch, where four of five fail every time, and on about one in seven replays that
+  land immediately after another landing. The rate falls as the wait before the replay grows, to zero at
+  one second, and a fast-forward never fails. Every retry that waited succeeded, and no data was lost or
+  duplicated in any case. The cause is still unknown, the server log records only the status code, and the
+  documentation does not mention it. A second, differently worded 500 is returned for requests that name a
+  nonexistent branch, where the API specification says 404. Details are in
+  [Editing Model](editing-model.md).
 
 ### What the documentation and client turned out to say
 
@@ -204,16 +209,15 @@ OpenAPI spec, and the client packages afterwards changed some of what was assume
   essay could move from Proposed to Ratified. It does not overturn the choice, because the merge can be
   done in the application (see [Prose Merging](prose-merging.md)), and most wiki-mechanic content is
   either append-only comments or structured data that never needed it. The remaining gate is a working
-  application-level merge, and, if block storage is ever adopted, the untested collection-field
-  behavior. One further observation belongs here: in the second run, two edits to the *same* paragraph
-  landed without a conflict where the first run reported one. Until that is explained, the claim that
-  same-field conflicts are always reported is not safe to rely on (see Editing Model).
-- **Server stability.** The intermittent server errors need characterizing before the store is treated
-  as production-ready. Planned: repeated runs with and without the sync step to get failure rates, the
-  server's own log for the same window, and, if the errors persist, a report to the maintainers together
-  with the missing-branch 500. The project is already on the latest server release (12.0.7), so a retest
-  after an upgrade is not currently possible. If the errors turn out to be a defect in this version, a
-  fix or a workaround is probably enough. If they turn out to be structural, this choice needs revisiting.
+  application-level merge. An earlier concern, that two edits to the same paragraph once landed without a
+  conflict, did not reproduce in 40 repeated runs: every one was reported as a conflict and kept the first
+  editor's text.
+- **Server stability.** The intermittent server errors are characterized and have a workaround, which is
+  spacing and retrying landings in the merge queue, but their cause is unknown. Remaining: report them to
+  the maintainers with a minimal reproduction and the missing-branch 500. The project is already on the
+  latest server release (12.0.7), so a retest after an upgrade is not currently possible. Because spacing
+  and retrying fully mask the errors in every test, a fix or a workaround is probably enough. If the
+  errors turn out to be structural, or to worsen with a larger database, this choice needs revisiting.
 - **QLever as a future secondary index.** Whether a fast, purpose-built query or search layer is ever
   worth adding alongside TerminusDB, once real content volume makes the current search position
   insufficient, is left open rather than decided now.

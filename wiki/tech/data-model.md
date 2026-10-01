@@ -6,8 +6,9 @@ The policy essays specify what a node and an edge mean. This essay writes down w
 concrete, storable fields, so that [Database Choice](database-choice.md) and [Editing
 Model](editing-model.md) have an actual schema to sit on top of. Nothing here introduces new meaning;
 each field traces to a specific policy decision, cited as it appears. Testing and a reading of the
-documentation have changed two things: how a review binds to a version of a claim, and what is known
-about key strategies and uniqueness, both noted below.
+documentation have changed three things: how a review binds to a version of a claim, how an edge is
+keyed so that the store enforces the multiplicity rules, and which collection type holds groundings,
+all noted below.
 
 ## Why this is mostly transcription
 
@@ -45,21 +46,20 @@ takes about 15 to 17 milliseconds, so computing on read is viable at that scale.
 
 | Field | Type | Source |
 | --- | --- | --- |
-| `id` | stable identifier | Governance and Moderation |
+| `id` | stable identifier, derived from the key fields `source_node`, `target_node`, `basis`, and `origin` (see Keys and uniqueness) | Governance and Moderation |
 | `source_node`, `target_node` | node `id` references, ordered | [Edge Schema](../policy/edge-schema.md) |
 | `statement` | text; the claim itself | Edge Schema, Sourcing and Citation Policy |
 | `relationship_kind` | enum: material necessity, conceptual enablement, combination, mere influence, or an unset generic default | Edge Schema |
 | `basis` | enum: historical attestation, logical necessity, or unspecified | [Historical Attestation vs. Logical Necessity](../policy/historical-vs-logical-necessity.md) |
 | `origin` | text (region or instance); present only on historical-attestation edges | Historical Attestation vs. Logical Necessity |
-| `groundings` | list of Grounding objects, see below | Sourcing and Citation Policy |
-| `objections` | list of Objection objects, see below | Sourcing and Citation Policy, Governance and Moderation |
+| `groundings` | set of Grounding sub-documents, see below | Sourcing and Citation Policy |
+| `objections` | set of Objection sub-documents, see below | Sourcing and Citation Policy, Governance and Moderation |
 | `status` | computed enum: ungrounded, red, yellow, green; never editor-set | Sourcing and Citation Policy |
 
 Multiplicity follows directly from Edge Schema and Historical Attestation vs. Logical Necessity: at
 most one logical-necessity edge per node pair, and at most one historical-attestation edge per node
-pair per distinct `origin` value. Nothing in the prototype schema enforces this; it is a rule the
-validation gate checks, the same way it checks for cycles. Whether the store could enforce some of it
-through the document key is the subject of the next section.
+pair per distinct `origin` value. The store enforces both through the edge's key, described in the
+next section, so the validation gate does not have to.
 
 One discrepancy to resolve: the prototype schema (`src/schema/graph-schema.ts`) currently stores
 `status` as an ordinary required field on the edge. That contradicts the rule above that status is
@@ -69,33 +69,47 @@ cache written only by the computation, and this is left for the Computed Values 
 
 ## Keys and uniqueness
 
-The prototype gives every node and edge a random key, so each insert mints a new identifier and two
-identical claims are accepted as two documents. That is a property of the key strategy, not a limitation
-of the store. The schema reference documents deterministic alternatives: a lexical key builds the
-identifier from named fields, a hash key builds it from a hash of named fields, and a value-hash key
-hashes the whole document. A deterministic key would make the store itself reject an exact duplicate.
+The first prototype gave every node and edge a random key, so each insert minted a new identifier and two
+identical claims were accepted as two documents. That is a property of the key strategy, not a limitation
+of the store. A deterministic key builds the identifier from named fields, and the store then refuses a
+second document with the same fields. Probes against the store settled what such a key can be made of and
+how it behaves.
 
-That is attractive, but it is not free, and the obvious version conflicts with the policies.
+- **Optional fields can be key fields.** An absent value is written into the identifier as a fixed
+  placeholder (`+none+`), so "no origin" is simply one more value.
+- **Reference fields and enums can be key fields.** A key over two node references, and a key over two
+  references, an enum, and an optional string together, all worked.
+- **A duplicate is refused.** A second document with the same key fields is rejected with
+  `DocumentIdAlreadyExists`, even when its other fields differ.
+- **A key field cannot be edited in place.** An update that changes one is rejected with
+  `SubmittedIdDoesNotMatchGeneratedId`. Changing a key field means a new document: a delete and an insert.
+- **Two branches adding the same key behave like any same-field collision.** With different statements,
+  the second merge fails with the same cardinality conflict on the statement that any same-field edit
+  produces. With identical statements, the two converge to one document.
 
-- **The multiplicity rules are not "unique over a fixed set of fields".** A logical-necessity claim is
-  unique per node pair regardless of its relationship-kind, while a historical-attestation claim is
-  unique per pair *and origin*. A key built from source, target, relationship-kind, and origin would
-  therefore allow two logical-necessity edges for one pair that differed only in kind, which Edge Schema
-  forbids, and would need `basis` in the key to distinguish the two cases at all.
-- **A key field is part of the identifier, so editing it changes the identifier.** The expected
-  behavior, which the documentation does not state, is that changing a key field means a new document, not
-  an update. Since `relationship_kind` and `basis` are fields editors are expected to revise, keying on
-  them would turn a routine edit into a delete and an insert, detaching reviews, objections, and any
-  references from the claim they belong to. A whole-document hash is worse, since every edit would
-  change the identifier.
-- **Optional and reference key fields are undocumented.** `origin` and `basis` are optional, and
-  `source_node` and `target_node` are references. Whether either can be part of a key is not stated in
-  the documentation. Scenarios that probe an optional key field, a key over two node references, and an
-  edit to a key field are written and awaiting their first run.
+> **An edge's key is `(source_node, target_node, basis, origin)`. Nodes keep random keys.**
 
-The position for now is to leave keys random and keep uniqueness with the validation gate, and to revisit
-once those probes have run. If a deterministic key proves workable, the natural candidate is a narrow one
-over the immutable parts of a claim's identity, not over its editable content.
+- **Why these four fields.** They are exactly the parts of a claim that the policies treat as making it a
+  different claim: which pair, on which basis, and for a historical attestation, which origin. With them in
+  the key, the store itself enforces "at most one logical-necessity edge per pair" (provided `origin` is left empty
+  on logical-necessity edges, which the store cannot require and the gate must check) and "at most one
+  historical-attestation edge per pair per origin". A key over `relationship_kind` as well would have allowed two logical-necessity edges that
+  differed only in kind, which Edge Schema forbids, so it is deliberately left out and stays editable.
+- **Why nodes stay random.** Governance and Moderation requires a node's identifier to be stable across
+  renames, moves, and merges, so it cannot be derived from anything an editor can change.
+- **An edge changes identity when its proposition does.** Editing `basis`, `origin`, or an endpoint produces
+  a new document. The old claim keeps its reviews and objections and the new one starts with none, which
+  matches the Sourcing policy's rule that a substantive change invalidates reviews. A physical re-pointing
+  of an edge, such as when a node is merged into another, is therefore a delete and an insert. Whether the
+  old reviews may be carried across by explicit re-attestation is a governance question. A redirect, by
+  contrast, leaves the stored edge untouched and is resolved when the graph is read.
+- **An unspecified basis is a value like any other.** A bare edge and a basis-specific edge on the same pair
+  have different keys, so the store permits both. Whether it should is Edge Schema's open question, and the
+  validation gate is the place to flag it.
+- **Duplicates arrive in two forms.** Inserting a duplicate on one branch fails with
+  `DocumentIdAlreadyExists`. The same claim added on two branches fails at merge as a cardinality conflict
+  on its statement, which the merge queue already translates. In that case the conflict means two editors
+  proposed the same claim with different wording, and resolving it is choosing the wording.
 
 ## Grounding
 
@@ -107,18 +121,38 @@ grounding exists to support one specific claim and is meaningless detached from 
 | --- | --- | --- |
 | `type` | Citation or Argument | Sourcing and Citation Policy |
 | `source` | text/reference | Citation only: what states the claim |
-| `premises` | ordered list, each itself grounded by a citation or a sub-argument | Argument only; recursive, and the leaves of the recursion must be citations |
-| `ungrounded_premises` | list, always shown, never averaged into a score | Argument only |
-| `reviews` | list of Review objects | both types, reviewed to the same standard |
+| `premises` | ordered sequence (a List, see below), each itself grounded by a citation or a sub-argument | Argument only; recursive, and the leaves of the recursion must be citations |
+| `ungrounded_premises` | derived: the premises with no grounding, always shown, never averaged into a score | Argument only |
+| `reviews` | set of Review sub-documents | both types, reviewed to the same standard |
 
-Nesting groundings inside the claim has a cost that the prototype has not yet measured. Two editors
-appending to the same nested list at once might collide even though they touch different entries. The
-schema offers `Set`, `List`, and `Array` collection types, and the documentation says nothing about how
-concurrent appends to each merge, so the choice of type matters and is untested. Two storage options are
-also documented and undecided: an embedded sub-document, owned by its parent and not independently
-updatable, and a shared document type (added in server 12.0.6) with its own identifier that several
-parents can reference. Which suits groundings and objections depends on the collection test and on
-whether they ever need to be edited or referenced independently.
+Nesting groundings inside the claim was tested, because two editors appending to the same nested
+collection at once might collide even though they touch different entries. The collection type decides
+the outcome.
+
+| Type | Two branches each append a different entry | Outcome |
+| --- | --- | --- |
+| `Set` | Both land | Both entries survive |
+| `List` | Second merge fails | A cardinality conflict, reported like any same-field collision |
+| `Array` | Both land | **Silently wrong:** the result was the base entry twice plus both additions, which neither branch wrote |
+
+A `Set` of sub-documents, each keyed by a hash of its value, behaved the same way as a `Set` of strings:
+both appends survived and nothing was duplicated.
+
+- **Groundings, objections, and reviews are Sets of sub-documents nested in the claim.** They are
+  independent entries with no order, so concurrent additions merging is what is wanted. Nothing tested
+  needed them to be separate documents, so the embedded form is enough.
+- **`Array` is never used,** because it fails without any error.
+- **Premises are ordered, and a Set has no order.** The two options are a `List`, where concurrent edits to
+  one argument's chain conflict, or a Set with an explicit position field on each premise. The leaning is
+  `List`. A deductive chain is one author's structure, and two editors changing it at once should be
+  stopped and shown the collision, because inserting or reordering a step changes what a reviewer attested
+  to.
+- **Not yet tested:** two branches editing the same sub-document, reviews nested one level deeper inside a
+  grounding, and a `List` of sub-documents for premises.
+
+The shared document type (added in server 12.0.6), with its own identifier that several parents can
+reference, remains documented and unused. It becomes relevant only if a grounding ever needs to be edited
+or referenced independently of its claim.
 
 ## Review
 
@@ -133,11 +167,13 @@ whether they ever need to be edited or referenced independently.
 specific version of the grounding reviewed" without saying how a version is named. The obvious answer is
 the commit that created it. The prototype showed that is unsafe: landing a branch replays it onto main,
 and the branch's own commits are rewritten (in the second run, 194 of 196 commit IDs survived, which
-matches the branch's two own commits being the ones changed). Nor is there a merge operation that avoids
+matches the branch's two own commits being the ones changed, and in the third run none of the branch's two
+own commits could be found on main after landing). Nor is there a merge operation that avoids
 this: the server's version-control operations are rebase, which replays commits, and apply, which
-squashes them. A rebase does return a report mapping each replayed commit to the commit IDs it became,
-so a commit-based binding could in principle be kept current, but that couples reviews to the store's
-internal bookkeeping. A hash of the grounding's formal structure is stable across rebases and also lines
+squashes them. A rebase is documented to return a report mapping each replayed commit to the commit IDs it
+became, so a commit-based binding could in principle be kept current, but in the third run that report
+came back empty for a replay that had plainly rewritten commits, and relying on it would couple reviews to
+the store's internal bookkeeping in any case. A hash of the grounding's formal structure is stable across rebases and also lines
 up with the Sourcing policy's rule that a substantive change is computed from the difference, since two
 versions with the same hash have no difference. Which fields go into the hash is settled by the planned
 Argument Page Format policy.
@@ -165,12 +201,15 @@ what the validation gate has to be written to catch.
 | No dangling edge after concurrent delete and add | Yes | The merge failed and main stayed consistent |
 | No cycles among logical-necessity edges | **No** | Two independently added edges formed a cycle and both merged |
 | No self-loops | **No** | A self-loop edge was accepted |
-| No duplicate claims | **No, under random keys** | Two identical claims were accepted; a deterministic key might change this (see above) |
-| At most one logical-necessity edge per pair | **Unknown** | Both attempts to test it hit a server error before they could answer |
-| At most one historical-attestation edge per pair per origin | **Not tested** | |
+| No duplicate claims | **Yes, under the composite edge key** (no under random keys) | Under random keys two identical claims were accepted. Under the key, a second is rejected with `DocumentIdAlreadyExists` |
+| At most one logical-necessity edge per pair | **Yes, under the composite edge key** (no under random keys) | Under random keys, two such edges merged. Under the key, the second insert is rejected, and the same claim added on two branches conflicts at merge |
+| At most one historical-attestation edge per pair per origin | **Yes, under the composite edge key** | A second claim repeating an origin was rejected, and different origins were accepted |
+| `origin` empty on logical-necessity edges | **No** | The key accepts any origin value, so a logical-necessity edge given an origin would escape the one-per-pair rule |
+| A bare-basis edge alongside a basis-specific edge on one pair | **No** | The two have different keys, so both are accepted |
 
-Everything in the "No" and "Unknown" rows belongs to the validation gate, which is consistent with what
-Governance and Moderation already assumed.
+Everything in the "No" rows belongs to the validation gate, which is consistent with what Governance and
+Moderation already assumed. The multiplicity rules no longer need the gate, since the edge key enforces
+them.
 
 ## Clusters are not stored as graph entities
 
@@ -193,8 +232,8 @@ inside it, which [Prose Merging](prose-merging.md) addresses in the application.
 
 ## What this essay does not decide
 
-- The literal TerminusDB JSON-LD schema declarations (types, key strategies, and so on). That is an
-  implementation detail below the level of a policy essay, apart from the key question above.
+- The literal TerminusDB JSON-LD schema declarations. That is an implementation detail below the level
+  of a policy essay, apart from the key and collection-type positions above.
 - The internal schema of talk, policy, and argument pages. That belongs to Talk Pages and Argument
   Pages, still Open.
 - When and how computed fields like blast radius, status, and cluster membership are actually
@@ -215,14 +254,12 @@ inside it, which [Prose Merging](prose-merging.md) addresses in the application.
   revisiting if the answer turns out to be "one stage chain per origin."
 - **Redirect chains.** Whether a `redirect_target` may itself point to a redirected node, and how that
   resolves, is not specified.
-- **Deterministic keys.** Whether a key over an edge's immutable identity is workable: whether key
-  fields can be optional or references, and what editing one does. Untested, and the documentation is
-  silent.
-- **Collection fields under concurrent edits.** Whether two editors appending to `groundings` or
-  `objections` inside the same claim collide, and whether `Set`, `List`, or `Array` behaves differently.
-  If they collide, groundings and objections may need to become their own documents referencing the
-  claim, which would change this schema. This is the most important untested assumption behind
-  one-claim-per-document.
+- **Carrying reviews across a re-pointing.** A physical re-pointing of an edge is a new document, so its
+  reviews do not carry over. Whether a reviewer may re-attest across such a change in one action, as the
+  Sourcing policy allows for a small edit, and whether a display-time redirect should reset reviews at all,
+  belong to Governance and Moderation.
+- **Nested collections beyond the tested case.** Two branches editing the same sub-document, reviews nested
+  inside a grounding, and a `List` of sub-documents for premises have not been tested.
 - **Whether one-claim-per-document holds up under real editing load.** Supported in the prototype's
   small simulated tests. Shared with Editing Model's own open questions.
 - **Block storage for long-form content.** If [Prose Merging](prose-merging.md)'s deferred option is

@@ -106,12 +106,16 @@ repeated runs with and without the sync step. The database questions are answere
   edited in place, so changing one is a new document. Nodes keep random keys.
 - **Groundings and objections are Sets** of sub-documents nested in the claim. `List` conflicts on
   concurrent appends and `Array` silently corrupts, so `Array` is never used.
-- **The store still misses** cycles, self-loops, and an origin set on a logical-necessity edge, so the
-  validation gate is required.
+- **The store still misses** cycles, self-loops, an origin set on a logical-necessity edge, and an edge that
+  lands on main after another branch deleted its target (replaying the deletion onto the edge branch fails,
+  but the reverse replay succeeds), so the validation gate is required.
 - **Native prose merge fails**, hence the application-level merge.
 - **Reviews bind to a content hash**, because rebase rewrites a branch's own commit IDs.
 
-Still untested or unbuilt: the merge queue, apply as a three-way merge, reading a document at a past
+The merge queue (`src/db/merge-queue.ts`) lands each edit through a staging branch and the gate
+(`src/db/validation-gate.ts`), so main only moves to a state that passed. Live runs passed concurrent
+landings, conflicts, the missing-branch check, and composite-key duplicates. Still untested or unbuilt: the
+staged refusal of a dangling edge and of a cycle against the live server, apply as a three-way merge, reading a document at a past
 commit, nested collections beyond the tested case, and the application-level prose merge. The full list is
 the "Prototype test backlog" in `wiki/tech/tech-index.md`.
 
@@ -125,9 +129,11 @@ where cluster governance lives.
 wiki/policy/      policy essays, plus essay-index.md
 wiki/tech/        tech essays, plus tech-index.md
 src/config.ts     env-based settings
-src/db/           client factory, rebase helper, commit-log helper
+src/db/           client factory, rebase helper, commit-log helper, merge queue, staged landing,
+                  validation gate
 src/schema/       Node/Edge schema transcribed from Data Model
-src/scripts/      init-db, reset-db, concurrent-suite (50 scenarios)
+src/scripts/      init-db, reset-db, concurrent-suite (50 scenarios), merge-queue-test and
+                  validation-gate-test (no server needed), merge-queue-live (needs the server)
 tools/            run-experiments.js, gen_openapi_md.py
 ```
 

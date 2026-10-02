@@ -1,5 +1,5 @@
 import { RebaseResult } from './rebase';
-import { getCommitLog } from './log';
+import { branchExists, getCommitLog } from './log';
 import { landViaStaging, ValidationFailure } from './staged-landing';
 import { Violation } from './validation-gate';
 
@@ -10,7 +10,7 @@ import { Violation } from './validation-gate';
  *
  *   - serializes landings (one in flight at a time),
  *   - spaces them (a minimum gap after the previous landing finishes),
- *   - checks the source branch exists first (a missing branch is a 500),
+ *   - checks the source branch exists first (using database branch metadata),
  *   - translates errors into a small closed set of outcomes,
  *   - retries transient failures with a growing pause and a cap,
  *   - never retries a conflict or an unrecognized error.
@@ -72,10 +72,7 @@ export interface QueueDeps {
 
 export const REAL_DEPS: QueueDeps = {
   land: (r) => landViaStaging(r),
-  // The log endpoint returns an error for a missing branch, and the helper
-  // maps any failure to null. A transient log failure therefore reads as
-  // "missing". An unambiguous existence check is still to be found.
-  branchExists: async (b) => (await getCommitLog(b, { count: 1 })) !== null,
+  branchExists: (b) => branchExists(b),
   sleep: (ms) => new Promise((res) => setTimeout(res, ms)),
   now: () => Date.now(),
 };

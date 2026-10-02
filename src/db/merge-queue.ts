@@ -124,7 +124,18 @@ export class MergeQueue {
     try {
       while (this.jobs.length > 0) {
         const job = this.jobs.shift()!;
-        job.resolve(await this.process(job.req));
+        try {
+          job.resolve(await this.process(job.req));
+        } catch (err) {
+          // Anything that escapes process() must still settle the job and keep the queue moving.
+          job.resolve({
+            outcome: 'unrecognized',
+            attempts: 0,
+            request: job.req,
+            detail: bodyOf(err),
+            landMs: [],
+          });
+        }
       }
     } finally {
       this.running = false;
@@ -139,8 +150,25 @@ export class MergeQueue {
   private async process(req: LandingRequest): Promise<LandingResult> {
     const full = { targetBranch: 'main', ...req } as Required<LandingRequest>;
 
-    if (!(await this.deps.branchExists(full.sourceBranch))) {
-      return { outcome: 'missing_branch', attempts: 0, request: req, landMs: [] };
+    // Preflight. A failed check is retried like a transient landing failure if it was
+    // a 5xx, and otherwise surfaced. Either way no landing was attempted, so attempts is 0.
+    for (let tries = 1; ; tries++) {
+      try {
+        if (!(await this.deps.branchExists(full.sourceBranch))) {
+          return { outcome: 'missing_branch', attempts: 0, request: req, landMs: [] };
+        }
+        break;
+      } catch (err) {
+        const kind = translateError(err);
+        const detail = bodyOf(err);
+        if (kind !== 'transient') {
+          return { outcome: 'unrecognized', attempts: 0, request: req, detail, landMs: [] };
+        }
+        if (tries > this.opts.maxRetries) {
+          return { outcome: 'transient_failed', attempts: 0, request: req, detail, landMs: [] };
+        }
+        await this.deps.sleep(this.opts.retryBaseMs * 2 ** (tries - 1));
+      }
     }
 
     let attempts = 0;

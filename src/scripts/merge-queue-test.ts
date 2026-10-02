@@ -93,6 +93,57 @@ async function main() {
     const r = await h.q.enqueue({ sourceBranch: 'a', message: 'm' });
     check('validation failure: reported with violations, not retried', r.outcome === 'validation_failed' && r.attempts === 1 && r.violations?.[0].check === 'dangling_edge');
   }
+  {
+    // Preflight failures: 5xx is retried with backoff, then lands.
+    let calls = 0;
+    const h = harness([]);
+    (h.q as any).deps.branchExists = async () => {
+      calls++;
+      if (calls <= 2) throw Object.assign(new Error('x'), { status: 503 });
+      return true;
+    };
+    const r = await h.q.enqueue({ sourceBranch: 'a', message: 'm' });
+    check('preflight 5xx: retried, then lands', r.outcome === 'landed' && calls === 3);
+    check('preflight 5xx: backoff pauses 500 then 1000', JSON.stringify(h.sleeps.slice(0, 2)) === '[500,1000]', JSON.stringify(h.sleeps));
+  }
+  {
+    // Preflight 5xx that never clears: gives up, never lands.
+    const h = harness([]);
+    (h.q as any).deps.branchExists = async () => {
+      throw Object.assign(new Error('x'), { status: 500 });
+    };
+    const r = await h.q.enqueue({ sourceBranch: 'a', message: 'm' });
+    check('preflight 5xx exhausted: transient_failed, land never called', r.outcome === 'transient_failed' && r.attempts === 0 && h.starts.length === 0);
+  }
+  {
+    // Preflight 401: surfaced, not retried, and the next job still runs.
+    let calls = 0;
+    const h = harness([]);
+    (h.q as any).deps.branchExists = async () => {
+      calls++;
+      if (calls === 1) throw Object.assign(new Error('x'), { status: 401 });
+      return true;
+    };
+    const [a, b] = await Promise.all([
+      h.q.enqueue({ sourceBranch: 'a', message: 'm' }),
+      h.q.enqueue({ sourceBranch: 'b', message: 'm' }),
+    ]);
+    check('preflight 401: unrecognized, not retried', a.outcome === 'unrecognized' && calls === 2 && h.sleeps.length === 0);
+    check('preflight 401: the next job still lands', b.outcome === 'landed');
+  }
+  {
+    // Something unexpected escapes process() (here, a throwing sleep during spacing):
+    // that job resolves as unrecognized and the queue keeps going.
+    let sleeps = 0;
+    const h = harness([]);
+    (h.q as any).deps.sleep = async () => {
+      sleeps++;
+      if (sleeps === 1) throw new Error('clock exploded');
+    };
+    const rs = await Promise.all(['a', 'b', 'c'].map((x) => h.q.enqueue({ sourceBranch: x, message: x })));
+    check('unexpected throw: that job resolves as unrecognized', rs[1].outcome === 'unrecognized' && /clock exploded/.test(rs[1].detail ?? ''));
+    check('unexpected throw: jobs before and after still land', rs[0].outcome === 'landed' && rs[2].outcome === 'landed');
+  }
   console.log(failures === 0 ? '\nAll passed.' : `\n${failures} failed.`);
   process.exit(failures === 0 ? 0 : 1);
 }

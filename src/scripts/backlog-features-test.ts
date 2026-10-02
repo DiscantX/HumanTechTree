@@ -90,18 +90,27 @@ async function testBranchExistsOffline() {
     try {
       await branchExists('feat');
     } catch (err: any) {
-      threw401 = err.message.includes('401');
+      threw401 = err.status === 401 && err.message.includes('401');
     }
-    check('branchExists throws error including status code on 401', threw401);
+    check('branchExists throws an error with status 401 and the code in its message', threw401);
 
     (axios.get as any) = async () => { throw new Error('ECONNREFUSED'); };
     let threwNetwork = false;
     try {
       await branchExists('feat');
     } catch (err: any) {
-      threwNetwork = Boolean(err);
+      threwNetwork = Boolean(err) && err.status === undefined;
     }
-    check('branchExists throws error on network error', threwNetwork);
+    check('branchExists throws on a network error, with no status set', threwNetwork);
+
+    (axios.get as any) = async () => ({ status: 503, data: {} });
+    let status503: number | undefined;
+    try {
+      await branchExists('feat');
+    } catch (err: any) {
+      status503 = err.status;
+    }
+    check('branchExists carries status 503 so callers can classify it as transient', status503 === 503);
   } finally {
     axios.get = originalGet;
   }

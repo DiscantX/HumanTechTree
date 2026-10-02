@@ -306,7 +306,8 @@ natural place for that gate to sit.
 
 ## Tests not yet run
 
-The full backlog is in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
+The full list is tracked as [repository issues](https://github.com/DiscantX/HumanTechTree/issues), and the
+settled results are in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
 this essay are a test of apply with an explicit merge base, a check of what a conflicting rebase returns
 through the client in full, the staged-landing queue against the live database (the first live run covered
 concurrent landings, conflicts, the missing-branch check, and duplicate claims, while forced server failures

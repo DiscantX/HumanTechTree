@@ -116,8 +116,8 @@ The merge queue (`src/db/merge-queue.ts`) lands each edit through a staging bran
 (`src/db/validation-gate.ts`), so main only moves to a state that passed. Live runs passed concurrent
 landings, conflicts, the missing-branch check, and composite-key duplicates. Still untested or unbuilt: the
 staged refusal of a dangling edge and of a cycle against the live server, apply as a three-way merge, reading a document at a past
-commit, nested collections beyond the tested case, and the application-level prose merge. The full list is
-the "Prototype test backlog" in `wiki/tech/tech-index.md`.
+commit, nested collections beyond the tested case, and the application-level prose merge. The full list is tracked as
+GitHub issues in the repo; the settled results are in the "Prototype test backlog" in `wiki/tech/tech-index.md`.
 
 Cross-cutting policy questions still open: redirects versus reviewed claims, reviewer eligibility and
 permission tiers, multi-origin subjects with stage chains, mere-influence sub-kinds, a two-layer floor, and

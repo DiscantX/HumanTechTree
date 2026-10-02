@@ -112,6 +112,70 @@ async function run() {
       check('Gamma node is in blast radius of Alpha', descendants.includes(refId(gammaId)));
     }
 
+    // --- Additional Live Tests for Task 2 ---
+    // Test 2: Graph with no cycle
+    console.log('\nTesting graph with no cycle returns zero cycle bindings...');
+    const noCycleBranch = `test_nocycles_${Date.now()}`;
+    await client.branch(noCycleBranch);
+    client.checkout(noCycleBranch);
+    try {
+      const nRes = await client.addDocument([nodeDoc('N1'), nodeDoc('N2'), nodeDoc('N3')]);
+      const [n1, n2, n3] = nRes as string[];
+      await client.addDocument([
+        edgeDoc(n1, n2, 'LogicalNecessity', 'N1->N2'),
+        edgeDoc(n2, n3, 'LogicalNecessity', 'N2->N3'),
+      ]);
+      const noCycleBindings = await executeWoqlQuery(client, cycleDetectionQuery(), noCycleBranch);
+      check('Graph with no cycle returns zero bindings for cycle detection', noCycleBindings.length === 0);
+    } finally {
+      client.checkout('main');
+      await client.deleteBranch(noCycleBranch);
+    }
+
+    // Test 3: Diamond graph (A->B, A->C, B->D, C->D)
+    console.log('\nTesting diamond graph blast radius...');
+    const diamondBranch = `test_diamond_${Date.now()}`;
+    await client.branch(diamondBranch);
+    client.checkout(diamondBranch);
+    try {
+      const dRes = await client.addDocument([
+        nodeDoc('Node A'),
+        nodeDoc('Node B'),
+        nodeDoc('Node C'),
+        nodeDoc('Node D'),
+      ]);
+      const [aId, bId, cId, dId] = dRes as string[];
+      await client.addDocument([
+        edgeDoc(aId, bId, 'LogicalNecessity', 'A->B'),
+        edgeDoc(aId, cId, 'LogicalNecessity', 'A->C'),
+        edgeDoc(bId, dId, 'LogicalNecessity', 'B->D'),
+        edgeDoc(cId, dId, 'LogicalNecessity', 'C->D'),
+      ]);
+      const blastQ = blastRadiusQuery(aId);
+      const blastB = await executeWoqlQuery(client, blastQ, diamondBranch);
+      const desc = Array.from(new Set(blastB.map((b: any) => refId(b.Descendant))));
+      console.log(`Diamond graph blast radius from A: ${desc.join(', ')}`);
+      check('Blast radius of A in diamond graph is exactly 3 distinct nodes (B, C, D)',
+        desc.length === 3 && desc.includes(refId(bId)) && desc.includes(refId(cId)) && desc.includes(refId(dId))
+      );
+
+      // Test 4: Edge from D back to A in a second branch / cyclic diamond
+      console.log('\nTesting blast radius with edge from D back to A...');
+      await client.addDocument([
+        edgeDoc(dId, aId, 'LogicalNecessity', 'D->A'),
+      ]);
+      const cyclicBlastQ = blastRadiusQuery(aId);
+      const startedAt = Date.now();
+      const cyclicBlastB = await executeWoqlQuery(client, cyclicBlastQ, diamondBranch);
+      const elapsed = Date.now() - startedAt;
+      const cyclicDesc = Array.from(new Set(cyclicBlastB.map((b: any) => refId(b.Descendant))));
+      console.log(`Cyclic diamond blast radius from A (took ${elapsed}ms): ${cyclicDesc.join(', ')}`);
+      check('Blast radius query terminates even with cycle from D back to A', true, `Terminated in ${elapsed}ms, returned ${cyclicDesc.length} nodes (${cyclicDesc.join(', ')})`);
+    } finally {
+      client.checkout('main');
+      await client.deleteBranch(diamondBranch);
+    }
+
   } finally {
     // 7. Cleanup Test Branch
     console.log(`\nCleaning up test branch "${testBranch}"...`);

@@ -7,6 +7,7 @@
 
 import { branchExists, getCommitLog } from '../db/log';
 import { cycleDetectionQuery, blastRadiusQuery } from '../db/woql-queries';
+import axios from 'axios';
 
 let failures = 0;
 
@@ -71,6 +72,48 @@ check(
   typeof getCommitLog === 'function',
 );
 
-console.log('\n--- Test Result Summary ---');
-console.log(failures === 0 ? 'All backlog feature tests passed successfully.' : `${failures} test(s) failed.`);
-process.exit(failures === 0 ? 0 : 1);
+// 4. Validate branchExists error handling offline
+async function testBranchExistsOffline() {
+  const originalGet = axios.get;
+  try {
+    (axios.get as any) = async () => ({ status: 200, data: { branches: ['main', 'feat'] } });
+    check('branchExists returns true on 200 when branch present', await branchExists('feat') === true);
+
+    (axios.get as any) = async () => ({ status: 200, data: { branches: ['main'] } });
+    check('branchExists returns false on 200 when branch absent', await branchExists('feat') === false);
+
+    (axios.get as any) = async () => ({ status: 404, data: {} });
+    check('branchExists returns false on 404', await branchExists('feat') === false);
+
+    (axios.get as any) = async () => ({ status: 401, data: {} });
+    let threw401 = false;
+    try {
+      await branchExists('feat');
+    } catch (err: any) {
+      threw401 = err.message.includes('401');
+    }
+    check('branchExists throws error including status code on 401', threw401);
+
+    (axios.get as any) = async () => { throw new Error('ECONNREFUSED'); };
+    let threwNetwork = false;
+    try {
+      await branchExists('feat');
+    } catch (err: any) {
+      threwNetwork = Boolean(err);
+    }
+    check('branchExists throws error on network error', threwNetwork);
+  } finally {
+    axios.get = originalGet;
+  }
+}
+
+testBranchExistsOffline()
+  .then(() => {
+    console.log('\n--- Test Result Summary ---');
+    console.log(failures === 0 ? 'All backlog feature tests passed successfully.' : `${failures} test(s) failed.`);
+    process.exit(failures === 0 ? 0 : 1);
+  })
+  .catch((err) => {
+    console.error('Test suite failed:', err);
+    process.exit(1);
+  });

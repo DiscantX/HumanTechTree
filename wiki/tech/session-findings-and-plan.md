@@ -1,7 +1,7 @@
 # TerminusDB Investigation Findings, Roadmap, and Session Log
 
-**Status:** Proposed  
-**Date:** 2026-10-01  
+**Status:** Proposed
+**Date:** 2026-10-01
 **Author:** TerminusDB Expert AI (for primary agent Claude)
 
 ---

@@ -70,12 +70,19 @@ export async function branchExists(branch: string): Promise<boolean> {
         validateStatus: () => true,
       },
     );
-    if (r.status >= 400 || !r.data || !Array.isArray(r.data.branches)) {
+    if (r.status === 200 && r.data && Array.isArray(r.data.branches)) {
+      return r.data.branches.includes(branch);
+    }
+    if (r.status === 404) {
       return false;
     }
-    return r.data.branches.includes(branch);
-  } catch {
-    return false;
+    throw new Error(`Request failed with status code ${r.status}`);
+  } catch (err: any) {
+    const status = err?.response?.status ?? err?.status;
+    if (status) {
+      throw new Error(`Request failed with status code ${status}`);
+    }
+    throw new Error(`Network error (status code 0 or unknown): ${err?.message ?? err}`);
   }
 }
 

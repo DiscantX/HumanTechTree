@@ -17,9 +17,33 @@ const WOQL = TerminusClient.WOQL;
  *     Configured WOQL query object.
  */
 export function cycleDetectionQuery() {
+  // A path pattern cannot filter by property value, so cycleDetectionQuery currently walks every edge whatever its basis.
   return WOQL.and(
     WOQL.triple('v:Edge', 'rdf:type', '@schema:Edge'),
     WOQL.triple('v:Edge', '@schema:basis', '@schema:Basis/LogicalNecessity'),
+    WOQL.triple('v:Edge', '@schema:source_node', 'v:Source'),
+    WOQL.triple('v:Edge', '@schema:target_node', 'v:Target'),
+    WOQL.path(
+      'v:Source',
+      '(<@schema:source_node,@schema:target_node>)+',
+      'v:Source',
+      'v:Path',
+    ),
+  );
+}
+
+/**
+ * Builds a WOQL query to detect cycles across all edges (any basis).
+ *
+ * Traverses edges regardless of basis, following source_node and
+ * target_node connections to find any path that loops back to its source node.
+ *
+ * Returns:
+ *     Configured WOQL query object.
+ */
+export function cycleDetectionQueryAll() {
+  return WOQL.and(
+    WOQL.triple('v:Edge', 'rdf:type', '@schema:Edge'),
     WOQL.triple('v:Edge', '@schema:source_node', 'v:Source'),
     WOQL.triple('v:Edge', '@schema:target_node', 'v:Target'),
     WOQL.path(

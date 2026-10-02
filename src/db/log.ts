@@ -48,42 +48,50 @@ export async function getCommitLog(
   }
 }
 
+/** Error thrown by branchExists. `status` is set for HTTP failures and absent for transport failures. */
+export class BranchCheckError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = 'BranchCheckError';
+    this.status = status;
+  }
+}
+
 /**
  * Checks unambiguously whether a branch exists by querying database metadata.
  *
- * Uses `GET /api/db/{org}/{db}?branches=true` per OpenAPI spec to avoid
- * log-based heuristics or 500 errors on missing branches.
+ * Uses `GET /api/db/{org}/{db}?branches=true`. The docs page branch-howto shows
+ * the response as `{"path": "...", "branches": [...]}`, which the OpenAPI schema
+ * does not describe.
  *
  * Args:
  *     branch: Name of the branch to check.
  *
  * Returns:
- *     True if the branch exists in the database, false otherwise.
+ *     True if the branch exists, false if it does not (including a 404 for the database).
+ *
+ * Raises:
+ *     BranchCheckError: With `status` set for any other HTTP status, or without
+ *         `status` when the request itself failed.
  */
 export async function branchExists(branch: string): Promise<boolean> {
+  let r;
   try {
-    const r = await axios.get(
-      `${config.endpoint}/api/db/${config.organization}/${config.db}`,
-      {
-        params: { branches: true },
-        auth: { username: config.user, password: config.key },
-        validateStatus: () => true,
-      },
-    );
-    if (r.status === 200 && r.data && Array.isArray(r.data.branches)) {
-      return r.data.branches.includes(branch);
-    }
-    if (r.status === 404) {
-      return false;
-    }
-    throw new Error(`Request failed with status code ${r.status}`);
+    r = await axios.get(`${config.endpoint}/api/db/${config.organization}/${config.db}`, {
+      params: { branches: true },
+      auth: { username: config.user, password: config.key },
+      validateStatus: () => true,
+    });
   } catch (err: any) {
-    const status = err?.response?.status ?? err?.status;
-    if (status) {
-      throw new Error(`Request failed with status code ${status}`);
-    }
-    throw new Error(`Network error (status code 0 or unknown): ${err?.message ?? err}`);
+    throw new BranchCheckError(`Branch check request failed: ${err?.message ?? err}`);
   }
+  if (r.status === 200 && r.data && Array.isArray(r.data.branches)) {
+    return r.data.branches.includes(branch);
+  }
+  if (r.status === 404) return false;
+  throw new BranchCheckError(`Branch check failed with status code ${r.status}`, r.status);
 }
 
 /** Commit identifiers for a branch, or null if the log is unavailable. */

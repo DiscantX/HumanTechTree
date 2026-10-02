@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "terminusdb": {
+      "command": "npx",
+      "args": [
+        "ts-node",
+        "src/mcp/index.ts"
+      ],
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}

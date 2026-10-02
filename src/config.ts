@@ -17,4 +17,9 @@ export const config = {
   key: readVar('TERMINUSDB_KEY', 'root'),
   organization: readVar('TERMINUSDB_ORG', 'admin'),
   db: readVar('TERMINUSDB_DB', 'tech_tree_dev'),
+  sshHost: readVar('SSH_HOST', 'localhost'),
+  sshPort: readVar('SSH_PORT', '22'),
+  sshUser: readVar('SSH_USER', 'root'),
+  sshPassword: process.env.SSH_PASSWORD,
+  sshKeyPath: process.env.SSH_KEY_PATH,
 };

@@ -7,6 +7,10 @@ import {
   handleReadCommitLog,
   handleFetchDocument,
   handleRunWoqlQuery,
+  handleContainerStatus,
+  handleLogTail,
+  handleTerminusDbVersion,
+  handleListPlugins,
 } from '../mcp/tools';
 
 /**
@@ -37,6 +41,38 @@ async function runMcpTests() {
     console.log('Cycle detection result bindings count:', cycles.length);
   } catch (err: any) {
     console.log('WOQL query note:', err.message);
+  }
+
+  console.log('\n5. Testing handleContainerStatus()...');
+  try {
+    const status = await handleContainerStatus();
+    console.log('Container status:', status);
+  } catch (err: any) {
+    console.log('Container status note:', err.message);
+  }
+
+  console.log('\n6. Testing handleLogTail()...');
+  try {
+    const logs = await handleLogTail({ lines: 5 });
+    console.log('Log tail (sample):', logs);
+  } catch (err: any) {
+    console.log('Log tail note:', err.message);
+  }
+
+  console.log('\n7. Testing handleTerminusDbVersion()...');
+  try {
+    const ver = await handleTerminusDbVersion();
+    console.log('TerminusDB version info:', ver);
+  } catch (err: any) {
+    console.log('TerminusDB version note:', err.message);
+  }
+
+  console.log('\n8. Testing handleListPlugins()...');
+  try {
+    const plugins = await handleListPlugins();
+    console.log('Plugins:', plugins);
+  } catch (err: any) {
+    console.log('Plugins note:', err.message);
   }
 
   console.log('\nAll MCP test handlers executed successfully.');

@@ -1,70 +1,93 @@
-# TerminusDB Upstream Bug Report & Concurrency Findings
+# TerminusDB 12.0.7: Rebase Landing Failures and Status-Code Mismatches
 
-**Status:** Proposed  
-**Target TerminusDB Version:** 12.0.7  
-**API Specification Version:** OpenAPI 12.0.5  
-**Evidence Source:** Prototype test suite ([`src/scripts/concurrent-suite.ts`](src/scripts/concurrent-suite.ts:1)) and execution runs recorded in [`wiki/tech/tech-index.md`](wiki/tech/tech-index.md:214).
+Draft upstream report. Not yet submitted. Every reproduction below must be re-run against the live
+server before filing, and the counts marked "recorded" come from the prototype's own test log, not from
+the minimal scripts.
 
----
+## Environment
+
+- TerminusDB server 12.0.7, Docker container, single node, default `admin` / `root`.
+- JavaScript client `terminusdb` 12.0.5.
+- API reference: `docs/openapi.yaml` (label 12.0.5).
 
 ## Summary
 
-This report documents four critical behavioral anomalies and specification discrepancies observed during concurrency and version-control stress testing of TerminusDB 12.0.7 for the Human Tech Tree Wiki project.
+Four issues, in rough order of impact:
 
----
+1. `POST /api/rebase/{path}` returns an HTTP 500 with no error detail when it runs shortly after another
+   landing on the same branch.
+2. Concurrent rebases onto one branch mostly fail with HTTP 500 rather than a retryable or conflict status.
+3. A request naming a branch that does not exist returns HTTP 500.
+4. Rebase replays an edge addition onto a state where its target document was deleted, and succeeds. The
+   reverse order is rejected.
 
-## Bug 1: Intermittent HTTP 500 on Sequential Rebase Landings
+## 1. HTTP 500 on a rebase right after another landing
 
-### Description
-When sequential rebase landings (`POST /api/rebase/{path}`) are executed against a single branch (`main`) with zero delay between requests, approximately 1 in 7 requests (14%) fails with an internal server error (HTTP 500) containing no descriptive error body or stack trace.
+**Observed.** About one in seven sequential replays that landed immediately after another landing returned
+HTTP 500 (recorded). With a one-second wait before each landing the count was zero. Fast-forwards never
+failed. Retrying after a pause always succeeded. The response carries only the status code and the server
+log adds nothing.
 
-### Minimal Reproduction
-```typescript
-for (let i = 0; i < 20; i++) {
-  const branch = `feature-${i}`;
-  await client.branch(branch);
-  client.checkout(branch);
-  await client.addDocument([/* valid node doc */]);
-  // Immediate rebase onto main without delay
-  await client.rebase({
-    rebase_from: `admin/tech_tree_dev/local/branch/${branch}`,
-    author: 'admin',
-    message: `Landing ${i}`
-  });
-}
-```
+**Minimal reproduction (to be confirmed).**
 
-### Workaround
-Introducing a minimum 1000ms delay (`minGapMs`) between landing operations reduces the failure rate to 0%.
+1. Create a database with the document class used by the prototype.
+2. Create branches `b1` and `b2` from `main`, and add one unrelated document on each.
+3. Check out `main`, then call `rebase` with `rebase_from` set to `b1`.
+4. Immediately, with no wait, call `rebase` with `rebase_from` set to `b2`.
+5. Repeat the cycle at least 20 times with fresh branches and count the 500s.
 
----
+**Expected.** Both rebases succeed, or the second returns a documented, retryable status.
 
-## Bug 2: High HTTP 500 Failure Rate on Parallel Branch Landings
+## 2. Parallel rebases onto one branch
 
-### Description
-When multiple branches attempt to land (rebase onto `main`) concurrently without serialization, 4 out of 5 requests fail with HTTP 500 internal server errors rather than returning a structured HTTP 409 conflict or optimistic concurrency retry response.
+**Observed.** With five rebases issued at once onto `main`, four failed with HTTP 500 in every run
+(recorded). The failure rate falls to zero when the calls are serialized.
 
-### Impact
-Forces the implementation of an application-level single-writer serialized merge queue ([`src/db/merge-queue.ts`](src/db/merge-queue.ts:1)).
+**Minimal reproduction (to be confirmed).** Create five branches with one unrelated commit each. Fire five
+`rebase` calls onto `main` together (`Promise.all`), one per branch. Count statuses.
 
----
+**Expected.** One landing wins and the others either queue or return a conflict-type status the client can
+retry on.
 
-## Bug 3: Missing Branch Error Code Mismatch (HTTP 500 vs HTTP 404)
+## 3. Missing branch returns 500
 
-### Description
-When attempting a rebase or commit log retrieval on a branch name that does not exist in the database, the server responds with HTTP 500 (`{"api:status": "An error occurred"}`).
+**Observed.** A request that names a nonexistent branch returns HTTP 500 with a generic error body
+(recorded).
 
-### Specification Violation
-The OpenAPI specification for TerminusDB explicitly defines HTTP 404 (`Not Found`) for non-existent branch or resource paths. Returning 500 conflates missing resources with server crashes.
+**What the spec says.** The wording matters here and an earlier draft overstated it.
 
----
+- `DELETE /branch/{path}` documents 404 "Branch not found".
+- `POST /rebase/{path}` and `GET /log/{path}` document 404 only as "Database not found".
 
-## Bug 4: Asymmetric Referential Integrity Validation in Rebase Replay
+So the spec does not promise 404 for a missing branch on rebase or log. The report should ask for a
+documented 404 (or 400) rather than claim the spec is violated.
 
-### Description
-During branch rebase replay:
-1. If Branch A deletes Node $N_1$, and Branch B adds Edge $E(N_1 \to N_2)$, replaying Branch B onto Branch A succeeds and inserts the dangling edge without raising a schema or foreign key violation during the rebase operation.
-2. Conversely, replaying the deletion of $N_1$ when an edge already references it correctly rejects with `instance_not_of_class`.
+**Minimal reproduction (to be confirmed).** `GET /api/log/admin/<db>/local/branch/does-not-exist`, and a
+`rebase` call with `rebase_from` pointing at a missing branch. Record the status and body for each.
 
-### Expected Behavior
-Rebase replay should validate referential integrity against the target branch's graph state and reject dangling edge creation.
+## 4. Rebase does not check replayed edits against the target's state
+
+**Observed.**
+
+- Branch A deletes node N1. Branch B adds an edge whose target is N1. When the history ends up with the
+  deletion first and the edge addition replayed after it, the rebase succeeds and leaves a dangling
+  reference.
+- When the edge exists first and the deletion is replayed after it, the rebase fails with
+  `instance_not_of_class`.
+
+**Documentation.** The OpenAPI description of rebase says only that it finds the most recent common commit
+and reapplies the source's commits, then the branch's. A search of the docs repository found no statement
+that a replayed commit is validated against the state it lands on. That silence is the finding: the
+behavior is neither documented nor ruled out.
+
+**Minimal reproduction.** Take the dangling-edge scenario from the prototype suite and reduce it to two
+nodes, one edge, and one deletion. Run it in both orders.
+
+**Expected.** Either the replay is rejected like the reverse order, or the docs state that referential
+integrity is not checked during replay.
+
+## What we would like
+
+- A structured error body and a retryable status for concurrent or back-to-back rebases.
+- A documented status for a missing branch.
+- A statement, or a fix, for how replayed commits are validated against the target state.

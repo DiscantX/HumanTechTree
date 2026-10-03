@@ -16,6 +16,7 @@
  *
  * Settings (environment):
  *   STRESS_VM_SSH        required. ssh target for the VM, e.g. user@192.168.56.101 or an ssh config alias
+ *   STRESS_SSH_CMD       optional ssh executable (default "ssh"); same idea as --ssh-cmd in tools/run-experiments.js
  *   STRESS_SSH_OPTS      optional extra ssh options, e.g. "-i C:/keys/vm_key -p 2222" (no spaces inside values)
  *                        Use a normal login key, NOT the read-only forced-command key used by the MCP server.
  *   STRESS_DOCKER        docker command in the VM (default "docker"; use "sudo docker" if needed, passwordless)
@@ -29,13 +30,20 @@
 import axios from 'axios';
 import { execFileSync, spawn } from 'child_process';
 import * as fs from 'fs';
+import * as http from 'http';
+import * as https from 'https';
 import * as path from 'path';
 
 import { config } from '../config';
 import { createClient } from '../db/client';
 
+// One connection per request, as in the suite: pooled keep-alive sockets can go stale between calls.
+(http.globalAgent as any).keepAlive = false;
+(https.globalAgent as any).keepAlive = false;
+
 const args = new Set(process.argv.slice(2));
 const VM = process.env.STRESS_VM_SSH;
+const SSH_CMD = process.env.STRESS_SSH_CMD ?? 'ssh';
 const SSH_OPTS = (process.env.STRESS_SSH_OPTS ?? '').split(/\s+/).filter(Boolean);
 const DOCKER = process.env.STRESS_DOCKER ?? 'docker';
 const CONTAINER = process.env.STRESS_CONTAINER ?? 'terminus-db';
@@ -50,10 +58,12 @@ const MIN_FREE_KB_WARN = 5 * 1024 * 1024;
 
 // ---------- ssh helpers ----------
 
-const SSH_BASE = ['-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', ...SSH_OPTS];
+// No -o ConnectTimeout: Windows OpenSSH 8.6 fails with "Connection to UNKNOWN port -1" when it is set
+// (same finding as tools/run-experiments.js). The execFileSync timeout below bounds a hung connection instead.
+const SSH_BASE = [...SSH_OPTS, '-o', 'BatchMode=yes'];
 
 function remote(cmd: string): string {
-  return execFileSync('ssh', [...SSH_BASE, VM as string, cmd], {
+  return execFileSync(SSH_CMD, [...SSH_BASE, VM as string, cmd], {
     encoding: 'utf8',
     timeout: 60000,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -62,7 +72,7 @@ function remote(cmd: string): string {
 
 /** The same ssh call as a single shell string, for the suite's STRESS_*_CMD hooks (no inner double quotes). */
 function sshString(cmd: string): string {
-  return `ssh ${SSH_BASE.join(' ')} ${VM} "${cmd}"`;
+  return `${SSH_CMD} ${SSH_BASE.join(' ')} ${VM} "${cmd}"`;
 }
 
 const memRemote = `${DOCKER} stats --no-stream --format {{.MemUsage}} ${CONTAINER}`;
@@ -111,14 +121,18 @@ async function preflight(): Promise<Preflight | null> {
   let version = 'unknown';
   try {
     const info = await axios.get(`${config.endpoint}/api/info`, { auth, timeout: 5000 });
-    const m = JSON.stringify(info.data).match(/"version"\s*:\s*"([^"]+)"/);
+    // Prefer a semantic version (12.0.7); a bare "version" field can be the API version (e.g. 2).
+    const text = JSON.stringify(info.data);
+    const m = text.match(/"version"\s*:\s*"(\d+\.\d+\.\d+[^"]*)"/) ?? text.match(/"version"\s*:\s*"([^"]+)"/);
     version = m ? m[1] : 'unknown';
+    if (!/\./.test(version)) warnings.push(`server version looks odd ("${version}"); check the full /api/info output`);
     console.log(`  ok    TerminusDB server reachable at ${config.endpoint}, version ${version}`);
   } catch (e: any) {
     console.log(`  FAIL  TerminusDB server not reachable at ${config.endpoint}: ${e?.message}`);
     failures.push('server reachable');
   }
 
+  console.log(`  info  ssh command: ${[SSH_CMD, ...SSH_BASE, VM].join(' ')}`);
   const sshOk = check(
     'ssh into the VM',
     () => {
@@ -222,6 +236,54 @@ async function stringProbe(): Promise<any[]> {
   return rows;
 }
 
+// ---------- subdocument id probe ----------
+
+/** Do two parents holding an identical ValueHash subdocument collide? Matters for the Data Model's groundings. */
+async function subdocProbe(): Promise<any[]> {
+  console.log('\n== Subdocument id probe ==');
+  const db = `${SCRATCH}_subdoc`;
+  const client = createClient();
+  try {
+    await client.deleteDatabase(db, config.organization);
+  } catch {
+    /* did not exist */
+  }
+  await client.createDatabase(db, { label: db, comment: 'subdoc probe', schema: true });
+  client.db(db);
+  await client.addDocument(
+    [
+      { '@type': '@context', '@base': 'terminusdb:///data/', '@schema': 'terminusdb:///schema#' },
+      { '@type': 'Class', '@id': 'G', '@subdocument': [], '@key': { '@type': 'ValueHash' }, text: 'xsd:string' },
+      { '@type': 'Class', '@id': 'Holder', '@key': { '@type': 'Random' }, name: 'xsd:string', gs: { '@type': 'Set', '@class': 'G' } },
+    ],
+    { graph_type: 'schema', full_replace: true },
+  );
+  const holder = (name: string) => ({ '@type': 'Holder', name, gs: [{ '@type': 'G', text: 'same text' }] });
+  const rows: any[] = [];
+  const attempt = async (label: string, fn: () => Promise<any>) => {
+    try {
+      await fn();
+      rows.push({ label, ok: true });
+      console.log(`  ${label}: accepted`);
+    } catch (e: any) {
+      const error = String(e?.message ?? e).slice(0, 160);
+      rows.push({ label, ok: false, error });
+      console.log(`  ${label}: rejected (${error})`);
+    }
+  };
+  await attempt('two holders, identical subdocument, one request', () => client.addDocument([holder('h1'), holder('h2')]));
+  await attempt('two more holders, identical subdocument, separate requests', async () => {
+    await client.addDocument(holder('h3'));
+    await client.addDocument(holder('h4'));
+  });
+  try {
+    await client.deleteDatabase(db, config.organization);
+  } catch {
+    /* ignore */
+  }
+  return rows;
+}
+
 // ---------- suite runner and checks ----------
 
 function runSuite(extraEnv: Record<string, string>): Promise<number> {
@@ -256,7 +318,7 @@ export function validateSmoke(results: any): { problems: string[]; notes: string
       continue;
     }
     for (const s of v.steps) {
-      for (const k of ['lookup', 'edgesOf', 'blastRadius', 'smallEdit']) {
+      for (const k of ['lookup', 'edgesOf', 'blastRadius', 'blastRadiusNoPath', 'smallEdit']) {
         const q = s.queries?.[k];
         if (!q || q.errors > 0 || q.median == null) problems.push(`variant ${name}: query "${k}" failed (${q?.firstError ?? 'no data'})`);
       }
@@ -301,9 +363,9 @@ export function estimateMinutes(smoke: any, smokeNodes: number, fullNodes: numbe
 
 const num = (s: any) => (typeof s === 'string' ? parseInt(s, 10) : NaN);
 const f = (x: any) => (x == null ? '-' : String(x));
-const q = (o: any) => (o ? `${f(o.median)}/${f(o.p95)}${o.errors ? ` (${o.errors} err)` : ''}` : '-');
+const q = (o: any) => (o?.skipped ? 'skipped' : o ? `${o.median == null ? '-' : `${f(o.median)}/${f(o.p95)}`}${o.errors ? ` (${o.timedOut ? 'timeout' : 'error'})` : ''}` : '-');
 
-function summarize(results: any, pre: Preflight, probe: any[] | null): string {
+function summarize(results: any, pre: Preflight, probe: any[] | null, subdoc: any[] | null = null): string {
   const L: string[] = [];
   L.push(`# Stress run summary: ${results.label}`, '');
   L.push(`- Server: TerminusDB ${pre.version}`);
@@ -315,10 +377,10 @@ function summarize(results: any, pre: Preflight, probe: any[] | null): string {
     L.push(`## Variant ${name}`, '');
     if (v.fatal) L.push(`FAILED: ${v.fatal}`, '');
     if (v.steps?.length) {
-      L.push('| Nodes | Load s | Lookup | Edges-into-node | Blast radius | Small edit | Memory | Disk KB | Cold ready ms |');
-      L.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+      L.push('| Nodes | Load s | Lookup | Edges-into-node | Blast radius | Blast (no path) | Small edit | Memory | Disk KB | Cold ready ms |');
+      L.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
       for (const s of v.steps) {
-        L.push(`| ${s.nodes} | ${f(s.loadSec?.toFixed?.(1))} | ${q(s.queries?.lookup)} | ${q(s.queries?.edgesOf)} | ${q(s.queries?.blastRadius)} | ${q(s.queries?.smallEdit)} | ${f(s.memory)} | ${f(num(s.disk))} | ${f(s.cold?.readyMs)} |`);
+        L.push(`| ${s.nodes} | ${f(s.loadSec?.toFixed?.(1))} | ${q(s.queries?.lookup)} | ${q(s.queries?.edgesOf)} | ${q(s.queries?.blastRadius)} | ${q(s.queries?.blastRadiusNoPath)} | ${q(s.queries?.smallEdit)} | ${f(s.memory)} | ${f(num(s.disk))} | ${f(s.cold?.readyMs)} |`);
       }
       L.push('');
     }
@@ -338,13 +400,18 @@ function summarize(results: any, pre: Preflight, probe: any[] | null): string {
     for (const r of probe) L.push(`- ${r.kb} KB: ${r.accepted ? `accepted${r.roundTrip ? '' : ' (length mismatch on read-back)'}` : `rejected: ${r.error}`}`);
     L.push('');
   }
+  if (subdoc) {
+    L.push('## Subdocument id probe', '');
+    for (const r of subdoc) L.push(`- ${r.label}: ${r.ok ? 'accepted' : `rejected: ${r.error}`}`);
+    L.push('');
+  }
   return L.join('\n');
 }
 
 // ---------- main ----------
 
 async function cleanup(): Promise<void> {
-  for (const v of ['a', 'b', 'c', 'd', 'probe']) {
+  for (const v of ['a', 'b', 'c', 'd', 'probe', 'subdoc']) {
     try {
       await axios.delete(`${config.endpoint}/api/db/${config.organization}/${SCRATCH}_${v}`, { auth, timeout: 60000 });
     } catch {
@@ -369,10 +436,16 @@ async function main() {
   const label = `v${pre.version}-baseline`;
 
   let probe: any[] | null = null;
+  let subdoc: any[] | null = null;
   try {
     probe = await stringProbe();
   } catch (e: any) {
     console.log(`  string probe could not run: ${e?.message}`);
+  }
+  try {
+    subdoc = await subdocProbe();
+  } catch (e: any) {
+    console.log(`  subdocument probe could not run: ${e?.message}`);
   }
 
   if (!args.has('--skip-smoke')) {
@@ -414,7 +487,7 @@ async function main() {
   const code = await runSuite({ STRESS_NODES: FULL_NODES, STRESS_LABEL: label, STRESS_OUT: fullOut, STRESS_VM_NOTES: pre.vmNotes });
   if (fs.existsSync(fullOut)) {
     const summaryFile = path.join(RESULTS, `summary-${label}-${stamp}.md`);
-    fs.writeFileSync(summaryFile, summarize(readJson(fullOut), pre, probe));
+    fs.writeFileSync(summaryFile, summarize(readJson(fullOut), pre, probe, subdoc));
     console.log(`\nSummary: ${summaryFile}\nRaw:     ${fullOut}`);
   }
   if (code !== 0) console.error(`The suite exited with code ${code}; partial results may exist.`);

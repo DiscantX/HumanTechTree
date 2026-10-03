@@ -18,6 +18,12 @@ import {
   handleReadCommitLog,
   handleFetchDocument,
   handleRunWoqlQuery,
+  handleContainerStatus,
+  handleLogTail,
+  handleListPlugins,
+  handleTerminusDbVersion,
+  handleRestartContainer,
+  handleCopyPlugin,
 } from './tools';
 
 /**
@@ -111,6 +117,69 @@ async function main() {
             required: ['query_type'],
           },
         },
+        {
+          name: 'container_status',
+          description: 'Get status of the TerminusDB Docker container.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'log_tail',
+          description: 'Retrieve a bounded log tail from the TerminusDB Docker container.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              lines: {
+                type: 'number',
+                description: 'Number of lines to tail (default: 50).',
+              },
+            },
+          },
+        },
+        {
+          name: 'list_plugins',
+          description: 'List files in the TerminusDB plugins directory inside the container.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'terminusdb_version',
+          description: 'Get TerminusDB reported server version.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'restart_container',
+          description: 'Restart the TerminusDB Docker container.',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
+        {
+          name: 'copy_plugin',
+          description: 'Copy a plugin file from a repository path into the TerminusDB container.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              repo_path: {
+                type: 'string',
+                description: 'Path to the plugin file in the repository.',
+              },
+              container_path: {
+                type: 'string',
+                description: 'Destination path inside the container.',
+              },
+            },
+            required: ['repo_path', 'container_path'],
+          },
+        },
       ],
     };
   });
@@ -134,6 +203,24 @@ async function main() {
           break;
         case 'run_woql_query':
           result = await handleRunWoqlQuery(toolArgs as any);
+          break;
+        case 'container_status':
+          result = await handleContainerStatus();
+          break;
+        case 'log_tail':
+          result = await handleLogTail(toolArgs);
+          break;
+        case 'list_plugins':
+          result = await handleListPlugins();
+          break;
+        case 'terminusdb_version':
+          result = await handleTerminusDbVersion();
+          break;
+        case 'restart_container':
+          result = await handleRestartContainer();
+          break;
+        case 'copy_plugin':
+          result = await handleCopyPlugin(toolArgs as any);
           break;
         default:
           throw new Error(`Unknown tool: ${name}`);

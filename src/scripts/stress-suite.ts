@@ -19,6 +19,7 @@
  *   STRESS_RESTART_CMD  restarts the server (cold-start timing)
  *
  * Other settings (all optional): STRESS_NODES=1000,10000  STRESS_VARIANTS=A,B,C,D
+ * STRESS_BLAST=1 (0 skips blast radius)  STRESS_BLAST_TIMEOUT_MS=20000
  * STRESS_EDITS=500  STRESS_PROSE_BYTES=8192  STRESS_EDIT_PROSE_BYTES=20480
  * STRESS_BATCH=500  STRESS_REPS=20  STRESS_OPTIMIZE=1  STRESS_LABEL=...
  * STRESS_VM_NOTES=...  STRESS_OUT=results/name.json
@@ -28,11 +29,19 @@
 import axios from 'axios';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
+import * as http from 'http';
+import * as https from 'https';
 import * as path from 'path';
 
 import { config } from '../config';
 import { createClient } from '../db/client';
 import { blastRadiusQuery, executeWoqlQuery } from '../db/woql-queries';
+
+// One connection per request. Pooled keep-alive sockets sometimes go stale during the pauses between
+// measurements (shell calls over ssh, long history queries) and fail with "socket hang up". Latencies
+// therefore include connection setup, consistently across variants.
+(http.globalAgent as any).keepAlive = false;
+(https.globalAgent as any).keepAlive = false;
 
 const env = (k: string, d: string) => process.env[k] ?? d;
 const NODES = env('STRESS_NODES', '1000,10000').split(',').map((s) => parseInt(s, 10));
@@ -46,6 +55,8 @@ const DO_OPTIMIZE = env('STRESS_OPTIMIZE', '1') === '1';
 const CHECKPOINT = 50;
 const WINDOW = 200;
 const LABEL = env('STRESS_LABEL', '');
+const BLAST = env('STRESS_BLAST', '1') === '1';
+const BLAST_TIMEOUT_MS = parseInt(env('STRESS_BLAST_TIMEOUT_MS', '20000'), 10);
 
 if (config.db === 'tech_tree_dev') {
   console.error('Refusing to run: set TERMINUSDB_DB to a scratch name, not the prototype database.');
@@ -128,12 +139,22 @@ function claimDocs(i: number, ids: string[]): any[] {
       basis: logical ? 'LogicalNecessity' : 'HistoricalAttestation',
       ...(logical ? {} : { origin: `Region ${Math.floor(r() * 6)}` }),
       relationship_kind: KINDS[Math.floor(r() * KINDS.length)],
-      statement: prose(80, i * 3 + s),
-      groundings: [{ '@type': 'Grounding', kind: 'Citation', text: prose(160, s + 99) }],
-      reviews: [{ '@type': 'Review', reviewer: `user-${Math.floor(r() * 50)}`, verdict: 'Supports', content_hash: prose(64, s + 5).replace(/[^a-z]/g, 'x') }],
+      statement: prose(80, i * 100003 + s),
+      groundings: [{ '@type': 'Grounding', kind: 'Citation', text: prose(160, i * 100003 + s + 99) }],
+      reviews: [{ '@type': 'Review', reviewer: `user-${Math.floor(r() * 50)}`, verdict: 'Supports', content_hash: prose(64, i * 100003 + s + 5).replace(/[^a-z]/g, 'x') }],
     });
   }
   return docs;
+}
+
+/** Client-side duplicate counts for a batch of claims, to explain "same id multiple times" style errors. */
+function describeBatch(docs: any[]): string {
+  const dups = (xs: string[]) => xs.length - new Set(xs).size;
+  const keys = docs.map((d) => [d.source_node, d.target_node, d.basis, d.origin ?? ''].join('|'));
+  const g = docs.flatMap((d) => (d.groundings ?? []).map((x: any) => `${x.kind}|${x.text}`));
+  const r = docs.flatMap((d) => (d.reviews ?? []).map((x: any) => `${x.reviewer}|${x.verdict}|${x.content_hash}`));
+  const missing = docs.filter((d) => !d.source_node || !d.target_node).length;
+  return `batch of ${docs.length}: duplicate claim keys ${dups(keys)}, duplicate groundings ${dups(g)}, duplicate reviews ${dups(r)}, claims missing a node ref ${missing}`;
 }
 
 function schemaFor(variant: string): any[] {
@@ -216,6 +237,21 @@ async function repeat(n: number, fn: () => Promise<any>) {
   return { ...summarize(ms), errors: errors.length, firstError: errors[0] };
 }
 
+/** Like repeat, but stops at the first failure (a timeout means the server may still be busy). */
+async function repeatBounded(n: number, fn: () => Promise<any>, ms: number) {
+  const times: number[] = [];
+  let firstError: string | undefined;
+  for (let i = 0; i < n; i++) {
+    const r = await timed(() => withTimeout(fn(), ms));
+    if (r.error) {
+      firstError = r.error;
+      break;
+    }
+    times.push(r.ms);
+  }
+  return { ...summarize(times), errors: firstError ? 1 : 0, firstError, timedOut: !!firstError && /timeout/.test(firstError) };
+}
+
 async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`timeout ${ms}ms`)), ms))]);
 }
@@ -226,6 +262,27 @@ const logLatency = (db: string) =>
   timed(() =>
     axios.get(`${config.endpoint}/api/log/${dbPath(db)}/local/branch/main`, { params: { count: 10 }, auth }),
   );
+
+/**
+ * After a server restart, Node (19+) keeps pooled keep-alive sockets that now point at a dead
+ * process, so the next request fails with "socket hang up". Drop them, and retry resets once or twice.
+ */
+function dropPooledSockets(): void {
+  http.globalAgent.destroy();
+  https.globalAgent.destroy();
+}
+
+async function retryOnReset<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      const m = String(e?.message ?? e);
+      if (i >= tries || !/socket hang up|ECONNRESET|ECONNREFUSED/.test(m)) throw e;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+}
 
 async function waitReady(): Promise<void> {
   for (let i = 0; i < 120; i++) {
@@ -244,22 +301,38 @@ async function waitReady(): Promise<void> {
 async function measureQueries(client: any, db: string, ids: string[]) {
   const rand = rng(123);
   const pick = () => ids[Math.floor(rand() * ids.length)];
-  client.db(db).checkout('main');
+  client.db(db);
+  client.checkout('main');
   const lookup = await repeat(REPS, () => client.getDocument({ id: pick() }));
   const { WOQL } = require('terminusdb');
   const edgesOf = await repeat(REPS, () =>
     client.query(WOQL.triple('v:Claim', '@schema:target_node', pick())),
   );
   const early = [ids[0], ids[Math.min(5, ids.length - 1)], ids[Math.min(25, ids.length - 1)]];
-  const blast = await repeat(3, () =>
-    withTimeout(executeWoqlQuery(client, blastRadiusQuery(early[Math.floor(rand() * early.length)])), 120000),
-  );
+  // Blast radius is bounded: a client-side timeout does not stop the server, so after a timeout the
+  // server is restarted (when STRESS_RESTART_CMD is set) to kill the abandoned query before going on.
+  const pattern = '(<@schema:source_node,@schema:target_node>)+';
+  const noPathQuery = (iri: string) => WOQL.select('v:Descendant').distinct('v:Descendant').path(iri, pattern, 'v:Descendant');
+  const restartAfterTimeout = async () => {
+    const r = process.env.STRESS_RESTART_CMD;
+    if (!r) return;
+    sh(r);
+    await waitReady();
+    dropPooledSockets();
+  };
+  const bounded = async (build: (iri: string) => any) => {
+    const res = await repeatBounded(3, () => executeWoqlQuery(client, build(early[Math.floor(rand() * early.length)])), BLAST_TIMEOUT_MS);
+    if (res.timedOut) await restartAfterTimeout();
+    return res;
+  };
+  const blast = BLAST ? await bounded(blastRadiusQuery) : { skipped: true };
+  const blastNoPath = BLAST ? await bounded(noPathQuery) : { skipped: true };
   const edit = await repeat(REPS, async () => {
     const id = pick();
     const d = await client.getDocument({ id });
     await client.updateDocument({ ...d, description: `edited ${Math.random()}` }, {}, undefined, 'stress edit');
   });
-  return { lookup, edgesOf, blastRadius: blast, smallEdit: edit };
+  return { lookup, edgesOf, blastRadius: blast, blastRadiusNoPath: blastNoPath, smallEdit: edit };
 }
 
 async function runVariant(variant: string, results: any) {
@@ -303,7 +376,11 @@ async function runVariant(variant: string, results: any) {
       const cdocs: any[] = [];
       for (let i = start; i < end; i++) cdocs.push(...claimDocs(i, ids));
       if (cdocs.length) {
-        await client.addDocument(cdocs, {}, undefined, `claims ${start}-${end}`);
+        try {
+          await client.addDocument(cdocs, {}, undefined, `claims ${start}-${end}`);
+        } catch (e: any) {
+          throw new Error(`claims ${start}-${end} failed: ${String(e?.message ?? e).slice(0, 160)} | ${describeBatch(cdocs)}`);
+        }
         commits++;
       }
     }
@@ -318,12 +395,13 @@ async function runVariant(variant: string, results: any) {
       sh(restart);
       const t = Date.now();
       await waitReady();
-      const first = await timed(() => client.getDocument({ id: ids[0] }));
+      dropPooledSockets();
+      const first = await timed(() => retryOnReset(() => client.getDocument({ id: ids[0] })));
       step.cold = { readyMs: Date.now() - t, firstLookupMs: +first.ms.toFixed(1), error: first.error };
       step.memoryAfterRestart = mem();
     }
     out.steps.push(step);
-    console.log(`  step ${target}: lookup median ${(step.queries.lookup as any)?.median}ms, blast median ${(step.queries.blastRadius as any)?.median}ms`);
+    console.log(`  step ${target}: lookup median ${(step.queries.lookup as any)?.median}ms, blast median ${(step.queries.blastRadius as any)?.median ?? (step.queries.blastRadius as any)?.firstError ?? 'skipped'}, no-path ${(step.queries.blastRadiusNoPath as any)?.median ?? (step.queries.blastRadiusNoPath as any)?.firstError ?? 'skipped'}`);
   }
 
   // ----- edit growth -----
@@ -331,7 +409,7 @@ async function runVariant(variant: string, results: any) {
   const fieldId = ids[Math.min(1, ids.length - 1)];
   const proseNode = ids[0];
   let proseDocId = proseNode;
-  if (variant === 'D') proseDocId = (await client.getDocument({ id: proseNode })).prose_ref;
+  if (variant === 'D') proseDocId = (await retryOnReset(() => client.getDocument({ id: proseNode }))).prose_ref;
   const hasProse = variant !== 'A';
 
   async function editLoop(kind: 'prose' | 'field') {
@@ -399,7 +477,7 @@ async function main() {
     startedAt: new Date().toISOString(),
     vmNotes: process.env.STRESS_VM_NOTES ?? null,
     server: info.error ? info.error : (info.value as any)?.data,
-    settings: { NODES, VARIANTS, EDITS, PROSE_BYTES, EDIT_PROSE_BYTES, BATCH, REPS, DO_OPTIMIZE },
+    settings: { NODES, VARIANTS, EDITS, PROSE_BYTES, EDIT_PROSE_BYTES, BATCH, REPS, DO_OPTIMIZE, BLAST, BLAST_TIMEOUT_MS },
     variants: {},
   };
   const outFile = env('STRESS_OUT', path.join('results', `stress-${(LABEL || 'run').replace(/\W+/g, '-')}-${Date.now()}.json`));

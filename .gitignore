@@ -16,3 +16,7 @@ dist/
 
 # stress-suite raw output (commit only a summary)
 results/
+
+# Python
+*.pyc
+*.cpython-314.pyc

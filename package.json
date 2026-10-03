@@ -13,6 +13,7 @@
     "validation-gate-test": "ts-node src/scripts/validation-gate-test.ts",
     "backlog-features-test": "ts-node src/scripts/backlog-features-test.ts",
     "backlog-features-live": "ts-node src/scripts/backlog-features-live.ts",
+    "stress-run": "ts-node src/scripts/stress-run.ts",
     "repro-rebase": "ts-node src/scripts/repro-rebase.ts"
   },
   "dependencies": {

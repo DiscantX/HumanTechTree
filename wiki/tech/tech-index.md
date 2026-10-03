@@ -20,8 +20,8 @@ Architecture Overview, Database Choice, Editing Model, Data Model, and Prose Mer
 other tech essay is still Open. A prototype exists (`src/`) and its test suite has run in several rounds,
 including repeated runs with and without the sync step. Beyond the tests, the official documentation, the
 OpenAPI spec, and the client packages have been read against the essays, which changed several positions;
-those results are folded into the essays, and what remains untested is listed under "Prototype test
-backlog" below. The database questions that were open through the first rounds are now answered, and the
+those results are folded into the essays, and what remains untested is tracked as repository issues
+(see "Prototype test backlog" below). The database questions that were open through the first rounds are now answered, and the
 data layer is settled enough to build the application on. Drafting proceeds roughly in the order
 listed under "Suggested drafting order", since several later essays depend on positions taken in earlier
 ones.
@@ -197,7 +197,8 @@ each.
 The prototype's suite ran 37 scenarios twice, then, rewritten, ran the probe set once and the scenarios
 that had failed intermittently 20 times each with and without the sync step, followed by targeted runs on
 the server errors, composite keys, and collection appends. The results are folded into the essays. This
-section lists what those runs settled, so it is not repeated, and what remains.
+section lists what those runs settled, so it is not repeated. What remains untested or unbuilt is tracked
+as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repository rather than here.
 
 **Settled**
 
@@ -223,59 +224,6 @@ section lists what those runs settled, so it is not repeated, and what remains.
   composite key.
 - **Rebase and commit IDs.** A branch's own commits did not survive a rebase in the third round either, and
   the rebase report was empty.
-
-**Server and merge queue**
-
-1. **Report the server errors upstream.** Include the minimal reproduction (a replay landed immediately
-   after another landing on main), the parallel-landing result, the missing-branch 500, which
-   contradicts the spec's 404, and the dangling-edge landing, which is reported as a valid commit although the
-   reverse replay is rejected.
-2. **Server version.** Retesting after an upgrade is not currently possible, since 12.0.7 is the latest
-   release. Confirm what the running server reports as its version, and check whether the specification's
-   12.0.5 label is simply behind.
-3. **The merge queue, live.** The queue, the staged landing, and the gate's first four checks are written, and
-   their logic is tested without a server. Live runs passed concurrent landings, same-field conflicts,
-   fresh-branch resolution, the missing-branch check, and composite-key duplicates. The refusal of a dangling
-   edge (Q3) and of an edge that closes a cycle (Q7) through the staged path are written but not yet run.
-   Still to test: forced server failures, the retry caps, the effect of staging on landing time, and a
-   growing database.
-
-**Merge semantics**
-
-4. **Apply as a merge.** Test apply with the target's current tip as `before` after main has moved, to see
-   whether it reverts newer changes, and, if a merge base can be obtained, with that base. Also
-   confirm what a conflicting rebase returns through the client, in full.
-5. **Nested collections beyond the tested case.** Two branches editing the same sub-document, reviews
-   nested inside a grounding, and a `List` of sub-documents for an argument's premises.
-6. **Fractional-position block inserts**, and **block edit against block delete**, for the deferred block
-   storage option (Prose Merging).
-
-**History**
-
-7. **Reading a document as of a past commit.** Documented, untested. Needed to fetch the merge base for
-   application-level prose merging, if the base is not stored with the editing session (Prose Merging).
-8. **The per-document history endpoint.** Reported to list the commits that touched a document; read what
-   it returns and whether it helps with review binding or with the base text.
-9. **Confirm that the commit-log helper is not paginated.** The rewritten suite asks for a large count,
-   but the server's limit is unchecked.
-
-**Harness fixes** (made in the rewritten suite; the scenarios that exercise them have not been run again)
-
-10. **Blast-radius check.** IDs are normalized before comparing.
-11. **Error classification.** The blocked delete of a node with dependents is still labeled as a
-    cardinality conflict; the rewritten test records its body so it can get its own label.
-12. **Commit counting.** Count only the branch's own commits when checking whether IDs survive a rebase.
-
-**Application-level work the tests point to**
-
-13. **A working three-way merge** with conflict regions on markdown, to exercise Prose Merging's
-    position on real text.
-14. **The validation gate's first checks.** Dangling edges, self-loops, logical-necessity cycles, and an origin
-    on a logical-necessity edge are written (`src/db/validation-gate.ts`) and tested on in-memory graphs. They
-    have yet to be run against a real branch.
-15. **WOQL path queries** for cycle detection and blast radius. Check the correct syntax for traversing
-    edges stored as documents, and compare with the client-side computation that already takes about
-    15 to 17 milliseconds at 300 nodes.
 
 ## What this page does not decide
 

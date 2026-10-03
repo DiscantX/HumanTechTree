@@ -18,7 +18,8 @@ from server import (
     search_qdrant_points,
     get_points,
     scroll_points,
-    count_points
+    count_points,
+    get_file_context
 )
 
 def run_all_tests():
@@ -46,7 +47,7 @@ def run_all_tests():
         print(f"    Distance Metric: {info['distance']}")
         assert info["points_count"] > 0, f"Collection {col_name} has 0 points"
         assert info["vector_size"] == 768, f"Expected 768d vector size, got {info['vector_size']}"
-        assert label in ["code", "docs", "unknown"], f"Unexpected label: {label}"
+        assert label in ["code", "docs", "mixed", "empty", "unknown"], f"Unexpected label: {label}"
 
     # 3. Test search_qdrant_points tool with raw vector and Ollama text query
     print("[3/5] Testing search_qdrant_points() with raw vector and Ollama text search:")
@@ -94,6 +95,19 @@ def run_all_tests():
         fetched = get_points(col, ids=sample_ids)
         assert len(fetched) == len(sample_ids), f"get_points expected {len(sample_ids)} points, got {len(fetched)}"
         print(f"  - get_points[{col}]: fetched IDs {sample_ids}")
+
+    # 5. Test get_file_context on a real file path taken from the index
+    print("[5/5] Testing get_file_context:")
+    for col_dict in collections:
+        col = col_dict["name"]
+        pts, _ = client.scroll(col, limit=1, with_payload=True)
+        path = (pts[0].payload or {}).get("filePath")
+        if not path:
+            continue
+        ctx = get_file_context(col, path)
+        starts = [c["startLine"] for c in ctx["chunks"]]
+        assert ctx["total_chunks"] > 0 and starts == sorted(starts), f"chunks not in line order for {path}"
+        print(f"  - get_file_context[{col}] {path}: {ctx['total_chunks']} chunks, first lines {starts[:5]}")
 
     print("\n=== ALL MCP TOOLS AND TESTS PASSED SUCCESSFULLY ===")
 

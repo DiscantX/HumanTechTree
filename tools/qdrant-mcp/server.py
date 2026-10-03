@@ -7,10 +7,11 @@ the local Qdrant vector database created and populated by ZooCode.
 
 import os
 import requests
+from collections import Counter
 from typing import Optional, Union, Any
 from mcp.server.fastmcp import FastMCP
 from qdrant_client import QdrantClient
-from qdrant_client.models import Filter, FieldCondition, MatchValue
+from qdrant_client.models import Filter, FieldCondition, MatchValue, MatchAny
 
 # Initialize FastMCP server
 mcp = FastMCP("Qdrant Local Reader")
@@ -82,38 +83,83 @@ def truncate_payload(payload: Any, max_len: Optional[int] = 500) -> Any:
     return payload
 
 
-def infer_collection_label(client: QdrantClient, collection_name: str) -> str:
-    """Infers whether a collection primarily contains 'code', 'docs', or 'unknown' by inspecting sample payloads."""
+PATH_KEYS = ("filePath", "path", "file")
+DOC_EXTS = (".md", ".txt", ".rst", ".doc", ".docx", ".pdf")
+CODE_EXTS = (".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go", ".c", ".cpp", ".h", ".java", ".sh")
+LABEL_SAMPLE_SIZE = 200
+LABEL_DOMINANCE = 0.8
+
+
+def payload_path(payload: Optional[dict]) -> str:
+    """Returns the file path stored in a point payload, or an empty string."""
+    for key in PATH_KEYS:
+        value = (payload or {}).get(key)
+        if value:
+            return str(value)
+    return ""
+
+
+def classify_path(file_path: str) -> str:
+    """Classifies one stored path as 'docs', 'code' or 'other', by extension only.
+
+    Extension is decisive: a markdown file under tools/ is still documentation.
+    """
+    p = file_path.replace("\\", "/").lower()
+    if p.endswith(DOC_EXTS):
+        return "docs"
+    if p.endswith(CODE_EXTS):
+        return "code"
+    return "other"
+
+
+def collection_composition(client: QdrantClient, collection_name: str) -> dict:
+    """Samples up to LABEL_SAMPLE_SIZE points and reports a label plus the sampled mix.
+
+    The label is 'code' or 'docs' when one kind makes up at least 80% of the classifiable
+    sample, 'mixed' otherwise, 'empty' for an empty collection and 'unknown' when no path
+    could be classified. The sample is in point-ID order (effectively random), not exhaustive.
+    """
     try:
-        pts, _ = client.scroll(collection_name=collection_name, limit=5, with_payload=True)
+        pts, _ = client.scroll(
+            collection_name=collection_name,
+            limit=LABEL_SAMPLE_SIZE,
+            with_payload=list(PATH_KEYS),
+            with_vectors=False,
+        )
         if not pts:
-            return "empty"
-        for pt in pts:
-            if not pt.payload:
-                continue
-            payload_str = str(pt.payload).lower()
-            file_path = str(
-                pt.payload.get("filePath") 
-                or pt.payload.get("path") 
-                or pt.payload.get("file") 
-                or ""
-            ).lower()
-            
-            if any(file_path.endswith(ext) for ext in [".ts", ".js", ".py", ".json", ".rs", ".go", ".c", ".cpp"]):
-                return "code"
-            if any(prefix in file_path for prefix in ["src/", "lib/", "tools/"]):
-                return "code"
-            if any(file_path.endswith(ext) for ext in [".md", ".txt", ".rst", ".doc", ".docx", ".pdf"]):
-                return "docs"
-            if any(prefix in file_path for prefix in ["wiki/", "docs/", "readme"]):
-                return "docs"
-            if "code" in payload_str or "function" in payload_str or "class" in payload_str:
-                return "code"
-            if "document" in payload_str or "section" in payload_str or "markdown" in payload_str:
-                return "docs"
-        return "unknown"
+            return {"label": "empty", "sampled": 0, "mix": {}}
+        counts = Counter(classify_path(payload_path(pt.payload)) for pt in pts)
+        mix = dict(counts)
+        classifiable = counts["code"] + counts["docs"]
+        if classifiable == 0:
+            return {"label": "unknown", "sampled": len(pts), "mix": mix}
+        top, n = max(("code", counts["code"]), ("docs", counts["docs"]), key=lambda kv: kv[1])
+        label = top if n / classifiable >= LABEL_DOMINANCE else "mixed"
+        return {"label": label, "sampled": len(pts), "mix": mix}
     except Exception:
-        return "unknown"
+        return {"label": "unknown", "sampled": 0, "mix": {}}
+
+
+def infer_collection_label(client: QdrantClient, collection_name: str) -> str:
+    """Infers 'code', 'docs', 'mixed', 'empty' or 'unknown' for a collection from a payload sample."""
+    return collection_composition(client, collection_name)["label"]
+
+
+def path_variants(value: str) -> list[str]:
+    """Both slash styles of a path. The indexer stores the platform's native form (backslashes on Windows)."""
+    forward = value.replace("\\", "/")
+    return list(dict.fromkeys([value, forward, forward.replace("/", "\\")]))
+
+
+def payload_filter(filter_key: Optional[str], filter_value: Optional[str]) -> Optional[Filter]:
+    """Exact-match payload filter. Path-like keys match either slash style."""
+    if not filter_key or filter_value is None:
+        return None
+    if filter_key in PATH_KEYS:
+        condition = FieldCondition(key=filter_key, match=MatchAny(any=path_variants(filter_value)))
+    else:
+        condition = FieldCondition(key=filter_key, match=MatchValue(value=filter_value))
+    return Filter(must=[condition])
 
 
 @mcp.tool()
@@ -121,17 +167,19 @@ def list_qdrant_collections() -> list[dict]:
     """List all vector collections available in the local Qdrant store with human-readable labels.
     
     Returns:
-        List of dictionaries containing collection name, label ('code'/'docs'), and point count.
+        List of dictionaries with collection name, label ('code', 'docs', 'mixed', 'empty' or 'unknown'),
+        the sampled file-type mix, and point count.
     """
     client = get_client()
     collections = client.get_collections()
     results = []
     for col in collections.collections:
         info = client.get_collection(col.name)
-        label = infer_collection_label(client, col.name)
+        comp = collection_composition(client, col.name)
         results.append({
             "name": col.name,
-            "label": label,
+            "label": comp["label"],
+            "composition": comp["mix"],
             "points_count": info.points_count
         })
     return results
@@ -145,7 +193,8 @@ def get_collection_info(collection_name: str) -> dict:
         collection_name: Name of the collection to inspect.
         
     Returns:
-        Dictionary containing vector size, distance metric, point count, and label ('code'/'docs').
+        Dictionary containing vector size, distance metric, point count, and label ('code', 'docs', 'mixed', 'empty' or 'unknown'),
+        and the sampled file-type mix.
     """
     client = get_client()
     info = client.get_collection(collection_name)
@@ -160,11 +209,12 @@ def get_collection_info(collection_name: str) -> dict:
             vector_size = {k: v.size for k, v in vectors_config.items()}
             distance = {k: str(v.distance) for k, v in vectors_config.items()}
 
-    label = infer_collection_label(client, collection_name)
+    comp = collection_composition(client, collection_name)
 
     return {
         "status": str(info.status),
-        "label": label,
+        "label": comp["label"],
+        "composition": comp["mix"],
         "points_count": info.points_count,
         "indexed_vectors_count": getattr(info, "indexed_vectors_count", 0),
         "vector_size": vector_size,
@@ -275,23 +325,15 @@ def scroll_points(
         limit: Number of points to return (default: 10).
         offset: Pagination offset cursor from previous scroll call.
         filter_key: Optional payload key to filter by (e.g., 'filePath').
-        filter_value: Optional payload string value to match.
+        filter_value: Optional payload string value to match. For path keys (filePath, path,
+            file) either slash style matches.
         truncate_length: Maximum length for text fields in payloads (default: 500).
         
     Returns:
         Dictionary with list of points and next_page_offset cursor.
     """
     client = get_client()
-    scroll_filter = None
-    if filter_key and filter_value is not None:
-        scroll_filter = Filter(
-            must=[
-                FieldCondition(
-                    key=filter_key,
-                    match=MatchValue(value=filter_value)
-                )
-            ]
-        )
+    scroll_filter = payload_filter(filter_key, filter_value)
 
     pts, next_offset = client.scroll(
         collection_name=collection_name,
@@ -331,16 +373,7 @@ def count_points(
         Dictionary containing 'count'.
     """
     client = get_client()
-    count_filter = None
-    if filter_key and filter_value is not None:
-        count_filter = Filter(
-            must=[
-                FieldCondition(
-                    key=filter_key,
-                    match=MatchValue(value=filter_value)
-                )
-            ]
-        )
+    count_filter = payload_filter(filter_key, filter_value)
 
     res = client.count(
         collection_name=collection_name,
@@ -349,6 +382,99 @@ def count_points(
     )
 
     return {"count": res.count}
+
+
+@mcp.tool()
+def get_file_context(
+    collection_name: str,
+    file_path: str,
+    line: Optional[int] = None,
+    context_lines: int = 30,
+    max_chars: int = 6000
+) -> dict:
+    """Returns the indexed chunks of one file in line order, optionally around a line.
+
+    The indexer stores small chunks, and scroll_points returns them in point-ID order. This tool
+    gathers every chunk of a file, sorts them by start line and returns a contiguous window, so
+    a search hit can be read in context without changing the shared index. Text is not truncated;
+    max_chars bounds the response instead.
+
+    Args:
+        collection_name: Name of the collection.
+        file_path: Stored path of the file. Forward or back slashes both match.
+        line: Optional line to centre on (for example a search hit's startLine). Omit to read
+            from the top of the file.
+        context_lines: Lines before and after `line` to include (default: 30). Ignored when
+            `line` is omitted.
+        max_chars: Maximum characters of chunk text to return (default: 6000).
+
+    Returns:
+        Dictionary with the chunks in line order (id, startLine, endLine, text), `gaps` (line
+        ranges inside the window that no chunk covers, so the indexer skipped them and the repo
+        file must be read for those lines), `total_chunks`, and, when the budget cut the window
+        short, `next_start_line` to continue from.
+    """
+    client = get_client()
+    flt = payload_filter("filePath", file_path)
+    found: list[Any] = []
+    offset = None
+    while len(found) < 5000:
+        pts, offset = client.scroll(
+            collection_name=collection_name,
+            limit=256,
+            offset=offset,
+            scroll_filter=flt,
+            with_payload=True,
+            with_vectors=False,
+        )
+        found.extend(pts)
+        if offset is None:
+            break
+
+    chunks = []
+    seen = set()
+    for pt in found:
+        pl = pt.payload or {}
+        start, end = pl.get("startLine"), pl.get("endLine")
+        text = pl.get("codeChunk") or pl.get("text") or pl.get("content") or ""
+        key = (start, end, pl.get("segmentHash") or text)
+        if start is None or end is None or key in seen:
+            continue
+        seen.add(key)
+        chunks.append({"id": pt.id, "startLine": start, "endLine": end, "text": text.replace("\r\n", "\n").replace("\r", "")})
+    chunks.sort(key=lambda c: (c["startLine"], c["endLine"]))
+
+    if not chunks:
+        return {
+            "file_path": file_path,
+            "total_chunks": 0,
+            "chunks": [],
+            "gaps": [],
+            "note": "No chunks found for this path. Use scroll_points without a filter to see how paths are stored.",
+        }
+
+    total = len(chunks)
+    if line is not None:
+        lo, hi = line - context_lines, line + context_lines
+        chunks = [c for c in chunks if c["endLine"] >= lo and c["startLine"] <= hi]
+
+    picked, used, next_start = [], 0, None
+    for c in chunks:
+        if picked and used + len(c["text"]) > max_chars:
+            next_start = c["startLine"]
+            break
+        picked.append(c)
+        used += len(c["text"])
+
+    gaps = [
+        {"from": a["endLine"] + 1, "to": b["startLine"] - 1}
+        for a, b in zip(picked, picked[1:])
+        if b["startLine"] > a["endLine"] + 1
+    ]
+    result = {"file_path": file_path, "total_chunks": total, "chunks": picked, "gaps": gaps}
+    if next_start is not None:
+        result["next_start_line"] = next_start
+    return result
 
 
 if __name__ == "__main__":

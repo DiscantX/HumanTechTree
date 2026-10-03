@@ -8,6 +8,14 @@
       ],
       "disabled": false,
       "alwaysAllow": []
+    },
+    "qdrant-reader": {
+      "command": "python",
+      "args": [
+        "tools/qdrant-mcp/server.py"
+      ],
+      "disabled": false,
+      "alwaysAllow": []
     }
   }
 }

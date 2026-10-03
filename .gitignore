@@ -13,3 +13,6 @@ node_modules/
 .env
 test-results/
 dist/
+
+# stress-suite raw output (commit only a summary)
+results/

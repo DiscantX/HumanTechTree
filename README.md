@@ -28,6 +28,7 @@ src/
     init-db.ts               # create the dev db (if needed) + push schema
     reset-db.ts              # delete the dev db entirely
     concurrent-suite.ts      # 50 comprehensive concurrency & conflict scenarios (live)
+    stress-suite.ts          # scale and edit-growth stress test on scratch databases (live; see header for env settings)
     merge-queue-test.ts      # merge queue logic with fake clock (no server needed)
     merge-queue-live.ts      # live merge queue tests (needs the server)
     validation-gate-test.ts  # validation gate checks (no server needed)

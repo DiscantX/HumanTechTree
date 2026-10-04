@@ -33,9 +33,9 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 
-import { config } from '../config';
-import { createClient } from '../db/client';
-import { blastRadiusQuery, executeWoqlQuery } from '../db/woql-queries';
+import { config } from '../../config';
+import { createClient } from '../../db/client';
+import { blastRadiusQuery, executeWoqlQuery } from '../../db/woql-queries';
 
 // One connection per request. Pooled keep-alive sockets sometimes go stale during the pauses between
 // measurements (shell calls over ssh, long history queries) and fail with "socket hang up". Latencies

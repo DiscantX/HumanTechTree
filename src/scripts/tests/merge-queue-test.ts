@@ -1,5 +1,5 @@
-import { MergeQueue, QueueDeps, QueueOptions } from '../db/merge-queue';
-import { ValidationFailure } from '../db/staged-landing';
+import { MergeQueue, QueueDeps, QueueOptions } from '../../db/merge-queue';
+import { ValidationFailure } from '../../db/staged-landing';
 
 /** Database-free tests of the queue's own logic, using a fake clock and fake landings. */
 let failures = 0;

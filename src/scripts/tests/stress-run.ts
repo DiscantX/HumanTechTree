@@ -34,8 +34,8 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 
-import { config } from '../config';
-import { createClient } from '../db/client';
+import { config } from '../../config';
+import { createClient } from '../../db/client';
 
 // One connection per request, as in the suite: pooled keep-alive sockets can go stale between calls.
 (http.globalAgent as any).keepAlive = false;

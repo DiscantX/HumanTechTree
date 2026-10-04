@@ -11,7 +11,7 @@ import {
   handleLogTail,
   handleTerminusDbVersion,
   handleListPlugins,
-} from '../mcp/tools';
+} from '../../mcp/tools';
 
 /**
  * Executes smoke tests against MCP tool handlers.

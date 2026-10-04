@@ -25,17 +25,18 @@ src/
   schema/
     graph-schema.ts      # Node/Edge schema transcribed from wiki/tech/data-model.md
   scripts/
-    init-db.ts               # create the dev db (if needed) + push schema
-    reset-db.ts              # delete the dev db entirely
-    concurrent-suite.ts      # 50 comprehensive concurrency & conflict scenarios (live)
-    stress-suite.ts          # scale and edit-growth stress test on scratch databases (live; see header for env settings)
-    merge-queue-test.ts      # merge queue logic with fake clock (no server needed)
-    merge-queue-live.ts      # live merge queue tests (needs the server)
-    validation-gate-test.ts  # validation gate checks (no server needed)
-    backlog-features-test.ts # query-building and preflight contracts (no server needed)
-    backlog-features-live.ts # branchExists, log pagination, WOQL path queries (live)
-    mcp-test.ts              # smoke test of the MCP tool handlers (live)
-    repro-rebase.ts          # repros for the upstream rebase/HTTP 500 behavior (live)
+    tests/
+      init-db.ts               # create the dev db (if needed) + push schema
+      reset-db.ts              # delete the dev db entirely
+      concurrent-suite.ts      # 50 comprehensive concurrency & conflict scenarios (live)
+      stress-suite.ts          # scale and edit-growth stress test on scratch databases (live; see header for env settings)
+      merge-queue-test.ts      # merge queue logic with fake clock (no server needed)
+      merge-queue-live.ts      # live merge queue tests (needs the server)
+      validation-gate-test.ts  # validation gate checks (no server needed)
+      backlog-features-test.ts # query-building and preflight contracts (no server needed)
+      backlog-features-live.ts # branchExists, log pagination, WOQL path queries (live)
+      mcp-test.ts              # smoke test of the MCP tool handlers (live)
+      repro-rebase.ts          # repros for the upstream rebase/HTTP 500 behavior (live)
 ```
 
 This shape is meant to survive into the real codebase: `config`, the

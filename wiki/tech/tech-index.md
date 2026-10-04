@@ -180,7 +180,7 @@ each.
 
 ## Prototype tooling
 
-- **The concurrency suite** (`src/scripts/concurrent-suite.ts`, 50 scenarios). Supports repeating
+- **The concurrency suite** (`src/scripts/tests/concurrent-suite.ts`, 50 scenarios). Supports repeating
   scenarios, running without the sync step, and failure-rate tables for rebase calls by stage; logs every
   error body with the failing commit the server reports; and includes probes for key strategies and for
   collection appends, plus Q1 (sequential rebases by pause length, selectable with `Q_N`, `Q_PAUSE_MS`,

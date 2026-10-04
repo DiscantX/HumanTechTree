@@ -1,6 +1,6 @@
-import { config } from '../config';
-import { createClient } from '../db/client';
-import { rebaseBranch } from '../db/rebase';
+import { config } from '../../config';
+import { createClient } from '../../db/client';
+import { rebaseBranch } from '../../db/rebase';
 import axios from 'axios';
 
 async function runRepros() {

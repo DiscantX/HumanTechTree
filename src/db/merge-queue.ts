@@ -1,5 +1,6 @@
 import { RebaseResult } from './rebase';
 import { branchExists, getCommitLog } from './log';
+import { InvalidBase } from './merge-base';
 import { landViaStaging, ValidationFailure } from './staged-landing';
 import { Violation } from './validation-gate';
 
@@ -24,6 +25,7 @@ export type LandingOutcome =
   | 'conflict' // two edits collided; resolve on a fresh branch
   | 'deleted_reference' // a node this edit refers to was deleted
   | 'validation_failed' // landed on staging but the gate blocked it; main unchanged
+  | 'invalid_base' // a recorded merge base is not on the source branch; refused, nothing changed
   | 'missing_branch' // source branch does not exist (preflight)
   | 'transient_failed' // 5xx persisted through every retry
   | 'unrecognized'; // surfaced, never retried
@@ -52,6 +54,8 @@ export interface LandingResult {
   detail?: string;
   /** Set when outcome is 'validation_failed'. */
   violations?: Violation[];
+  /** Set when the landing halted for a reason a person has to act on: why it failed and how to proceed. */
+  guidance?: string;
 }
 
 export interface QueueOptions {
@@ -95,6 +99,7 @@ function bodyOf(err: any): string {
 /** Map a thrown rebase error to a queue outcome, or 'transient'. */
 export function translateError(err: any): LandingOutcome | 'transient' {
   if (err instanceof ValidationFailure) return 'validation_failed';
+  if (err instanceof InvalidBase) return 'invalid_base';
   const status = err?.status ?? err?.response?.status;
   const body = bodyOf(err);
   if (/cardinality|subject_has_no_type/i.test(body)) return 'conflict';
@@ -238,6 +243,7 @@ export class MergeQueue {
             detail,
             landMs,
             violations: err instanceof ValidationFailure ? err.violations : undefined,
+            guidance: err instanceof InvalidBase ? err.guidance : undefined,
           };
         }
         if (attempts > this.opts.maxRetries) {

@@ -12,7 +12,9 @@ import { MergeQueue, APPLY_DEPS, APPLY_OPTIONS, LandingResult } from '../../db/m
  *
  *   B1  a landing with a recorded base gives the same result as one with a derived base
  *   B2  the recorded base is on the branch, and a base that is not on it is detected
- *   B3  what apply does with a wrong (too new) base, printed and not asserted
+ *   B3  a wrong (too new) recorded base is refused by the queue (issue #57): outcome invalid_base,
+ *       the target unchanged, no staging branch left behind. Before the check existed, the same landing
+ *       reported `landed` and the target lost the other landing's change.
  *
  * Everything works on scratch branches cut from main and nothing is written to main. The
  * scratch branches are deleted at the end (set KEEP_BRANCHES=1 to keep them).
@@ -108,11 +110,17 @@ async function main() {
   check('B2: the target head, which is not on the editor branch, is detected as a wrong base',
     tooNew !== undefined && !(await baseIsOnBranch(tooNew, t.editor)), String(tooNew));
 
+  const stagesBefore = new Set(Object.keys(await c.getBranches()).filter((b) => b.startsWith('stage_')));
   const wr = await t.q.enqueue({ sourceBranch: t.editor, targetBranch: t.target, message: 'B3 wrong base', baseCommit: tooNew });
   const w = await read(t.target, t.id);
-  observe('B3: landing with the target head as the base', brief(wr));
-  observe('B3: target afterwards', JSON.stringify({ description: w.description, stage: w.stage }));
-  observe('B3: expectation', "a base that is too new should drop the editor's change or conflict; the queue does not check it by default");
+  check('B3: a too-new recorded base is refused, not retried', wr.outcome === 'invalid_base' && wr.attempts === 1, brief(wr));
+  check('B3: the refusal says why and how to proceed', !!wr.guidance && !!wr.detail, wr.detail ?? '');
+  check("B3: the target is unchanged, with the other landing's field intact and the editor's change absent",
+    w.stage === 'Observation' && w.description !== 'edited by the editor (wrong)',
+    JSON.stringify({ description: w.description, stage: w.stage }));
+  const leftover = Object.keys(await c.getBranches()).filter((b) => b.startsWith('stage_') && !stagesBefore.has(b));
+  check('B3: no staging branch left behind', leftover.length === 0, leftover.join(', '));
+  observe('B3: guidance', String(wr.guidance));
 
   if (!process.env.KEEP_BRANCHES) {
     for (const b of made.reverse()) {

@@ -144,6 +144,32 @@ async function main() {
     check('unexpected throw: that job resolves as unrecognized', rs[1].outcome === 'unrecognized' && /clock exploded/.test(rs[1].detail ?? ''));
     check('unexpected throw: jobs before and after still land', rs[0].outcome === 'landed' && rs[2].outcome === 'landed');
   }
+  // A recorded base travels with the request and is the same on every retry.
+  {
+    const seen: Array<string | undefined> = [];
+    const script: Array<'ok' | Error> = [err(500, 'boom'), err(500, 'boom'), 'ok'];
+    let clock = 0;
+    const deps: QueueDeps = {
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      branchExists: async () => true,
+      land: async (req) => {
+        seen.push(req.baseCommit);
+        const next = script.shift() ?? 'ok';
+        if (next === 'ok') return { 'api:status': 'api:success' };
+        throw next;
+      },
+    };
+    const q = new MergeQueue(opts, deps);
+    const r = await q.enqueue({ sourceBranch: 'a', message: 'm', baseCommit: 'recorded' });
+    check('recorded base: lands after two 5xx', r.outcome === 'landed' && r.attempts === 3);
+    check('recorded base: every attempt used the same base', seen.length === 3 && seen.every((b) => b === 'recorded'), JSON.stringify(seen));
+    const r2 = await q.enqueue({ sourceBranch: 'b', message: 'm' });
+    check('no recorded base: the request carries none, and the landing derives one', r2.outcome === 'landed' && seen[3] === undefined);
+  }
+
   console.log(failures === 0 ? '\nAll passed.' : `\n${failures} failed.`);
   process.exit(failures === 0 ? 0 : 1);
 }

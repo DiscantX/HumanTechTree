@@ -20,7 +20,7 @@ export interface MergeBaseOptions {
   maxCommits?: number;
 }
 
-const idOf = (c: CommitInfo): string => c.identifier ?? c['@id'] ?? JSON.stringify(c);
+export const idOf = (c: CommitInfo): string => c.identifier ?? c['@id'] ?? JSON.stringify(c);
 
 export async function findMergeBase(
   source: string,
@@ -60,4 +60,48 @@ export async function findMergeBase(
     if (hit !== undefined) return hit;
   }
   return null;
+}
+
+/**
+ * Which base a landing uses: the one recorded when the branch was created, or, when there is
+ * none, the one derived from the logs. A recorded base costs no log reads at all. The recorded
+ * base is not checked here; `baseIsOnBranch` is the check, and the queue does not run it by
+ * default (see Editing Model, "Where the merge base comes from").
+ */
+export interface ResolvedBase {
+  base: string | null;
+  via: 'recorded' | 'derived';
+}
+
+export async function resolveBase(
+  recorded: string | undefined,
+  source: string,
+  staging: string,
+  find: (source: string, target: string) => Promise<string | null> = (s, t) => findMergeBase(s, t),
+): Promise<ResolvedBase> {
+  if (recorded) return { base: recorded, via: 'recorded' };
+  return { base: await find(source, staging), via: 'derived' };
+}
+
+/**
+ * Whether `base` is one of the commits on `branch`, which any valid merge base for that branch
+ * must be. A branch's own commits come first in its log, so for a recently cut branch the base
+ * is found in the first page. Throws when the log cannot be read, and returns false when the
+ * limit is reached without finding it.
+ */
+export async function baseIsOnBranch(
+  base: string,
+  branch: string,
+  options: MergeBaseOptions = {},
+  fetchLog: FetchLog = getCommitLog,
+): Promise<boolean> {
+  const pageSize = options.pageSize ?? 200;
+  const maxCommits = options.maxCommits ?? 20000;
+  for (let start = 0; start < maxCommits; start += pageSize) {
+    const page = await fetchLog(branch, { start, count: pageSize });
+    if (page === null) throw new Error(`could not read the commit log of ${branch}`);
+    if (page.some((c) => idOf(c) === base)) return true;
+    if (page.length < pageSize) return false;
+  }
+  return false;
 }

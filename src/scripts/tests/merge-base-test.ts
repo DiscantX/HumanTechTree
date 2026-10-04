@@ -1,5 +1,6 @@
 import { CommitInfo } from '../../db/log';
-import { findMergeBase, FetchLog } from '../../db/merge-base';
+import { findMergeBase, resolveBase, baseIsOnBranch, FetchLog } from '../../db/merge-base';
+import { createBranchWithBase, BranchDeps } from '../../db/branch';
 import { translateError } from '../../db/merge-queue';
 
 /**
@@ -63,6 +64,60 @@ async function main() {
   const dangling = { status: 400, response: { 'api:message': 'Schema check failure', 'system:witnesses': [{ '@type': 'references_untyped_object', object: 'terminusdb:///data/Node/x' }] } };
   check("apply's refusal of an edge to a deleted node is a deleted reference", translateError(dangling) === 'deleted_reference');
   check('a 500 is still transient', translateError({ status: 500, response: {} }) === 'transient');
+
+  // A recorded base is used as it is, with no log reads. Without one, the finder is called.
+  {
+    let finds = 0;
+    const find = async () => {
+      finds++;
+      return 'derived-base';
+    };
+    const rec = await resolveBase('recorded-base', 'a', 'stage', find);
+    check('a recorded base is used as given', rec.base === 'recorded-base' && rec.via === 'recorded');
+    check('a recorded base makes no log reads', finds === 0);
+    const der = await resolveBase(undefined, 'a', 'stage', find);
+    check('no record: the base is derived from the logs', der.base === 'derived-base' && der.via === 'derived' && finds === 1);
+    const none = await resolveBase(undefined, 'a', 'stage', async () => null);
+    check('no record and nothing found: the base is null', none.base === null && none.via === 'derived');
+  }
+
+  // The recorded base is read from the new branch, so a parent that moves during creation does not matter.
+  {
+    const heads: Record<string, string | null> = { main: 'c9', fresh: 'c3' };
+    const created: string[] = [];
+    const deps: BranchDeps = {
+      create: async (parent, name) => {
+        created.push(`${parent}>${name}`);
+      },
+      head: async (b) => heads[b] ?? null,
+    };
+    const r = await createBranchWithBase('main', 'fresh', deps);
+    check('the base is the new branch head, not the parent head', r.baseCommit === 'c3' && r.branch === 'fresh');
+    check('the branch is created off the parent', created[0] === 'main>fresh');
+    let threw = false;
+    try {
+      await createBranchWithBase('main', 'unreadable', deps);
+    } catch {
+      threw = true;
+    }
+    check('an unreadable new branch head throws, not a null base', threw);
+  }
+
+  // The check that a recorded base belongs to the branch.
+  {
+    const lg = logs({ a: ['a2', 'a1', 'c3', 'c2', 'c1'], main: ['c5', 'c4', 'c3', 'c2', 'c1'] });
+    check('a base on the branch is accepted', (await baseIsOnBranch('c3', 'a', {}, lg)) === true);
+    check('a base found only on the next page is accepted', (await baseIsOnBranch('c1', 'a', { pageSize: 2 }, lg)) === true);
+    check('a base from the target that is not on the branch is refused', (await baseIsOnBranch('c5', 'a', {}, lg)) === false);
+    check('the commit limit stops the check', (await baseIsOnBranch('c1', 'a', { pageSize: 1, maxCommits: 2 }, lg)) === false);
+    let threw = false;
+    try {
+      await baseIsOnBranch('c3', 'missing', {}, lg);
+    } catch {
+      threw = true;
+    }
+    check('an unreadable log throws', threw);
+  }
 
   console.log(failures === 0 ? '\nAll passed.' : `\n${failures} failed.`);
   process.exit(failures === 0 ? 0 : 1);

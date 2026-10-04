@@ -279,8 +279,8 @@ worked as `before`. The spec asks for bare names or IDs, and full paths are reje
   `api:conflict` and a list of witnesses. Each names the document and the field, with the expected and
   found values, which is much easier to translate than the schema-validation errors a conflicting rebase
   produces. The first edit's value stayed on the target.
-- **The base has to be known.** The server does not supply one. The application would record the commit a
-  branch was cut from when it creates the branch, or keep a snapshot branch at that point, as the test did.
+- **The base has to be known.** The server does not supply one. The application records the commit a
+  branch was cut from when it creates the branch (see below), where the test kept a snapshot branch at that point.
   A successful rebase does report a common commit, but only after it has already landed.
 - **It squashes.** Apply makes one commit, and the SDK stamps it with the login user as author by default.
   Passing the author in the request's commit information overrides it: a commit applied with an author of
@@ -317,10 +317,33 @@ rebase table.
 
 The queue's apply mode is its default. Running the live scripts with `--rebase`, or setting
 `LANDING_MODE=rebase`, selects the old rebase landing for comparison runs. The staging step
-replays the source onto the staging branch with apply and the merge base. The base is either passed with the
-request, which is cheaper once the application records it when a branch is cut, or derived from the two
-branches' logs. The final step from staging to the target stays a rebase fast-forward, and the spacing
+replays the source onto the staging branch with apply and the merge base, which is recorded when the branch is
+created or, when there is no record, derived from the two branches' logs (see the next section). The final step from staging to the target stays a rebase fast-forward, and the spacing
 between landings is off. The live queue scenarios were rerun through it.
+
+### Where the merge base comes from
+
+The application records the base when it creates a branch and passes it to the queue as `baseCommit`. The
+log-derived finder stays as the fallback for a branch that has no record, so a branch made by any other route
+still lands. The record is cheaper: it costs no log reads at landing time, where the derived base reads two
+commit logs on every landing and reads more of them the further the branch has drifted from the target. The
+derived path was not timed on a large database.
+
+- **The base is read from the new branch.** The helper creates the branch and then reads the new branch's
+  own head. A branch with no commits of its own has the commit it was cut from as its head, so the recorded
+  base is exact even if the parent moved while the branch was being created.
+- **The record outlives the landing.** It is written at creation, read on every attempt, so a retry after a
+  transient failure reuses the same base, and kept after landing, marked landed. Apply squashes, so once the
+  branch is deleted neither the landed commit nor the log says what the edit was cut from. A conflict abandons
+  the branch, and the resolution gets a fresh branch with a new record. Where the record lives, and how long it
+  is kept, belong to the Versioning and Reviews essay: the natural home is the application's own database,
+  next to the proposal, with retention following the proposal's.
+- **A wrong base is not caught by default.** A base that is too new makes apply see no difference and drop the
+  editor's change, or conflict. The check that a recorded base is one of the branch's own commits is available
+  (`baseIsOnBranch`) and cheap for a recently cut branch, but the queue does not run it on every landing.
+- **A branch lands once.** After a squash, a branch that keeps being edited has a derived base at its original
+  cut point, so its earlier edits would be applied again. The fresh-branch rule already treats a branch as
+  disposable. Whether that becomes an enforced rule is left to the Versioning and Reviews essay.
 
 - **Concurrent landings.** Six simultaneous landings all landed with no retries and no spacing, in 6.5
   seconds in total, 0.75 to 1.9 seconds each with the staging steps included. That was not measured side by
@@ -392,10 +415,10 @@ natural place for that gate to sit.
 
 ## Open questions
 
-- **Where the merge base comes from.** Apply needs the commit a branch was cut from. It can be recorded when
-  the branch is created, which is cheaper at landing time, or derived from the branches' logs by the
-  merge-base finder. The queue accepts a base with the request and derives one when it is absent, so both
-  work today, and which one the application relies on is not decided.
+- **What the queue does about a wrong recorded base.** It does not check one by default. Whether it should
+  verify that a recorded base is on the source branch, and if so whether a failure falls back to the derived
+  base or refuses the landing, is not decided. A record could also go stale if a branch were ever re-cut onto a
+  newer target.
 - **What apply's squash costs.** Apply turns a branch of several commits into one. Whether that history
   matters to reviewers, and how it interacts with reviews bound to a content hash, is not settled. A
   side-by-side timing comparison with rebase on a larger database has not been run either.
@@ -426,4 +449,5 @@ this essay are a check of what a conflicting rebase returns
 through the client in full, the staged-landing queue against the live database (the live runs covered
 concurrent landings, conflicts, the missing-branch check, duplicate claims, and the refusal of a dangling edge
 and of a cycle, while forced server failures and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of
-the pause measurement under a realistically sized database, and a timing run of apply against rebase on one.
+the pause measurement under a realistically sized database, a timing run of apply against rebase on one, and the live check of the recorded
+base (`npm run base-record-live`), which has passed its offline tests but not yet run against a server.

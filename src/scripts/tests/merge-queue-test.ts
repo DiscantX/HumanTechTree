@@ -1,4 +1,5 @@
 import { MergeQueue, QueueDeps, QueueOptions } from '../../db/merge-queue';
+import { InvalidBase } from '../../db/merge-base';
 import { ValidationFailure } from '../../db/staged-landing';
 
 /** Database-free tests of the queue's own logic, using a fake clock and fake landings. */
@@ -168,6 +169,16 @@ async function main() {
     check('recorded base: every attempt used the same base', seen.length === 3 && seen.every((b) => b === 'recorded'), JSON.stringify(seen));
     const r2 = await q.enqueue({ sourceBranch: 'b', message: 'm' });
     check('no recorded base: the request carries none, and the landing derives one', r2.outcome === 'landed' && seen[3] === undefined);
+  }
+
+  // An invalid recorded base halts the landing with a reason and a way forward, and is never retried.
+  {
+    const h = harness([new InvalidBase('c5', 'a') as any, 'ok']);
+    const r = await h.q.enqueue({ sourceBranch: 'a', message: 'm', baseCommit: 'c5' });
+    check('invalid base: refused, not retried', r.outcome === 'invalid_base' && r.attempts === 1);
+    check('invalid base: carries why and how to proceed', !!r.guidance && /fresh branch/.test(r.guidance) && !!r.detail && r.detail.includes('c5'), r.detail ?? '');
+    const next = await h.q.enqueue({ sourceBranch: 'b', message: 'm' });
+    check('invalid base: the next job still lands', next.outcome === 'landed');
   }
 
   console.log(failures === 0 ? '\nAll passed.' : `\n${failures} failed.`);

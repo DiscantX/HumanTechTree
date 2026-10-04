@@ -1,7 +1,7 @@
 import { config } from '../config';
 import { createClient } from './client';
 import { applyBranch } from './apply';
-import { resolveBase } from './merge-base';
+import { resolveBase, verifyRecordedBase } from './merge-base';
 import { rebaseBranch, RebaseResult } from './rebase';
 import { validateBranch, blocking, Violation } from './validation-gate';
 
@@ -44,6 +44,9 @@ export async function landViaStaging(
   },
   mode: LandingMode = 'rebase',
 ): Promise<RebaseResult> {
+  // A recorded base is checked before anything is created, so a refusal leaves nothing behind.
+  if (mode === 'apply' && req.baseCommit) await verifyRecordedBase(req.baseCommit, req.sourceBranch);
+
   const staging = `stage_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
   const c: any = createClient();
   c.db(config.db);

@@ -49,7 +49,8 @@ ones.
   does not document, a conflicted branch cannot be repaired in place, and landings need an
   application-side merge queue that serializes landings, retries with a pause, and lands each edit through a
   staging branch and the validation gate. Rebase landings needed spacing about a second apart, and apply
-  did not. The merge base is recorded when a branch is created, with the log-derived finder as the fallback. Soft-flag-versus-hard-block for cycles stays open, deferred to The
+  did not. The merge base is recorded when a branch is created, with the log-derived finder as the fallback, and a
+  recorded base that is not on the source branch is refused. Soft-flag-versus-hard-block for cycles stays open, deferred to The
   Validation Gate.
 - **[Data Model](data-model.md)** (Proposed). The concrete node, edge/claim, grounding, review, and
   objection schema implied by the policy essays, the one-claim-per-document storage decision Editing
@@ -242,6 +243,10 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
   fresh-branch resolution, duplicate claims, the missing-branch preflight, and both gate refusals) all
   passed with no retries and no spacing. Apply itself refuses an edge to a deleted node on the staging
   branch, which rebase let through to the gate.
+- **A recorded merge base.** Recorded and derived bases gave the same merged result, and landing times were
+  too noisy on a small database to show a speed difference. A too-new recorded base, the target's head,
+  landed without an error and silently reverted another landing's field. The check that a recorded base is on
+  the source branch caught it, and the queue now refuses such a landing with a reason and the steps to proceed.
 - **Nested collections.** Different fields of one sub-document merge across branches and the same field
   conflicts. Reviews nested in a grounding's `Set` merge, and a `List` of sub-documents conflicts on any
   concurrent edit.

@@ -105,3 +105,39 @@ export async function baseIsOnBranch(
   }
   return false;
 }
+
+/**
+ * Thrown when a recorded base is not one of the source branch's own commits. Applying it could
+ * silently undo changes other people already landed (a base that is too new makes apply treat
+ * their changes as part of the editor's diff), so the landing is refused instead.
+ */
+export const INVALID_BASE_GUIDANCE =
+  'The landing was refused and nothing was changed. The base recorded for this branch is not one of its ' +
+  'own commits, so applying it could silently undo changes that others already landed. To proceed, create a ' +
+  'fresh branch from the current target and replay the edit on it. If the record is known to be wrong, land ' +
+  'the branch again without a recorded base, and one will be derived from the commit logs.';
+
+export class InvalidBase extends Error {
+  guidance = INVALID_BASE_GUIDANCE;
+
+  constructor(
+    public base: string,
+    public branch: string,
+  ) {
+    super(`the recorded merge base ${base} is not one of the commits on ${branch}`);
+    this.name = 'InvalidBase';
+  }
+}
+
+/**
+ * Refuses a recorded base that is not on the source branch. An unreadable log throws an ordinary
+ * error, which the queue surfaces as unrecognized and never retries, so doubt halts the landing.
+ */
+export async function verifyRecordedBase(
+  base: string,
+  source: string,
+  options: MergeBaseOptions = {},
+  fetchLog: FetchLog = getCommitLog,
+): Promise<void> {
+  if (!(await baseIsOnBranch(base, source, options, fetchLog))) throw new InvalidBase(base, source);
+}

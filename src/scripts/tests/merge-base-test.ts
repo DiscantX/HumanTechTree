@@ -1,5 +1,5 @@
 import { CommitInfo } from '../../db/log';
-import { findMergeBase, resolveBase, baseIsOnBranch, FetchLog } from '../../db/merge-base';
+import { findMergeBase, resolveBase, baseIsOnBranch, verifyRecordedBase, InvalidBase, FetchLog } from '../../db/merge-base';
 import { createBranchWithBase, BranchDeps } from '../../db/branch';
 import { translateError } from '../../db/merge-queue';
 
@@ -117,6 +117,35 @@ async function main() {
       threw = true;
     }
     check('an unreadable log throws', threw);
+  }
+
+  // Verification of a recorded base: a wrong base halts, with the reason and the way forward.
+  {
+    const lg = logs({ a: ['a2', 'a1', 'c3', 'c2', 'c1'], main: ['c5', 'c4', 'c3', 'c2', 'c1'] });
+    let ok = true;
+    try {
+      await verifyRecordedBase('c3', 'a', {}, lg);
+    } catch {
+      ok = false;
+    }
+    check('a recorded base on the branch passes verification', ok);
+    let invalid: InvalidBase | undefined;
+    try {
+      await verifyRecordedBase('c5', 'a', {}, lg);
+    } catch (e) {
+      if (e instanceof InvalidBase) invalid = e;
+    }
+    check('a recorded base not on the branch is refused as InvalidBase', invalid !== undefined);
+    check('the refusal names the base and the branch', !!invalid && invalid.message.includes('c5') && invalid.message.includes('a'), invalid?.message ?? '');
+    check('the refusal says how to proceed', !!invalid && /fresh branch/.test(invalid.guidance) && /without a recorded base/.test(invalid.guidance));
+    let other: unknown;
+    try {
+      await verifyRecordedBase('c3', 'missing', {}, lg);
+    } catch (e) {
+      other = e;
+    }
+    check('an unreadable log halts as an ordinary error, not as a pass', other instanceof Error && !(other instanceof InvalidBase));
+    check('InvalidBase is translated to the invalid_base outcome', translateError(new InvalidBase('c5', 'a')) === 'invalid_base');
   }
 
   console.log(failures === 0 ? '\nAll passed.' : `\n${failures} failed.`);

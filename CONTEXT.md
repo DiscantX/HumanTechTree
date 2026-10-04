@@ -132,8 +132,9 @@ src/config.ts     env-based settings
 src/db/           client factory, rebase helper, commit-log helper, merge queue, staged landing,
                   validation gate
 src/schema/       Node/Edge schema transcribed from Data Model
-src/scripts/tests/ init-db, reset-db, concurrent-suite (50 scenarios), merge-queue-test and
-                  validation-gate-test (no server needed), merge-queue-live (needs the server)
+src/scripts/      init-db, reset-db
+src/scripts/tests/ concurrent-suite (50 scenarios), merge-queue-test and
+                    validation-gate-test (no server needed), merge-queue-live (needs the server)
 tools/            run-experiments.js, gen_openapi_md.py
 ```
 

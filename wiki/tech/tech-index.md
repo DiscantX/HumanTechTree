@@ -228,6 +228,9 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
   composite key.
 - **Rebase and commit IDs.** A branch's own commits did not survive a rebase in the third round either, and
   the rebase report was empty.
+- **Commit authors.** The SDK stamps every document write with the login user, but an HTTP write can carry a
+  chosen author, and that author survives a rewriting rebase, a fast-forward, and the staged landing. The
+  queue does not need to pass it through. The store does not authenticate the value.
 
 ## What this page does not decide
 

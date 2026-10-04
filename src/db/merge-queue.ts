@@ -32,7 +32,14 @@ export interface LandingRequest {
   sourceBranch: string;
   targetBranch?: string; // default 'main'
   message: string;
+  /** Apply mode only: the commit the source branch was cut from. Derived from the logs when absent. */
+  baseCommit?: string;
+  /** Apply mode only: the editor to record as the landing commit's author. */
+  author?: string;
 }
+
+/** A request once the default target has been filled in. */
+export type ResolvedRequest = LandingRequest & { targetBranch: string };
 
 export interface LandingResult {
   outcome: LandingOutcome;
@@ -64,7 +71,7 @@ export const DEFAULT_OPTIONS: QueueOptions = {
 
 /** Injection points so the queue can be tested without a server. */
 export interface QueueDeps {
-  land: (req: Required<LandingRequest>) => Promise<RebaseResult>;
+  land: (req: ResolvedRequest) => Promise<RebaseResult>;
   branchExists: (branch: string) => Promise<boolean>;
   sleep: (ms: number) => Promise<void>;
   now: () => number;
@@ -91,9 +98,29 @@ export function translateError(err: any): LandingOutcome | 'transient' {
   const status = err?.status ?? err?.response?.status;
   const body = bodyOf(err);
   if (/cardinality|subject_has_no_type/i.test(body)) return 'conflict';
+  if (/api:conflict/i.test(body)) return 'conflict'; // apply's 409
   if (/instance_not_of_class/i.test(body)) return 'deleted_reference';
   if (typeof status === 'number' && status >= 500) return 'transient';
   return 'unrecognized';
+}
+
+/**
+ * Landing with apply as the replay (see Editing Model, "Apply as a three-way merge"). Sequential
+ * applies showed no server errors even with no pause, so the spacing between landings is off by
+ * default here. The final step from staging to the target is still a rebase fast-forward.
+ */
+export const APPLY_DEPS: QueueDeps = { ...REAL_DEPS, land: (r) => landViaStaging(r, 'apply') };
+export const APPLY_OPTIONS: QueueOptions = { ...DEFAULT_OPTIONS, minGapMs: 0 };
+
+/**
+ * A queue for the live scripts. Rebase by default; apply when the script is run with
+ * `--apply` or LANDING_MODE=apply. MIN_GAP_MS overrides the spacing in either mode.
+ */
+export function queueFromEnv(): MergeQueue {
+  const apply = process.argv.includes('--apply') || process.env.LANDING_MODE === 'apply';
+  const base = apply ? APPLY_OPTIONS : DEFAULT_OPTIONS;
+  const gap = process.env.MIN_GAP_MS !== undefined ? Number(process.env.MIN_GAP_MS) : base.minGapMs;
+  return new MergeQueue({ ...base, minGapMs: gap }, apply ? APPLY_DEPS : REAL_DEPS);
 }
 
 interface Job {
@@ -148,7 +175,7 @@ export class MergeQueue {
   }
 
   private async process(req: LandingRequest): Promise<LandingResult> {
-    const full = { targetBranch: 'main', ...req } as Required<LandingRequest>;
+    const full: ResolvedRequest = { targetBranch: 'main', ...req };
 
     // Preflight. A failed check is retried like a transient landing failure if it was
     // a 5xx, and otherwise surfaced. Either way no landing was attempted, so attempts is 0.

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { config } from '../../config';
 import { createClient } from '../../db/client';
 import { getCommitLog } from '../../db/log';
-import { MergeQueue } from '../../db/merge-queue';
+import { queueFromEnv } from '../../db/merge-queue';
 import { rebaseBranch } from '../../db/rebase';
 
 /**
@@ -117,7 +117,7 @@ async function stageBranches(): Promise<string[]> {
 }
 
 async function main() {
-  const queue = new MergeQueue();
+  const queue = queueFromEnv();
   const stagesBefore = new Set(await stageBranches());
 
   await section('G1 dangling edge refused through the queue (issue #8, Q3)', async () => {

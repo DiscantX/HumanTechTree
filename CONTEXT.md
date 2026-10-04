@@ -132,8 +132,8 @@ where cluster governance lives.
 wiki/policy/      policy essays, plus essay-index.md
 wiki/tech/        tech essays, plus tech-index.md
 src/config.ts     env-based settings
-src/db/           client factory, rebase helper, commit-log helper, merge queue, staged landing,
-                  validation gate
+src/db/           client factory, rebase and apply helpers, commit-log helper, merge-base finder,
+                  merge queue (rebase or apply mode), staged landing, validation gate
 src/schema/       Node/Edge schema transcribed from Data Model
 src/scripts/      init-db, reset-db
 src/scripts/tests/ concurrent-suite (50 scenarios), merge-queue-test and

@@ -1,6 +1,6 @@
 import { config } from '../../config';
 import { createClient } from '../../db/client';
-import { MergeQueue, LandingResult } from '../../db/merge-queue';
+import { queueFromEnv, LandingResult } from '../../db/merge-queue';
 
 /**
  * Live test of the merge queue against a running TerminusDB. Needs the dev
@@ -50,7 +50,8 @@ const edge = (s: string, t: string, statement: string) => ({
 });
 
 async function main() {
-  const q = new MergeQueue();
+  const q = queueFromEnv();
+  console.log(`landing mode: ${process.argv.includes('--apply') || process.env.LANDING_MODE === 'apply' ? 'apply' : 'rebase'}`);
 
   // Q1: many branches enqueued at once all land, one at a time.
   {
@@ -156,7 +157,7 @@ async function main() {
     const b = await branchOff(base);
     await insert(a, [{ '@type': `PC${run}`, src: s, dst: t, basis: 'Logical', statement: 'from a' }]);
     await insert(b, [{ '@type': `PC${run}`, src: s, dst: t, basis: 'Logical', statement: 'from b' }]);
-    const qb = new MergeQueue();
+    const qb = queueFromEnv();
     const [ra, rb] = await Promise.all([
       qb.enqueue({ sourceBranch: a, targetBranch: base, message: 'Q5 A' }),
       qb.enqueue({ sourceBranch: b, targetBranch: base, message: 'Q5 B' }),

@@ -11,6 +11,7 @@
     "merge-queue-test": "ts-node src/scripts/tests/merge-queue-test.ts",
     "merge-queue-live": "ts-node src/scripts/tests/merge-queue-live.ts",
     "validation-gate-test": "ts-node src/scripts/tests/validation-gate-test.ts",
+    "merge-base-test": "ts-node src/scripts/tests/merge-base-test.ts",
     "apply-experiments": "ts-node src/scripts/tests/apply-experiments.ts",
     "gate-live": "ts-node src/scripts/tests/gate-live.ts",
     "author-check": "ts-node src/scripts/tests/author-check.ts",

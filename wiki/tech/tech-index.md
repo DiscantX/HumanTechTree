@@ -233,6 +233,10 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
 - **Apply as a three-way merge.** With a snapshot of the common ancestor as `before`, apply merged edits to
   different fields and returned a structured 409 for the same field. A bare branch name and a bare commit ID
   both work as `before`. Whether it should replace rebase is open in Editing Model.
+- **Apply under the server-error conditions.** An author passed in the commit information overrides the
+  SDK's default. Sequential applies onto a moved target had no server errors in 180 runs, including 60 with
+  no pause, where rebase failed about one in seven. Parallel applies onto one target still failed half the
+  time. Whether apply replaces rebase in the queue is open in Editing Model.
 - **Nested collections.** Different fields of one sub-document merge across branches and the same field
   conflicts. Reviews nested in a grounding's `Set` merge, and a `List` of sub-documents conflicts on any
   concurrent edit.

@@ -277,7 +277,7 @@ OpenAPI spec, and the client packages afterwards changed some of what was assume
   editor's text.
 - **Server stability.** The intermittent server errors are characterized and have a workaround, which is
   spacing and retrying landings in the merge queue, but their cause is unknown. Remaining: report them to
-  the maintainers with a minimal reproduction and the missing-branch 500. The project is already on the
+  the maintainers with a minimal reproduction and the missing-branch 500. A repeat of the measurement with apply instead of rebase showed no sequential errors, which narrows the cause to rebase's replay. The project is already on the
   latest server release (12.0.7), so a retest after an upgrade is not currently possible. Because spacing
   and retrying fully mask the errors in every test, a fix or a workaround is probably enough. If the
   errors turn out to be structural, or to worsen with a larger database, this choice needs revisiting.

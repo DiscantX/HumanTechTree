@@ -5,10 +5,10 @@
  * for cycle detection and blast radius against a running TerminusDB instance.
  */
 
-import { config } from '../config';
-import { createClient } from '../db/client';
-import { branchExists, getCommitLog } from '../db/log';
-import { cycleDetectionQuery, blastRadiusQuery, executeWoqlQuery } from '../db/woql-queries';
+import { config } from '../../config';
+import { createClient } from '../../db/client';
+import { branchExists, getCommitLog } from '../../db/log';
+import { cycleDetectionQuery, blastRadiusQuery, executeWoqlQuery } from '../../db/woql-queries';
 
 let failures = 0;
 

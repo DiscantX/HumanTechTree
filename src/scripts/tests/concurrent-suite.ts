@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { config } from '../config';
-import { createClient } from '../db/client';
-import { rebaseBranch } from '../db/rebase';
-import { getCommitLog } from '../db/log';
+import { config } from '../../config';
+import { createClient } from '../../db/client';
+import { rebaseBranch } from '../../db/rebase';
+import { getCommitLog } from '../../db/log';
 
 /**
  * Broad test suite for TerminusDB's branch-and-merge behavior.
@@ -15,7 +15,7 @@ import { getCommitLog } from '../db/log';
  *   OBSERVED  - purely informational; we recorded what happened.
  *   ERROR     - the scenario itself crashed. Only these set a non-zero exit.
  *
- * Usage (npm script: "concurrent-suite": "ts-node src/scripts/concurrent-suite.ts"):
+ * Usage (npm script: "concurrent-suite": "ts-node src/scripts/tests/concurrent-suite.ts"):
  *   npm run concurrent-suite
  *   npm run concurrent-suite -- --only=C,P          (scenario id prefixes)
  *   npm run concurrent-suite -- --skip-slow         (skips the X* scale tests)

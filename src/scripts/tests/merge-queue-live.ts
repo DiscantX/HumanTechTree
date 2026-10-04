@@ -1,6 +1,6 @@
-import { config } from '../config';
-import { createClient } from '../db/client';
-import { MergeQueue, LandingResult } from '../db/merge-queue';
+import { config } from '../../config';
+import { createClient } from '../../db/client';
+import { MergeQueue, LandingResult } from '../../db/merge-queue';
 
 /**
  * Live test of the merge queue against a running TerminusDB. Needs the dev
@@ -8,7 +8,7 @@ import { MergeQueue, LandingResult } from '../db/merge-queue';
  * are created with unique names, and main gains a handful of test documents,
  * so run reset-db and init-db afterward if you want a clean slate.
  *
- *   npx ts-node src/scripts/merge-queue-live.ts
+ *   npx ts-node src/scripts/tests/merge-queue-live.ts
  */
 const c: any = createClient();
 c.db(config.db);

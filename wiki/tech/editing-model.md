@@ -7,7 +7,7 @@ question open from the start: should the graph stay branch-and-merge, or move to
 Wikidata's, where each statement is independently addressable and contested claims coexist without a
 resolved merge? [Database Choice](database-choice.md) did not settle this directly, but it removed one
 of the two live options from serious contention, which is where this essay picks up. A prototype now
-exists (`src/scripts/concurrent-suite.ts`) and has been run in several rounds, including repeated runs
+exists (`src/scripts/tests/concurrent-suite.ts`) and has been run in several rounds, including repeated runs
 with and without the sync step, and the official documentation, the OpenAPI spec, and the client package
 have been read for what they actually say. This revision keeps three things apart: what was assumed, what
 was observed, and what the documentation states.

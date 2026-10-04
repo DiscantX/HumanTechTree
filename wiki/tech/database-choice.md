@@ -143,7 +143,7 @@ Search entry.
 
 ## What the prototype has shown
 
-A prototype (`src/scripts/`) runs against TerminusDB 12.0.7, and a broad test suite has exercised the
+A prototype (`src/scripts/tests/`) runs against TerminusDB 12.0.7, and a broad test suite has exercised the
 store's behavior in several rounds, including repeated runs. The editing-related findings are in [Editing Model](editing-model.md). The ones
 that bear on this choice are these.
 

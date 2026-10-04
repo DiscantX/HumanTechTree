@@ -5,8 +5,8 @@
  * and inspects branch preflight helper functions.
  */
 
-import { branchExists, getCommitLog } from '../db/log';
-import { cycleDetectionQuery, blastRadiusQuery } from '../db/woql-queries';
+import { branchExists, getCommitLog } from '../../db/log';
+import { cycleDetectionQuery, blastRadiusQuery } from '../../db/woql-queries';
 import axios from 'axios';
 
 let failures = 0;

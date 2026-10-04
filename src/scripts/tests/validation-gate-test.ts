@@ -1,4 +1,4 @@
-import { validateGraph, refId } from '../db/validation-gate';
+import { validateGraph, refId } from '../../db/validation-gate';
 
 let failures = 0;
 const check = (name: string, ok: boolean, detail = '') => {

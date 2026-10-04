@@ -161,8 +161,9 @@ ever require it.
 
 The cost is that no transaction spans the two stores. The prose store is built so that it does not need
 one: a save is one transaction inside PostgreSQL, and the only cross-store write is creating a page before
-the node that refers to it. A recent-changes feed that covers prose and graph edits has to read both
-histories, which Prose Merging lists as an open question.
+the node that refers to it. Recent changes and watchlists would otherwise have to read both histories, so a derived activity table in
+the prose database records every change, graph and prose alike, and the feed queries that (see Prose
+Merging). The graph store's commit log stays the source of truth for graph history.
 
 ## Search capability, checked directly
 

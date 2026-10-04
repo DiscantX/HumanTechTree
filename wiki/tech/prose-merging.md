@@ -38,7 +38,7 @@ are small or structured, and stay in the graph store.
 
 ## How prose is stored
 
-Three tables in the prose database carry the design.
+Four tables in the prose database carry the design.
 
 - **Content.** Each distinct text is stored once, keyed by a hash of the text. Saving text that already
   exists, such as a revert, adds no new copy.
@@ -47,6 +47,8 @@ Three tables in the prose database carry the design.
   timestamp, and an edit summary. Revisions are never changed after they are written.
 - **Page.** One row per page, with a stable identifier assigned when the page is created and never changed,
   and a pointer to the current revision. A node holds only this identifier.
+- **Activity.** One row per change, covering prose edits and graph edits alike, used for recent changes and
+  watchlists (see below).
 
 Full text is kept for every revision, and diffs are computed when someone asks to see one. The merge needs
 the base text, a review or rollback needs a revision that can be read without rebuilding it from a chain of
@@ -64,6 +66,30 @@ involved, which are the costs of landing an edit in the graph store described in
 [Editing Model](editing-model.md). The only write that spans both stores is creating a page and then a node
 that refers to it. The page is created first, so a failure in between leaves an unreferenced page, which is
 harmless and can be cleaned up later.
+
+Articles have a practical size limit of about 2 MB, set in configuration, matching Wikipedia's. It exists to
+refuse abuse, not to shape the design. A save over the limit is rejected before it reaches the database.
+
+## Recent changes and watchlists
+
+Graph edits and prose edits have separate histories, so a feed that covers both cannot read a single log.
+Reading the graph store's commit log on every request is also a poor basis for a feed, since the history
+endpoint timed out at every checkpoint in the stress test.
+
+> **A derived activity table in the prose database holds one row per change, for both kinds, and recent
+> changes and watchlists are ordinary indexed queries over it.**
+
+- **Prose edits** write their activity row in the same transaction as the revision, so a prose edit cannot
+  appear without its row or the reverse.
+- **Graph edits** write their row after the merge queue lands them. The graph store's commit log stays the
+  source of truth for graph history.
+- **The table is a read model.** If a graph row is ever missed, a job rebuilds it from the commit log. Rows
+  carry the opaque account identifier, so the table does not touch the accounts database.
+
+The alternatives were to read both histories on every request, and to land a marker in the graph for every
+prose edit. The first depends on the slow commit log. The second sends every prose edit through the merge
+queue and makes a save a two-store write that can half-succeed, which is what keeping prose out of the graph
+store was meant to avoid.
 
 ## How prose is merged
 
@@ -140,12 +166,8 @@ the merge in option A and any future block storage in option B both operate on p
 
 - **The merge library.** Whether a diff3 library handles the project's markdown well, including tables
   and lists, has not been tried.
-- **Watching across two histories.** Graph edits and prose edits have separate histories, so a watchlist
-  or recent-changes feed that covers both has to read both. Whether the graph should also record each prose
-  edit, so that one commit log still tells the whole story, is not decided. It would tie every prose edit
-  to the graph store's landing queue.
-- **An article size cap.** The graph store's roughly 100 KB string limit no longer constrains articles.
-  Whether to set a cap anyway, for editing and reading reasons, is open.
+- **The activity table's rebuild.** How a missed graph row is detected, and how often the reconciliation job
+  runs, is not designed. It belongs with the Versioning and Reviews and Hosting and Operations essays.
 - **Block storage feasibility.** Whether fractional position keys work as intended, and what happens when
   one editor changes a block that another deleted.
 - **Whether the volume of long-form prose editing will ever justify option B.** This is an empirical

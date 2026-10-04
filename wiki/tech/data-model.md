@@ -273,8 +273,8 @@ are specified in Prose Merging, and is reached from the graph only through a nod
   small simulated tests. Shared with Editing Model's own open questions.
 - **Block storage for long-form content.** If Prose Merging's deferred option is ever adopted, blocks
   become rows in the prose store with a position key and a page reference. Not modeled here.
-- **Whether the graph records prose edits.** The node holds only `prose_page`, so the graph's commit log
-  does not show prose edits. Whether it should, to keep one history for recent changes, is open in Prose
-  Merging.
+- **Prose edits and the graph's commit log.** The node holds only `prose_page`, so the graph's commit log
+  does not show prose edits. Recent changes come from the activity table in the prose database instead, as
+  set out in Prose Merging.
 - **The stored `status` field.** Whether to remove it from the stored schema or keep it as a computed
   cache. See the note under Edge above.

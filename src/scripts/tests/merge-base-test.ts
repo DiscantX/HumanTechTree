@@ -60,6 +60,8 @@ async function main() {
   check("apply's 409 is a conflict", translateError(conflict) === 'conflict');
   const badRef = { status: 400, response: { '@type': 'api:ApplyErrorResponse', 'api:error': { '@type': 'api:NotValidRefError' } } };
   check('an invalid ref is unrecognized, never retried', translateError(badRef) === 'unrecognized');
+  const dangling = { status: 400, response: { 'api:message': 'Schema check failure', 'system:witnesses': [{ '@type': 'references_untyped_object', object: 'terminusdb:///data/Node/x' }] } };
+  check("apply's refusal of an edge to a deleted node is a deleted reference", translateError(dangling) === 'deleted_reference');
   check('a 500 is still transient', translateError({ status: 500, response: {} }) === 'transient');
 
   console.log(failures === 0 ? '\nAll passed.' : `\n${failures} failed.`);

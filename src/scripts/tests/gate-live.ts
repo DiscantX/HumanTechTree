@@ -43,7 +43,7 @@ const observe = (name: string, detail: string) => console.log(`SEE   ${name}  ${
 const brief = (x: unknown, max = 260): string => {
   let s: string;
   try {
-    s = typeof x === 'string' ? x : JSON.stringify(x);
+    s = typeof x === 'string' ? x : (JSON.stringify(x) ?? String(x));
   } catch {
     s = String(x);
   }
@@ -132,9 +132,18 @@ async function main() {
     const rd = await queue.enqueue({ sourceBranch: deleter, targetBranch: base, message: 'G1 delete' });
     check('the deletion lands', rd.outcome === 'landed', rd.outcome);
     const re = await queue.enqueue({ sourceBranch: withEdge, targetBranch: base, message: 'G1 edge' });
-    check('the edge to the deleted node is refused by the gate', re.outcome === 'validation_failed', `${re.outcome} ${brief(re.violations?.map((v) => v.check))}`);
-    check('the refusal names a dangling edge', !!re.violations?.some((v) => v.check === 'dangling_edge'));
-    check('no edge reached the target', (await listOn(base, 'Edge')).length === 0);
+    // With rebase the replay succeeds and the gate refuses; with apply the store's own schema check refuses first.
+    check(
+      'the edge to the deleted node is refused (gate with rebase, apply\'s schema check with apply)',
+      re.outcome === 'validation_failed' || re.outcome === 'deleted_reference',
+      `${re.outcome} ${brief(re.violations?.map((v) => v.check))} ${re.outcome === 'landed' ? '' : brief(re.detail ?? '', 120)}`,
+    );
+    if (re.outcome === 'validation_failed') {
+      check('the refusal names a dangling edge', !!re.violations?.some((v) => v.check === 'dangling_edge'));
+    }
+    // main may hold edges from other scripts, so count only this run's.
+    const mine = (await listOn(base, 'Edge')).filter((e) => String(e.statement).includes(run));
+    check('no edge reached the target', mine.length === 0, `${mine.length} found`);
   });
 
   await section('G2 cycle refused through the queue (issue #8, Q7)', async () => {
@@ -150,7 +159,8 @@ async function main() {
     const r2 = await queue.enqueue({ sourceBranch: ba, targetBranch: base, message: 'G2 b to a' });
     check('the edge that closes the cycle is refused', r2.outcome === 'validation_failed', `${r2.outcome} ${brief(r2.violations?.map((v) => v.check))}`);
     check('the refusal names a cycle', !!r2.violations?.some((v) => v.check === 'cycle'));
-    check('only the first edge is on the target', (await listOn(base, 'Edge')).length === 1);
+    const mine = (await listOn(base, 'Edge')).filter((e) => String(e.statement).includes(run));
+    check('only the first edge is on the target', mine.length === 1, `${mine.length} of this run's edges found`);
   });
 
   await section('G3 reading a document as of a past commit (issue #14)', async () => {

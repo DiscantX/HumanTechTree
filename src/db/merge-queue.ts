@@ -99,7 +99,7 @@ export function translateError(err: any): LandingOutcome | 'transient' {
   const body = bodyOf(err);
   if (/cardinality|subject_has_no_type/i.test(body)) return 'conflict';
   if (/api:conflict/i.test(body)) return 'conflict'; // apply's 409
-  if (/instance_not_of_class/i.test(body)) return 'deleted_reference';
+  if (/instance_not_of_class|references_untyped_object/i.test(body)) return 'deleted_reference'; // rebase / apply
   if (typeof status === 'number' && status >= 500) return 'transient';
   return 'unrecognized';
 }

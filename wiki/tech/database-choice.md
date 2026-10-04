@@ -9,23 +9,26 @@ considered and set aside before settling on the sixth.
 ## What the data layer has to do
 
 Restated from Architecture Overview: store nodes and edges with real data attached to each, version
-that data (both prose and graph structure) with commits, branches, diffs, merges, and cheap reverts,
-and, under the current direction, also hold talk pages, policy pages, and argument pages as documents
-sharing that same version history. It also has to answer bulk, graph-shaped queries ("these thousands
+that data with commits, branches, diffs, merges, and cheap reverts, and also hold the structured
+wiki-mechanic documents (talk-page comments and argument pages) sharing that same version history.
+Long-form prose and accounts have different needs and are handled by a second store, set out below. The
+graph store also has to answer bulk, graph-shaped queries ("these thousands
 of nodes and the edges between them") as an ordinary access pattern, not an exceptional one.
 
 ## The position
 
-> **TerminusDB is the data layer, for the graph and, conditional on application-level prose merging
-> (see [Prose Merging](prose-merging.md)), for talk pages, policy pages, and argument pages as well. A
-> small side-store, outside TerminusDB, handles accounts and, later, search indexing.**
+> **TerminusDB is the data layer for the graph and for the structured wiki-mechanic documents:
+> talk-page comments and argument pages. Long-form prose lives in PostgreSQL, as immutable revisions
+> linked to the graph by a stable identifier (see [Prose Merging](prose-merging.md)). Accounts live in a
+> separate PostgreSQL database with its own credentials, so that identity data is isolated from
+> everything else.**
 
 TerminusDB is a version-controlled document-graph database: every write is a commit, branching and
 merging work roughly the way they do in git, and it is queryable through GraphQL or its own
-Datalog-based query language, WOQL. Nodes, edges, and now wiki-mechanic content are all schema'd
-JSON-LD documents in the same store, which is what lets a single commit log serve as the version
-history for the whole project rather than one history for the graph and a second, separate one for
-everything else.
+Datalog-based query language, WOQL. Nodes, edges, talk-page comments, and argument pages are all
+schema'd JSON-LD documents in the same store, so a single commit log is the version history for the
+graph and its structured discussion. Long-form prose keeps its own revision history in the second store,
+which is the one place the project accepts two histories.
 
 This is not the starting position. It is the surviving option after five real alternatives were
 compared against it and rejected, each for a distinct reason worth keeping on record rather than
@@ -51,6 +54,14 @@ over a graph, MediaWiki's is a line diff over a linear per-page history, and no 
 both. Standing up MediaWiki for two of four use cases, while accepting a permanently siloed
 diff/rollback experience, was judged not worth the weight of a second full application (its own
 accounts, permissions, skinning, and extension surface) bolted on rather than integrated.
+
+Moving long-form prose out of TerminusDB does not reopen this choice. The deciding problem was never that
+two stores would exist. It was that no shared primitive would underlie the two diff and rollback
+experiences, and the graph still lives in TerminusDB. What a wiki engine would now add is its own accounts,
+permission model, page model, and extension surface, none of which can see a node's blast radius, a claim's
+computed status, or a content-hash review. The application-level merge has to be built whichever store
+holds the text, so an engine's merge is not a saving. The prose store is therefore a plain relational
+database with a thin revision layer.
 
 ## Rejected: Wikibase as the sole system
 
@@ -129,6 +140,30 @@ truth, so its own revision history is unrelated to git commits; its more modular
 been in development without a release since roughly 2022, a soft signal about momentum even though 2.x
 patches continue.
 
+## The second store: PostgreSQL
+
+Long-form prose and accounts are kept out of TerminusDB, in two PostgreSQL databases that share an engine,
+a client library, and operational practice but no tables or credentials.
+
+- **The prose database** holds long-form text as immutable revisions, keyed to the graph by a stable page
+  identifier, and gives indexed full-text search over that text. Its tables and the merge that runs
+  against them are set out in [Prose Merging](prose-merging.md).
+- **The accounts database** holds identity, sessions, and permissions. The services that read the graph or
+  the prose use credentials that cannot read it. Revisions and commits record an opaque account identifier,
+  and display names are resolved by the application.
+
+PostgreSQL was chosen over SQLite for concurrent writers (the merge queue and bots will write at the same
+time), built-in full-text search and trigram matching, separate databases and roles for isolation, and the
+range of managed hosting. SQLite was the serious alternative: it needs no server, and a separate file
+isolates accounts just as well. It was set aside for its single writer and single host. The application
+reaches both databases through a thin repository layer, so the engine can change if hosting constraints
+ever require it.
+
+The cost is that no transaction spans the two stores. The prose store is built so that it does not need
+one: a save is one transaction inside PostgreSQL, and the only cross-store write is creating a page before
+the node that refers to it. A recent-changes feed that covers prose and graph edits has to read both
+histories, which Prose Merging lists as an open question.
+
 ## Search capability, checked directly
 
 Because the current direction folds wiki-mechanic content into TerminusDB, its native search
@@ -137,9 +172,9 @@ comparison, and ordinary substring queries through WOQL, all evaluated at query 
 inverted index, no tokenization, no stemming, and no relevance ranking, nothing that amounts to
 indexed full-text search. Given that node content is deliberately light (a short borrowed description,
 structured fields for stage, category, and dates), this is treated as sufficient for the graph itself.
-It is a real, acknowledged gap for the higher-volume prose that talk, policy, and argument pages will
-eventually carry, and is tracked as a deferred question rather than solved here; see the tech index's
-Search entry.
+For long-form prose the gap closes, since the prose database provides indexed full-text search. It remains
+for talk-page comments and argument pages, which stay in the graph store, and is tracked as a deferred
+question rather than solved here; see the tech index's Search entry.
 
 ## What the prototype has shown
 
@@ -172,6 +207,32 @@ that bear on this choice are these.
   nonexistent branch, where the API specification says 404. Details are in
   [Editing Model](editing-model.md).
 
+### What the stress test showed
+
+A stress test grew the graph from 1,000 to 10,000 nodes under four variants on the development VM (972 MB
+of memory, one CPU, TerminusDB 12.0.7). Variant A held no prose, B held prose of about 8 KB inline on every
+node, C held it on 10% of nodes, and D held it on every node as a separate document.
+
+| | A (no prose) | B (inline, all nodes) | C (inline, 10% of nodes) | D (separate document, all nodes) |
+| --- | --- | --- | --- | --- |
+| Disk growth, 1,000 to 10,000 nodes | +48 MB | +196 MB | +38 MB | +198 MB |
+| Memory after restart, 10,000 nodes | 79 MiB | 161 MiB | 88 MiB | 186 MiB |
+| Cold start to ready, 10,000 nodes | 1.1 s | 2.6 s | 2.2 s | 3.3 s |
+
+- **Prose volume drives the cost, not its placement.** B and D match on disk and are close on memory, and C
+  is close to A. This is why the decision to hold long-form prose elsewhere does not depend on whether it
+  would have been inline or separate.
+- **A field edit costs about 15 to 18 KB of storage.** Every variant also showed one jump in disk use
+  during the edits (23 to 105 MB, growing with database size) at roughly 230 to 300 commits. Layer
+  consolidation is a guess. A run of 1,000 or more edits would show whether it repeats.
+- **`optimize` reclaimed nothing,** and the history endpoint returned 408 at every checkpoint, a known
+  upstream limitation.
+- **Blast radius timed out as a live WOQL query,** so it is computed in application code, which is a matter
+  for the Computed Values essay.
+- **Timing is not comparable between runs.** Wall-clock figures varied two to three times. The disk figures
+  are growth in the whole storage directory, not absolute sizes, because earlier runs had left about
+  1.7 GB behind.
+
 ### What the documentation and client turned out to say
 
 The first version of this essay leaned on the prototype alone. Reading the official documentation, the
@@ -195,8 +256,9 @@ OpenAPI spec, and the client packages afterwards changed some of what was assume
 
 ## What this essay does not decide
 
-- Whether the eventual side-store for accounts is Postgres, SQLite, or something else, and whether it
-  later doubles as a search index. That belongs to Accounts, Permissions, and Bots and to Search.
+- The design of accounts, sessions, and permissions inside the accounts database. That belongs to
+  Accounts, Permissions, and Bots.
+- Hosting, backup, and operation of the two PostgreSQL databases. That belongs to Hosting and Operations.
 - The concrete editing workflow on top of TerminusDB. Editing Model has since adopted branch-and-merge
   and set out what the application must build around it.
 - The rendering and application-framework layers, which do not depend on this choice beyond needing a
@@ -227,3 +289,6 @@ OpenAPI spec, and the client packages afterwards changed some of what was assume
   repository that GitHub shows as 299 commits ahead of an older copy under a different organization, which
   fits that picture and suggests the prose docs are maintained more actively than the code they describe. This is worth
   periodically re-checking rather than assumed permanently settled.
+- **Whether talk-page comments stay in the graph store.** Each comment is a small separate document and
+  never needs text merging, so they stay for now. If comments grow long or numerous, they are the content
+  most likely to move to the prose database.

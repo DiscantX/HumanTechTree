@@ -48,17 +48,18 @@ actively wrong for another, and that the layers genuinely vary independently:
   layer [Database Choice](database-choice.md) settles, and [Editing Model](editing-model.md) sets out
   what the application must build around it (a merge queue that serializes landings and translates the
   store's errors).
-- **Wiki mechanics.** Talk pages, policy pages, argument pages, accounts, and permissions. The current
-  direction folds most of this into the same store as the data layer, discussed below, with accounts
-  as the one piece that stays separate. Long-form prose is the exception that needs application-level
-  help, covered in [Prose Merging](prose-merging.md).
+- **Wiki mechanics.** Talk pages, argument pages, long-form prose, accounts, and permissions. Talk-page
+  comments and argument pages are structured documents in the same store as the data layer, discussed
+  below. Long-form prose and accounts are the two pieces that stay outside it, each in a PostgreSQL
+  database of its own. The prose needs application-level merging, covered in
+  [Prose Merging](prose-merging.md).
 - **Presentation.** The curated tech-tree rendering, node and edge cards, the achievement/spotlight
   treatment, and the text editor used for long-form content. This layer is still Open; see [Graph
   Rendering](tech-index.md) and Text Editor in the tech index.
 - **Delivery.** The application framework serving the presentation layer against the data layer, plus
   hosting and operations. Also Open.
 
-## Why wiki mechanics folded into the data layer
+## Why structured wiki mechanics folded into the data layer
 
 The naive shape of this project treats "the graph" and "the wiki around the graph" as two systems that
 have to be made to cooperate — a graph database on one side, a conventional wiki engine (MediaWiki, a
@@ -72,33 +73,39 @@ history. Each keeps its own commit or revision log, so a unified watchlist has t
 federation across two event streams, and diff, rollback, and conflict resolution stay two genuinely
 different code paths behind one UI, not one shared mechanism.
 
-The current direction instead treats talk pages, policy pages, and argument pages as documents in the
+The current direction instead treats talk-page comments and argument pages as documents in the
 same store as the graph itself. This is a direct consequence of picking a document-graph database
-(TerminusDB, per Database Choice) rather than a pure triple store: a talk-page comment or a policy
-page is just another schema'd document, versioned by the same commits that version the graph. A
+(TerminusDB, per Database Choice) rather than a pure triple store: a talk-page comment is just
+another schema'd document, versioned by the same commits that version the graph. A
 watchlist becomes one query over one commit log instead of a federation of two. An argument page, with
 its premises, inference steps, and ungrounded-premise list, arguably fits better here than it would
 have in a wikitext template, since it can be real structured data instead of simulated structure.
 
 This was provisional on one test, and the test has now been run. The store does not merge text inside a
-field: two edits to different paragraphs of one description still conflict. The fold-in survives, but
-with a condition. Most wiki-mechanic content does not need text merging at all, since talk-page comments
-are separate append-only documents and argument pages are structured data. Long-form prose, chiefly
-policy and essay pages, is merged in the application, as [Prose Merging](prose-merging.md) sets out.
+field: two edits to different paragraphs of one description still conflict. The fold-in survives for
+structured content, which never needed text merging, since talk-page comments are separate append-only
+documents and argument pages are structured data. Long-form prose is the exception and does not stay in
+the graph store. Native merging fails on it, and a stress test found that the memory and disk cost of
+holding it inline grows with its volume. It lives in PostgreSQL and is merged in the application, as
+[Prose Merging](prose-merging.md) sets out.
 
 ## What stays outside the unified store
 
-Two things are deliberately not folded in, for different reasons.
+Three things are deliberately not folded in, for different reasons.
 
+- **Long-form prose.** Articles and any long policy or essay pages are stored as immutable revisions in a
+  PostgreSQL prose database and linked to the graph by a stable identifier. The graph store cannot merge
+  text inside a field and pays for prose in proportion to its volume.
 - **Accounts.** Identity, sessions, and permissions are treated as a solved problem with mature
   off-the-shelf libraries in the chosen application framework, and there is no argument for making the
-  graph store also be an identity provider. This sits in a small side-store of its own.
+  graph store also be an identity provider. This sits in a PostgreSQL database of its own, separate from the prose database, so that identity data
+  has its own credentials.
 - **Search, conditionally.** [Database Choice](database-choice.md) and the tech index's Search entry
   record that the graph store's native query capability (pattern and substring matching, not indexed
-  full-text search) is being treated as sufficient for now, given how light node content actually is.
-  Indexed full-text search over talk, policy, and argument pages, and any future embedding-based
-  features, are deferred rather than built preemptively, and would most likely live in whatever small
-  side-store already exists for accounts, rather than as a third system.
+  full-text search) is being treated as sufficient for the graph for now, given how light node content actually is.
+  Indexed full-text search over long-form prose comes with the prose database. Search over talk
+  comments and argument pages, and any future embedding-based features, are deferred rather than built
+  preemptively, and would sit with the prose database, not the accounts database, which stays isolated.
 
 ## Presentation is a separate concern by design
 
@@ -128,13 +135,13 @@ markdown.
 ## Open questions
 
 - **The application-level prose merge.** The store's own merge model was tested and does not merge
-  prose, so the gate before wiki mechanics can be folded into the data layer with confidence is now a
-  working three-way merge in the application. That has not been built.
+  prose, so the remaining gate is a working three-way merge in the application, over the prose store. That
+  has not been built.
 - **Where the line between "data layer" and "wiki mechanics" actually falls.** Argument pages lean
   structured enough to belong unambiguously with the graph. Talk pages are separate append-only
-  comments and behave like structured data too. Only long-form policy and essay pages behave like
-  prose, and whether they belong in the store at all depends on the open question of whether they stay a
-  markdown repository.
+  comments and behave like structured data too. Only long-form text behaves like prose, and it now lives
+  in the prose database. Whether policy and essay pages are held by the wiki at all depends on the open
+  question of whether they stay a markdown repository.
 - **How much of the presentation layer's needs should feed back into the data-layer choice.** A
   rendering library's appetite for bulk reads has not been tested against real query patterns yet. The
   prototype's bulk reads were fast at small scale (all edges of a 300-node graph in 0.15 seconds), but

@@ -309,6 +309,28 @@ therefore still have to be serialized, but the sequential errors that forced the
 appear with apply. The measurement used one-commit branches and a small database, the same conditions as the
 rebase table.
 
+### Apply in the merge queue
+
+The prototype's queue has an apply mode, selected by running the live scripts with `--apply`. The staging step
+replays the source onto the staging branch with apply and the merge base. The base is either passed with the
+request, which is cheaper once the application records it when a branch is cut, or derived from the two
+branches' logs. The final step from staging to the target stays a rebase fast-forward, and the spacing
+between landings is off. The live queue scenarios were rerun through it.
+
+- **Concurrent landings.** Six simultaneous landings all landed with no retries and no spacing, in 6.5
+  seconds in total, 0.75 to 1.9 seconds each with the staging steps included. That was not measured side by
+  side with rebase.
+- **Conflicts.** The second of two edits to one field was reported as a conflict, not retried, and the first
+  editor's text stayed. A resolution written on a fresh branch landed. A duplicate claim under the composite
+  key landed once and conflicted the second time.
+- **The gate.** The missing-branch preflight and the refusal of an edge that closes a cycle behaved as with
+  rebase.
+- **An edge to a deleted node is refused by apply itself.** On the staging branch the store's own schema check
+  rejected the edge, with a witness of `references_untyped_object`, before the gate ran. With rebase the
+  same replay succeeded and only the gate caught it. The queue reads that body as a deleted reference. The
+  gate's dangling-edge check stays as a backstop, since the refusal was seen in one direction only.
+- **Every landing took one attempt,** about a dozen across the scenarios.
+
 ## Where real conflicts still happen, and how they resolve
 
 Fine granularity does not eliminate conflicts, it narrows what counts as one. Two editors changing the
@@ -368,10 +390,11 @@ natural place for that gate to sit.
 - **Whether apply should replace rebase as the merge.** Apply gives a structured conflict contract and
   merges at field level with a recorded base, which rebase's schema-validation errors do not. Against that,
   it squashes the branch into one commit, and needs the base recorded at branch creation. The author override
-  works, and the sequential server errors did not appear with apply, so those two doubts are answered. What
-  remains is whether the rest of the queue's behavior carries over: the staged landing and the gate with
-  apply as the replay, how apply reports an edit against a delete and an edge to a deleted node, and how a
-  branch with several commits should be squashed. The merge operation stays rebase until that has run.
+  works, the sequential server errors did not appear with apply, and the queue's live scenarios, including
+  both gate refusals, pass through an apply mode, so those doubts are answered. What remains is a
+  side-by-side timing comparison with rebase on a larger database, how a branch of several commits should be
+  squashed and whether that history matters, and whether the merge base is recorded at branch creation or
+  derived from the logs. The position stays rebase until that is decided.
 - **The cause of the intermittent server errors.** Unknown, and absent from the documentation. A new lead is
   that apply did not show the sequential errors at all, which points at the replay that rebase performs
   and not at landing onto a branch that has just moved. The pattern is characterized and the workaround is

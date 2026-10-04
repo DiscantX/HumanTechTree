@@ -153,8 +153,14 @@ both appends survived and nothing was duplicated.
   `List`. A deductive chain is one author's structure, and two editors changing it at once should be
   stopped and shown the collision, because inserting or reordering a step changes what a reviewer attested
   to.
-- **Not yet tested:** two branches editing the same sub-document, reviews nested one level deeper inside a
-  grounding, and a `List` of sub-documents for premises.
+- **Two branches editing the same sub-document.** With a stable key on the sub-document, two branches
+  changing different fields of one entry merged and both changes survived. Changing the same field on both
+  was reported as a conflict, and the first branch's value stayed.
+- **Reviews nested inside a grounding.** Two branches each appended a review to the same grounding's `Set`,
+  and all three reviews survived, so reviews can sit one level inside a grounding.
+- **Premises as a `List` of sub-documents.** Two branches each appending a step conflicted, and so did two
+  branches editing different steps of one chain, with the first branch's version kept. That matches the
+  leaning below: concurrent edits to one argument's chain are stopped and shown the collision.
 
 The shared document type (added in server 12.0.6), with its own identifier that several parents can
 reference, remains documented and unused. It becomes relevant only if a grounding ever needs to be edited
@@ -267,8 +273,10 @@ are specified in Prose Merging, and is reached from the graph only through a nod
   reviews do not carry over. Whether a reviewer may re-attest across such a change in one action, as the
   Sourcing policy allows for a small edit, and whether a display-time redirect should reset reviews at all,
   belong to Governance and Moderation.
-- **Nested collections beyond the tested case.** Two branches editing the same sub-document, reviews nested
-  inside a grounding, and a `List` of sub-documents for premises have not been tested.
+- **The key of a grounding.** The nested-review test keyed the grounding on its name. A key that hashes every
+  field of a grounding would change the grounding's identity when a review is added to it, since the reviews
+  sit inside it. Which fields identify a grounding, and whether reviews are kept out of that key, is not
+  settled and is tied to which fields go into a review's content hash.
 - **Whether one-claim-per-document holds up under real editing load.** Supported in the prototype's
   small simulated tests. Shared with Editing Model's own open questions.
 - **Block storage for long-form content.** If Prose Merging's deferred option is ever adopted, blocks

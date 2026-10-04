@@ -90,9 +90,11 @@ examples marked as tested; prose pages have proved less reliable (see the tech i
 - **The commit log is plain HTTP.** The spec marks the JavaScript client's log method as not
   implemented. The docs' reset page shows a `getCommitHistory()` method, but it does not exist in either
   published client package, so the prototype keeps a small HTTP helper for it.
-- **Reading a document as of a past commit is documented** as a GET on the document endpoint against a
-  commit reference. It has not been tested. A per-document history endpoint also exists and is reported
-  to list the commits that touched a document; that has not been verified either.
+- **Reading a document as of a past commit works.** A GET on the document endpoint against a commit
+  reference returned the first version of a document after a later commit had changed it, while the branch
+  head showed the second. The per-document history endpoint, asked about one document on a small database,
+  returned the commits that touched it, with each commit's author, identifier, and timestamp. Its behavior
+  on a large database was not tested here.
 - **The docs are silent on several things the design depends on:** how concurrent appends to `Set`,
   `List`, or `Array` fields merge, whether key fields may be optional or references, and what an HTTP 500
   from rebase means.
@@ -207,7 +209,10 @@ a single-writer operation.
   onto it, run the gate there, and only then replay staging onto the target, which is a fast-forward when
   nothing else has written to main. Main therefore only ever moves to a state that passed the gate, and a
   failing edit never reaches it. This depends on the queue being the only writer to main. The staging
-  branch is deleted afterward, and a retry starts from a fresh one.
+  branch is deleted afterward, and a retry starts from a fresh one. Live runs confirmed the refusals. An edge
+  to a node that another branch had deleted was refused with the dangling-edge violation, and an edge that
+  closed a cycle was refused with the cycle violation. In both, the first change landed, no refused edge
+  reached the target, and no staging branch was left behind.
 - **Preflight.** Check that the source branch exists before calling, since a missing branch returns a
   server error indistinguishable from a real fault.
 - **Translate errors.** Map cardinality and `subject_has_no_type` witnesses to a user-facing conflict,
@@ -328,8 +333,8 @@ natural place for that gate to sit.
   branch is disposable when it conflicts.
 - **Whether one-claim-per-document holds up under real load.** Supported in every case tried, including
   concurrent appends to groundings and objections nested in a claim (see [Data Model](data-model.md)). All
-  of it was on small graphs with simulated edits, and two branches editing the same nested entry have not
-  been tested.
+  of it was on small graphs with simulated edits. Two branches editing the same nested entry were tested
+  and behave as described in the Data Model.
 - **This essay's own depth.** The position still follows more from a prior decision (TerminusDB) than
   from an independent debate. The prototype has stress-tested it in the ways listed above, but not yet
   under real concurrent editors.
@@ -339,7 +344,7 @@ natural place for that gate to sit.
 The full list is tracked as [repository issues](https://github.com/DiscantX/HumanTechTree/issues), and the
 settled results are in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
 this essay are a test of apply with an explicit merge base, a check of what a conflicting rebase returns
-through the client in full, the staged-landing queue against the live database (the first live run covered
-concurrent landings, conflicts, the missing-branch check, and duplicate claims, while forced server failures
-and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of
+through the client in full, the staged-landing queue against the live database (the live runs covered
+concurrent landings, conflicts, the missing-branch check, duplicate claims, and the refusal of a dangling edge
+and of a cycle, while forced server failures and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of
 the pause measurement under a realistically sized database.

@@ -1,7 +1,7 @@
 import { config } from '../config';
 import { createClient } from './client';
 import { applyBranch } from './apply';
-import { findMergeBase } from './merge-base';
+import { resolveBase } from './merge-base';
 import { rebaseBranch, RebaseResult } from './rebase';
 import { validateBranch, blocking, Violation } from './validation-gate';
 
@@ -37,7 +37,7 @@ export async function landViaStaging(
     sourceBranch: string;
     targetBranch: string;
     message: string;
-    /** Apply mode only: the commit the source was cut from. Derived from the logs when absent. */
+    /** Apply mode only: the commit the source was cut from, as recorded when the branch was created. Derived from the logs when absent. */
     baseCommit?: string;
     /** Apply mode only: the editor to record as the commit's author. */
     author?: string;
@@ -51,7 +51,7 @@ export async function landViaStaging(
   await c.branch(staging);
   try {
     if (mode === 'apply') {
-      const baseCommit = req.baseCommit ?? (await findMergeBase(req.sourceBranch, staging));
+      const { base: baseCommit } = await resolveBase(req.baseCommit, req.sourceBranch, staging);
       if (!baseCommit) throw new Error(`no merge base found between ${req.sourceBranch} and ${req.targetBranch}`);
       await applyBranch({
         sourceBranch: req.sourceBranch,

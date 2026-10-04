@@ -49,7 +49,7 @@ ones.
   does not document, a conflicted branch cannot be repaired in place, and landings need an
   application-side merge queue that serializes landings, retries with a pause, and lands each edit through a
   staging branch and the validation gate. Rebase landings needed spacing about a second apart, and apply
-  did not. Where the merge base comes from stays open. Soft-flag-versus-hard-block for cycles stays open, deferred to The
+  did not. The merge base is recorded when a branch is created, with the log-derived finder as the fallback. Soft-flag-versus-hard-block for cycles stays open, deferred to The
   Validation Gate.
 - **[Data Model](data-model.md)** (Proposed). The concrete node, edge/claim, grounding, review, and
   objection schema implied by the policy essays, the one-claim-per-document storage decision Editing

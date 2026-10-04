@@ -121,7 +121,8 @@ The merge queue (`src/db/merge-queue.ts`) lands each edit through a staging bran
 landings, conflicts, the missing-branch check, and composite-key duplicates. The staged refusal of a dangling edge and of a cycle, reading a document at a past commit, and
 nested collections beyond the first case have since passed live, and apply works as a three-way merge given
 an explicit base and passes the queue's live scenarios through apply, which is now the queue's default (`--rebase` selects the old
-landing). Where the merge base comes from is open. Still unbuilt: the application-level prose merge. The full list is tracked as
+landing). The merge base is recorded when a branch is created (`src/db/branch.ts`), with the log-derived finder as the
+fallback; its live check (`npm run base-record-live`) has not been run yet. Still unbuilt: the application-level prose merge. The full list is tracked as
 GitHub issues in the repo; the settled results are in the "Prototype test backlog" in `wiki/tech/tech-index.md`.
 
 Cross-cutting policy questions still open: redirects versus reviewed claims, reviewer eligibility and
@@ -135,7 +136,7 @@ wiki/policy/      policy essays, plus essay-index.md
 wiki/tech/        tech essays, plus tech-index.md
 src/config.ts     env-based settings
 src/db/           client factory, rebase and apply helpers, commit-log helper, merge-base finder,
-                  merge queue (apply by default, rebase selectable), staged landing, validation gate
+                  branch-with-recorded-base helper, merge queue (apply by default, rebase selectable), staged landing, validation gate
 src/schema/       Node/Edge schema transcribed from Data Model
 src/scripts/      init-db, reset-db
 src/scripts/tests/ concurrent-suite (50 scenarios), merge-queue-test and

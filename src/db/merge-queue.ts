@@ -32,7 +32,7 @@ export interface LandingRequest {
   sourceBranch: string;
   targetBranch?: string; // default 'main'
   message: string;
-  /** Apply mode only: the commit the source branch was cut from. Derived from the logs when absent. */
+  /** Apply mode only: the commit the source branch was cut from, as recorded when the branch was created. Derived from the logs when absent. */
   baseCommit?: string;
   /** Apply mode only: the editor to record as the landing commit's author. */
   author?: string;

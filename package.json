@@ -14,6 +14,7 @@
     "merge-base-test": "ts-node src/scripts/tests/merge-base-test.ts",
     "apply-experiments": "ts-node src/scripts/tests/apply-experiments.ts",
     "gate-live": "ts-node src/scripts/tests/gate-live.ts",
+    "base-record-live": "ts-node src/scripts/tests/base-record-live.ts",
     "author-check": "ts-node src/scripts/tests/author-check.ts",
     "backlog-features-test": "ts-node src/scripts/tests/backlog-features-test.ts",
     "backlog-features-live": "ts-node src/scripts/tests/backlog-features-live.ts",

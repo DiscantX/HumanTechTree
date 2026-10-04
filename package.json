@@ -5,9 +5,9 @@
   "description": "First-pass prototype for the Human Tech Tree Wiki: TerminusDB connectivity, schema push, and a basic Node/Edge smoke test.",
   "scripts": {
     "build": "tsc",
-    "init-db": "ts-node src/scripts/tests/init-db.ts",
+    "init-db": "ts-node src/scripts/init-db.ts",
     "concurrent-suite": "ts-node src/scripts/tests/concurrent-suite.ts",
-    "reset-db": "ts-node src/scripts/tests/reset-db.ts",
+    "reset-db": "ts-node src/scripts/reset-db.ts",
     "merge-queue-test": "ts-node src/scripts/tests/merge-queue-test.ts",
     "merge-queue-live": "ts-node src/scripts/tests/merge-queue-live.ts",
     "validation-gate-test": "ts-node src/scripts/tests/validation-gate-test.ts",

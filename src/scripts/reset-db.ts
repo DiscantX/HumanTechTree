@@ -1,5 +1,5 @@
-import { config } from '../../config';
-import { createClient } from '../../db/client';
+import { config } from '../config';
+import { createClient } from '../db/client';
 
 /**
  * Deletes the prototype's dev database entirely. Useful when a schema

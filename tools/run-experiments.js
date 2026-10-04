@@ -256,8 +256,8 @@ async function main() {
 
     if (run.reset) {
       say('Resetting the dev database...');
-      await runTs(bin, 'src/scripts/tests/reset-db.ts', [], path.join(dir, 'setup-output.txt')); // fails harmlessly if no DB yet
-      const code = await runTs(bin, 'src/scripts/tests/init-db.ts', [], path.join(dir, 'setup-output.txt'));
+      await runTs(bin, 'src/scripts/reset-db.ts', [], path.join(dir, 'setup-output.txt')); // fails harmlessly if no DB yet
+      const code = await runTs(bin, 'src/scripts/init-db.ts', [], path.join(dir, 'setup-output.txt'));
       if (code !== 0) fail(`init-db failed (exit ${code}); see ${path.join(dir, 'setup-output.txt')}`);
     }
 

@@ -1,6 +1,6 @@
-import { config } from '../../config';
-import { createClient } from '../../db/client';
-import { graphSchema } from '../../schema/graph-schema';
+import { config } from '../config';
+import { createClient } from '../db/client';
+import { graphSchema } from '../schema/graph-schema';
 
 async function main() {
   const client = createClient();

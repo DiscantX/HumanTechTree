@@ -178,49 +178,38 @@ async function main() {
   });
 
   await section('G4 apply as a three-way merge with an explicit base (issue #11)', async () => {
-    const base = await branchOff('main', 'g4base');
-    const [id] = await insert(base, [nodeDoc(`G4 ${run}`)]);
-    const snap = await branchOff(base, 'g4snap'); // stays at the merge base
-    const a = await branchOff(base, 'g4a');
-    const b = await branchOff(base, 'g4b');
-    c.checkout(a);
-    await c.updateDocument({ ...(await c.getDocument({ id })), description: 'edited on A' });
-    c.checkout(b);
-    await c.updateDocument({ ...(await c.getDocument({ id })), stage: 'Observation' });
-
-    const la = await land(a, base);
-    observe('A lands on the target by rebase', la.text);
-    c.checkout(base);
-    try {
-      const res = await c.apply(branchPath(snap), branchPath(b), 'G4 apply B over base');
-      observe('apply of B with the snapshot branch as before', brief(res));
-    } catch (e) {
-      observe('apply of B with the snapshot branch as before', `FAILED ${errText(e)}`);
-    }
-    const merged = await getOn(base, id);
-    observe('target after apply', brief({ description: merged.description, stage: merged.stage }));
-    check('different fields: both edits present (a true three-way merge)', merged.description === 'edited on A' && merged.stage === 'Observation');
-
-    // Same field edited on both sides.
-    const base2 = await branchOff('main', 'g4cbase');
-    const [id2] = await insert(base2, [nodeDoc(`G4c ${run}`)]);
-    const snap2 = await branchOff(base2, 'g4csnap');
-    const a2 = await branchOff(base2, 'g4ca');
-    const b2 = await branchOff(base2, 'g4cb');
-    c.checkout(a2);
-    await c.updateDocument({ ...(await c.getDocument({ id: id2 })), description: 'A says one thing' });
-    c.checkout(b2);
-    await c.updateDocument({ ...(await c.getDocument({ id: id2 })), description: 'B says another' });
-    await land(a2, base2);
-    c.checkout(base2);
-    try {
-      const res = await c.apply(branchPath(snap2), branchPath(b2), 'G4 conflicting apply');
-      observe('apply, same field on both sides', `NO ERROR ${brief(res)}`);
-    } catch (e: any) {
-      observe('apply, same field on both sides', `status ${e?.status} ${errText(e)}`);
-      check('a same-field collision is a 409 with a structured body', e?.status === 409);
-    }
-    observe('target text afterwards', brief((await getOn(base2, id2)).description));
+    // The spec takes a bare commit ID or branch name for before and after, not a full path.
+    const scenario = async (label: string, kind: 'branch' | 'commit', sameField: boolean): Promise<void> => {
+      const base = await branchOff('main', 'g4base');
+      const [id] = await insert(base, [nodeDoc(`G4 ${label} ${run}`)]);
+      const snap = await branchOff(base, 'g4snap'); // stays at the merge base
+      const baseCommit = await head(base);
+      const a = await branchOff(base, 'g4a');
+      const b = await branchOff(base, 'g4b');
+      c.checkout(a);
+      await c.updateDocument({ ...(await c.getDocument({ id })), description: sameField ? 'A says one thing' : 'edited on A' });
+      c.checkout(b);
+      await c.updateDocument({ ...(await c.getDocument({ id })), ...(sameField ? { description: 'B says another' } : { stage: 'Observation' }) });
+      await land(a, base);
+      const before = kind === 'branch' ? snap : String(baseCommit);
+      c.checkout(base);
+      try {
+        const res = await c.apply(before, b, `G4 ${label}`);
+        observe(`${label}: apply, before = ${kind} ${before.slice(0, 12)}`, `OK ${brief(res)}`);
+      } catch (e: any) {
+        observe(`${label}: apply, before = ${kind} ${before.slice(0, 12)}`, `status ${e?.status} ${errText(e)}`);
+        if (sameField) check(`${label}: a same-field collision is a 409`, e?.status === 409);
+      }
+      const m = await getOn(base, id);
+      observe(`${label}: target afterwards`, brief({ description: m.description, stage: m.stage }));
+      if (!sameField) {
+        check(`${label}: both edits present (a true three-way merge)`, m.description === 'edited on A' && m.stage === 'Observation');
+      }
+    };
+    await scenario('different fields', 'branch', false);
+    await scenario('different fields', 'commit', false);
+    await scenario('same field', 'branch', true);
+    await scenario('same field', 'commit', true);
   });
 
   await section('G5 nested collections (issue #12)', async () => {

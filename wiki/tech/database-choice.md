@@ -241,7 +241,7 @@ OpenAPI spec, and the client packages afterwards changed some of what was assume
 
 - **Rebase is the documented merge.** The server has no merge endpoint. Its version-control operations
   are rebase, apply, squash, reset, diff, patch, and log, and the docs' own quickstart merges with
-  rebase. The details, including apply's unresolved status, are in [Editing Model](editing-model.md).
+  rebase. The details, including why apply is used for the merge instead, are in [Editing Model](editing-model.md).
 - **Rebase's error behavior is undocumented.** The spec lists no conflict or server-error response for
   it, so the conflict shape and the 500s seen so far have no documented contract to check them against.
 - **The official client package is `terminusdb`, not the one the prototype started with.** The docs

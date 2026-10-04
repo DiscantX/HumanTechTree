@@ -112,12 +112,27 @@ export function translateError(err: any): LandingOutcome | 'transient' {
 export const APPLY_DEPS: QueueDeps = { ...REAL_DEPS, land: (r) => landViaStaging(r, 'apply') };
 export const APPLY_OPTIONS: QueueOptions = { ...DEFAULT_OPTIONS, minGapMs: 0 };
 
+export type LandingMode = 'apply' | 'rebase';
+
 /**
- * A queue for the live scripts. Rebase by default; apply when the script is run with
- * `--apply` or LANDING_MODE=apply. MIN_GAP_MS overrides the spacing in either mode.
+ * Which replay the live scripts and the application use. Apply is the default (see Editing Model).
+ * Rebase stays selectable with `--rebase` or LANDING_MODE=rebase, for comparison runs. `--apply` and
+ * LANDING_MODE=apply are still accepted and change nothing. Asking for both modes is an error.
+ */
+export function landingModeFromEnv(): LandingMode {
+  const wantsRebase = process.argv.includes('--rebase') || process.env.LANDING_MODE === 'rebase';
+  const wantsApply = process.argv.includes('--apply') || process.env.LANDING_MODE === 'apply';
+  if (wantsRebase && wantsApply) throw new Error('Both apply and rebase were requested as the landing mode');
+  return wantsRebase ? 'rebase' : 'apply';
+}
+
+/**
+ * A queue for the live scripts and the application. Apply by default; rebase when the script is run
+ * with `--rebase` or LANDING_MODE=rebase. MIN_GAP_MS overrides the spacing in either mode. A queue
+ * built directly with `new MergeQueue()` still uses the rebase defaults above.
  */
 export function queueFromEnv(): MergeQueue {
-  const apply = process.argv.includes('--apply') || process.env.LANDING_MODE === 'apply';
+  const apply = landingModeFromEnv() === 'apply';
   const base = apply ? APPLY_OPTIONS : DEFAULT_OPTIONS;
   const gap = process.env.MIN_GAP_MS !== undefined ? Number(process.env.MIN_GAP_MS) : base.minGapMs;
   return new MergeQueue({ ...base, minGapMs: gap }, apply ? APPLY_DEPS : REAL_DEPS);

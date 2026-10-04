@@ -118,8 +118,8 @@ repeated runs with and without the sync step. The database questions are answere
 The merge queue (`src/db/merge-queue.ts`) lands each edit through a staging branch and the gate
 (`src/db/validation-gate.ts`), so main only moves to a state that passed. Live runs passed concurrent
 landings, conflicts, the missing-branch check, and composite-key duplicates. The staged refusal of a dangling edge and of a cycle, reading a document at a past commit, and
-nested collections beyond the first case have since passed live. Still untested or unbuilt: apply as a
-three-way merge and the application-level prose merge. The full list is tracked as
+nested collections beyond the first case have since passed live, and apply works as a three-way merge given
+an explicit base (whether it should replace rebase is open). Still unbuilt: the application-level prose merge. The full list is tracked as
 GitHub issues in the repo; the settled results are in the "Prototype test backlog" in `wiki/tech/tech-index.md`.
 
 Cross-cutting policy questions still open: redirects versus reviewed claims, reviewer eligibility and

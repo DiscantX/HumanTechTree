@@ -227,6 +227,36 @@ a single-writer operation.
 - **Reading back what landed is optional.** The same-paragraph result that motivated it did not
   reproduce, so it is no longer required. It remains a cheap safeguard.
 
+## Who made an edit
+
+[Accounts](tech-index.md) are kept outside the graph store, and the application reaches the store through
+one service account. Attribution therefore rests on the `author` recorded on each commit, which the
+application sets to the editor's account identifier. A check (`src/scripts/tests/author-check.ts`) asked
+whether that author survives the landing path.
+
+- **The SDK cannot set it.** The client stamps every document write with the login user: its add, update,
+  and delete methods overwrite the `author` parameter with the current user. A commit written through them
+  carries the service account. Attribution needs the write itself to carry the editor, either as a plain HTTP
+  request with the `author` parameter, which the server accepted with an arbitrary value, or a client per
+  editor.
+- **A rebase keeps it.** A commit authored by one editor, replayed onto a main that had moved, kept that
+  editor as its author after landing, although the rebase call passed the service account as its own
+  `author`. The rebase report showed the commit was replayed, not forwarded. A fast-forward kept it too.
+- **So does the staged landing.** The same edit landed through the merge queue, with main moved so that the
+  replay onto the staging branch rewrote the commit, and main showed the original author. The queue does
+  not have to pass the author through.
+- **The store does not authenticate it.** The author is a string the writer supplies, so anyone holding the
+  service credentials can write any value. That is acceptable while the application is the only writer, but
+  attribution is then the application's assertion, not something the store proves.
+- **Use the account identifier, not the display name.** The identifier is stable across renames, and the
+  display name is resolved when the history is shown.
+
+Each of these was observed once, on a small database, so they carry the same standing as the other single
+observations here. A first run against a development database that had not been reset was refused by the
+validation gate, with main unchanged, so the queue's refusal works, and the run was repeated on a clean
+database. What a rebase's own `author` parameter applies to was not observed, because no commit was created
+by the rebase itself, and apply, which squashes, was not tried.
+
 ## Where real conflicts still happen, and how they resolve
 
 Fine granularity does not eliminate conflicts, it narrows what counts as one. Two editors changing the

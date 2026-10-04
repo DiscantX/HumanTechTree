@@ -226,6 +226,13 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
   `Array` silently produces a wrong result.
 - **The second logical-necessity edge for one pair.** Accepted under random keys, rejected under the
   composite key.
+- **Staged refusals.** Through the queue, an edge to a node another branch had deleted and an edge that
+  closed a cycle were each refused by the gate, with the first change landed and no staging branch left.
+- **Reading at a past commit.** A document read against an older commit returned the older version. The
+  per-document history endpoint listed the commits for one document on a small database.
+- **Nested collections.** Different fields of one sub-document merge across branches and the same field
+  conflicts. Reviews nested in a grounding's `Set` merge, and a `List` of sub-documents conflicts on any
+  concurrent edit.
 - **Rebase and commit IDs.** A branch's own commits did not survive a rebase in the third round either, and
   the rebase report was empty.
 - **Commit authors.** The SDK stamps every document write with the login user, but an HTTP write can carry a

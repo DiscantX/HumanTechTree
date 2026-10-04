@@ -278,13 +278,36 @@ worked as `before`. The spec asks for bare names or IDs, and full paths are reje
 - **The base has to be known.** The server does not supply one. The application would record the commit a
   branch was cut from when it creates the branch, or keep a snapshot branch at that point, as the test did.
   A successful rebase does report a common commit, but only after it has already landed.
-- **It squashes.** Apply makes one commit, and the SDK stamps it with the login user as author. Whether the
-  author can be overridden through the request's commit information was not tried.
+- **It squashes.** Apply makes one commit, and the SDK stamps it with the login user as author by default.
+  Passing the author in the request's commit information overrides it: a commit applied with an author of
+  `alice` showed `alice` in the log. Apply can therefore carry the real editor.
 - **`match_final_state` defaults to true.** A conflict is waved through when both sides produce the same
   final state, which matches how identical concurrent edits already converge under rebase.
 
 This does not change the position that the merge operation is rebase. Whether apply should replace it is
 open below.
+
+### Apply under the conditions that break rebase
+
+The pause measurement made for rebase was repeated with apply. Branches that each added one node were applied
+one after another onto one target, using a snapshot as the base, so every apply landed on a target that had
+already moved. Each pause length had 30 applies.
+
+| Pause before the apply | First-attempt server errors with apply | With rebase |
+| --- | --- | --- |
+| none (run twice) | 0 of 60 | 7 of 50 (14 percent) |
+| 100 ms | 0 of 30 | 3 of 30 |
+| 250 ms | 0 of 30 | 1 of 30 |
+| 500 ms | 0 of 30 | 1 of 30 |
+| 1 second | 0 of 30 | 0 of 30 |
+
+All 180 applies landed on the first attempt, with no 409s, and the mean time per apply was 140 to 270
+milliseconds. Parallel applies still failed: in ten rounds of five simultaneous applies onto one target, 25
+of 50 succeeded and 25 returned server errors, against one success in five for rebase. The failed applies'
+bodies were not sampled, and whether the failures left the target consistent was not checked here. Landings
+therefore still have to be serialized, but the sequential errors that forced the one-second spacing did not
+appear with apply. The measurement used one-commit branches and a small database, the same conditions as the
+rebase table.
 
 ## Where real conflicts still happen, and how they resolve
 
@@ -344,12 +367,15 @@ natural place for that gate to sit.
 
 - **Whether apply should replace rebase as the merge.** Apply gives a structured conflict contract and
   merges at field level with a recorded base, which rebase's schema-validation errors do not. Against that,
-  it squashes the branch into one commit, stamps the SDK's user on it unless the author can be overridden,
-  needs the base recorded at branch creation, and has not been tried under the conditions that produce
-  rebase's intermittent server errors, so it is not known whether it shares them. A repeat of the pause
-  measurement with apply, and a check of the author override, would answer both.
-- **The cause of the intermittent server errors.** Unknown, and absent from the documentation. The
-  pattern is characterized and the workaround is spacing and retrying, but a report to the maintainers
+  it squashes the branch into one commit, and needs the base recorded at branch creation. The author override
+  works, and the sequential server errors did not appear with apply, so those two doubts are answered. What
+  remains is whether the rest of the queue's behavior carries over: the staged landing and the gate with
+  apply as the replay, how apply reports an edit against a delete and an edge to a deleted node, and how a
+  branch with several commits should be squashed. The merge operation stays rebase until that has run.
+- **The cause of the intermittent server errors.** Unknown, and absent from the documentation. A new lead is
+  that apply did not show the sequential errors at all, which points at the replay that rebase performs
+  and not at landing onto a branch that has just moved. The pattern is characterized and the workaround is
+  spacing and retrying, but a report to the maintainers
   should include the minimal reproduction (a replay landed immediately after another landing on main) and
   the missing-branch 500, which contradicts the spec. The project is already on the latest server release,
   so an upgrade retest is not currently available.
@@ -369,7 +395,7 @@ natural place for that gate to sit.
 
 The full list is tracked as [repository issues](https://github.com/DiscantX/HumanTechTree/issues), and the
 settled results are in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
-this essay are a repeat of the server-error measurement with apply, a check of what a conflicting rebase returns
+this essay are the staged landing and the gate rerun with apply as the replay, a check of what a conflicting rebase returns
 through the client in full, the staged-landing queue against the live database (the live runs covered
 concurrent landings, conflicts, the missing-branch check, duplicate claims, and the refusal of a dangling edge
 and of a cycle, while forced server failures and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of

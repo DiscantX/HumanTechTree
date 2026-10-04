@@ -42,13 +42,14 @@ ones.
   application-level merge and a report to the maintainers about the store's intermittent server errors,
   whose pattern is now characterized (they fade when landings are spaced about a second apart and retried)
   but whose cause is unknown.
-- **[Editing Model](editing-model.md)** (Proposed). Branch-and-merge, with rebase as the merge operation
-  (it is the documented one; the server has no merge endpoint), called through the official client, and
-  one claim per document to keep unrelated edits apart. Testing showed field-level merging works,
+- **[Editing Model](editing-model.md)** (Proposed). Branch-and-merge, with apply (given an explicit merge
+  base) as the merge operation, called through the official client, rebase kept for the final fast-forward
+  from staging to the target, and one claim per document to keep unrelated edits apart. Testing showed field-level merging works,
   conflicts are always reported (40 of 40 repeated same-paragraph runs) as schema-validation errors the API
   does not document, a conflicted branch cannot be repaired in place, and landings need an
-  application-side merge queue that serializes, spaces them about a second apart, retries with a pause, and
-  lands each edit through a staging branch and the validation gate. Apply is documented but unverified as an alternative. Soft-flag-versus-hard-block for cycles stays open, deferred to The
+  application-side merge queue that serializes landings, retries with a pause, and lands each edit through a
+  staging branch and the validation gate. Rebase landings needed spacing about a second apart, and apply
+  did not. Where the merge base comes from stays open. Soft-flag-versus-hard-block for cycles stays open, deferred to The
   Validation Gate.
 - **[Data Model](data-model.md)** (Proposed). The concrete node, edge/claim, grounding, review, and
   objection schema implied by the policy essays, the one-claim-per-document storage decision Editing
@@ -232,11 +233,11 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
   per-document history endpoint listed the commits for one document on a small database.
 - **Apply as a three-way merge.** With a snapshot of the common ancestor as `before`, apply merged edits to
   different fields and returned a structured 409 for the same field. A bare branch name and a bare commit ID
-  both work as `before`. Whether it should replace rebase is open in Editing Model.
+  both work as `before`. Apply replaced rebase as the merge in Editing Model.
 - **Apply under the server-error conditions.** An author passed in the commit information overrides the
   SDK's default. Sequential applies onto a moved target had no server errors in 180 runs, including 60 with
   no pause, where rebase failed about one in seven. Parallel applies onto one target still failed half the
-  time. Whether apply replaces rebase in the queue is open in Editing Model.
+  time. Apply is now the queue's default.
 - **Apply in the queue.** Through an apply mode, the live scenarios (concurrent landings, conflicts, a
   fresh-branch resolution, duplicate claims, the missing-branch preflight, and both gate refusals) all
   passed with no retries and no spacing. Apply itself refuses an edge to a deleted node on the staging

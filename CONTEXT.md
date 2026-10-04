@@ -74,8 +74,9 @@ Argument Page Format, and Can an Achievement Become a Genuine Prerequisite.
 - **Database Choice.** TerminusDB for the graph, talk-page comments, and argument pages. Long-form prose
   lives in PostgreSQL, and accounts in a separate PostgreSQL database. MediaWiki,
   Wikibase, Blazegraph, QLever, Gollum, and Wiki.js were each rejected, with reasons recorded.
-- **Editing Model.** Branch-and-merge, using rebase through the official client, one claim per document, and
-  an application-side merge queue that serializes and spaces landings, translates errors, and retries.
+- **Editing Model.** Branch-and-merge, using apply with an explicit merge base through the official client
+  (rebase only for the final fast-forward), one claim per document, and an application-side merge queue that
+  serializes landings, translates errors, and retries.
 - **Data Model.** Node, edge/claim, grounding, review, and objection schema. Reviews bind to a content hash,
   not a commit ID. Edges use a composite key, groundings are Sets, and clusters are never stored, apart from
   a thin pinned-cluster record.
@@ -119,7 +120,8 @@ The merge queue (`src/db/merge-queue.ts`) lands each edit through a staging bran
 (`src/db/validation-gate.ts`), so main only moves to a state that passed. Live runs passed concurrent
 landings, conflicts, the missing-branch check, and composite-key duplicates. The staged refusal of a dangling edge and of a cycle, reading a document at a past commit, and
 nested collections beyond the first case have since passed live, and apply works as a three-way merge given
-an explicit base and passes the queue's live scenarios through an apply mode (whether it should replace rebase is open). Still unbuilt: the application-level prose merge. The full list is tracked as
+an explicit base and passes the queue's live scenarios through apply, which is now the queue's default (`--rebase` selects the old
+landing). Where the merge base comes from is open. Still unbuilt: the application-level prose merge. The full list is tracked as
 GitHub issues in the repo; the settled results are in the "Prototype test backlog" in `wiki/tech/tech-index.md`.
 
 Cross-cutting policy questions still open: redirects versus reviewed claims, reviewer eligibility and
@@ -133,7 +135,7 @@ wiki/policy/      policy essays, plus essay-index.md
 wiki/tech/        tech essays, plus tech-index.md
 src/config.ts     env-based settings
 src/db/           client factory, rebase and apply helpers, commit-log helper, merge-base finder,
-                  merge queue (rebase or apply mode), staged landing, validation gate
+                  merge queue (apply by default, rebase selectable), staged landing, validation gate
 src/schema/       Node/Edge schema transcribed from Data Model
 src/scripts/      init-db, reset-db
 src/scripts/tests/ concurrent-suite (50 scenarios), merge-queue-test and

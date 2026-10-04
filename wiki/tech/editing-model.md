@@ -16,12 +16,14 @@ was observed, and what the documentation states.
 
 > **Branch-and-merge is adopted as the concurrency and versioning mechanic, using TerminusDB's native
 > commit/branch model, with one claim per document so that unrelated edits do not collide. The merge
-> operation is rebase, called through the official client (`client.rebase`), because rebase is what
-> the documentation itself calls merging and the server has no separate merge endpoint. Because the
-> store reports rebase conflicts in a form its API does not document, and fails intermittently with
-> opaque server errors that fade when landings are spaced out, every merge goes through an
-> application-side merge queue that serializes landings, spaces them, translates errors, retries
-> transient failures, and resolves conflicts on a fresh branch.**
+> operation is apply, called through the official client (`client.apply`) with an explicit merge base,
+> because it merges at field level, reports a conflict as a structured 409, can carry the real editor as
+> the commit's author, and showed no server errors in sequential landings where rebase failed about one
+> time in seven. Rebase, which the documentation itself calls merging, is kept for one step only: moving
+> a staging branch that has passed the gate onto the target as a fast-forward. Because parallel landings
+> still fail and the store does not catch every invalid combination, every merge goes through an
+> application-side merge queue that serializes landings, translates errors, retries transient failures,
+> and resolves conflicts on a fresh branch.**
 
 This is a narrower conclusion than it looks. It does not resolve every open question Governance and
 Moderation left on the table (soft-flag versus hard-block for cycles, for instance, stays open below).
@@ -201,11 +203,13 @@ a single-writer operation.
 - **Serialize landings.** Editing on branches can happen in parallel, but the step that moves main
   goes through one queue. Parallel landings succeed one in five and fail cleanly, which is a reason to
   avoid them, not a reason to fear them.
-- **Space landings.** Wait about a second after a landing before replaying the next branch onto main. The
-  server errors fell from about one in seven with no wait to none in 30 at one second. A queue that lands
-  at most about once a second costs little for a wiki that edits by review.
-- **Use the official client.** Rebase is a single `client.rebase` call on a client whose current branch
-  is the target. Each landing uses a fresh client so no branch state leaks between calls.
+- **Space landings only when replaying with rebase.** Wait about a second after a landing before replaying
+  the next branch onto main. The server errors fell from about one in seven with no wait to none in 30 at
+  one second. Apply showed no sequential errors at any pause, so in apply mode the spacing defaults to
+  zero, and `MIN_GAP_MS` can set it in either mode.
+- **Use the official client.** Apply is a single `client.apply` call, and rebase a single `client.rebase`
+  call, each on a client whose current branch is the target. Each landing uses a fresh client so no branch
+  state leaks between calls.
 - **Land through a staging branch and the validation gate.** Branch staging off the target, replay the source
   onto it, run the gate there, and only then replay staging onto the target, which is a fast-forward when
   nothing else has written to main. Main therefore only ever moves to a state that passed the gate, and a
@@ -261,7 +265,7 @@ Each of these was observed once, on a small database, so they carry the same sta
 observations here. A first run against a development database that had not been reset was refused by the
 validation gate, with main unchanged, so the queue's refusal works, and the run was repeated on a clean
 database. What a rebase's own `author` parameter applies to was not observed, because no commit was created
-by the rebase itself, and apply, which squashes, was not tried.
+by the rebase itself. Apply creates a commit, and its author override is covered below.
 
 ## Apply as a three-way merge
 
@@ -284,8 +288,8 @@ worked as `before`. The spec asks for bare names or IDs, and full paths are reje
 - **`match_final_state` defaults to true.** A conflict is waved through when both sides produce the same
   final state, which matches how identical concurrent edits already converge under rebase.
 
-This does not change the position that the merge operation is rebase. Whether apply should replace it is
-open below.
+These results are the basis for the position above: apply is the merge, with rebase kept for the final
+fast-forward. What is still open about it is listed below.
 
 ### Apply under the conditions that break rebase
 
@@ -311,7 +315,8 @@ rebase table.
 
 ### Apply in the merge queue
 
-The prototype's queue has an apply mode, selected by running the live scripts with `--apply`. The staging step
+The queue's apply mode is its default. Running the live scripts with `--rebase`, or setting
+`LANDING_MODE=rebase`, selects the old rebase landing for comparison runs. The staging step
 replays the source onto the staging branch with apply and the merge base. The base is either passed with the
 request, which is cheaper once the application records it when a branch is cut, or derived from the two
 branches' logs. The final step from staging to the target stays a rebase fast-forward, and the spacing
@@ -387,14 +392,13 @@ natural place for that gate to sit.
 
 ## Open questions
 
-- **Whether apply should replace rebase as the merge.** Apply gives a structured conflict contract and
-  merges at field level with a recorded base, which rebase's schema-validation errors do not. Against that,
-  it squashes the branch into one commit, and needs the base recorded at branch creation. The author override
-  works, the sequential server errors did not appear with apply, and the queue's live scenarios, including
-  both gate refusals, pass through an apply mode, so those doubts are answered. What remains is a
-  side-by-side timing comparison with rebase on a larger database, how a branch of several commits should be
-  squashed and whether that history matters, and whether the merge base is recorded at branch creation or
-  derived from the logs. The position stays rebase until that is decided.
+- **Where the merge base comes from.** Apply needs the commit a branch was cut from. It can be recorded when
+  the branch is created, which is cheaper at landing time, or derived from the branches' logs by the
+  merge-base finder. The queue accepts a base with the request and derives one when it is absent, so both
+  work today, and which one the application relies on is not decided.
+- **What apply's squash costs.** Apply turns a branch of several commits into one. Whether that history
+  matters to reviewers, and how it interacts with reviews bound to a content hash, is not settled. A
+  side-by-side timing comparison with rebase on a larger database has not been run either.
 - **The cause of the intermittent server errors.** Unknown, and absent from the documentation. A new lead is
   that apply did not show the sequential errors at all, which points at the replay that rebase performs
   and not at landing onto a branch that has just moved. The pattern is characterized and the workaround is
@@ -418,8 +422,8 @@ natural place for that gate to sit.
 
 The full list is tracked as [repository issues](https://github.com/DiscantX/HumanTechTree/issues), and the
 settled results are in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
-this essay are the staged landing and the gate rerun with apply as the replay, a check of what a conflicting rebase returns
+this essay are a check of what a conflicting rebase returns
 through the client in full, the staged-landing queue against the live database (the live runs covered
 concurrent landings, conflicts, the missing-branch check, duplicate claims, and the refusal of a dangling edge
 and of a cycle, while forced server failures and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of
-the pause measurement under a realistically sized database.
+the pause measurement under a realistically sized database, and a timing run of apply against rebase on one.

@@ -1,6 +1,6 @@
 import { config } from '../../config';
 import { createClient } from '../../db/client';
-import { queueFromEnv, LandingResult } from '../../db/merge-queue';
+import { queueFromEnv, landingModeFromEnv, LandingResult } from '../../db/merge-queue';
 
 /**
  * Live test of the merge queue against a running TerminusDB. Needs the dev
@@ -51,7 +51,7 @@ const edge = (s: string, t: string, statement: string) => ({
 
 async function main() {
   const q = queueFromEnv();
-  console.log(`landing mode: ${process.argv.includes('--apply') || process.env.LANDING_MODE === 'apply' ? 'apply' : 'rebase'}`);
+  console.log(`landing mode: ${landingModeFromEnv()}`);
 
   // Q1: many branches enqueued at once all land, one at a time.
   {

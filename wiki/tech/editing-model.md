@@ -86,7 +86,8 @@ examples marked as tested; prose pages have proved less reliable (see the tech i
   signature (`before`, `after`, `message`, and optional flags, applied to the currently checked-out
   branch) does not match the argument order in the docs' examples. Its `match_final_state` option,
   which lets a conflicting patch through if it yields the same final state, is documented for apply
-  only, not for rebase. Whether apply can serve as a real three-way merge is untested.
+  only, not for rebase. A live test showed that apply does work as a three-way merge when given an explicit
+  base (see below).
 - **The commit log is plain HTTP.** The spec marks the JavaScript client's log method as not
   implemented. The docs' reset page shows a `getCommitHistory()` method, but it does not exist in either
   published client package, so the prototype keeps a small HTTP helper for it.
@@ -262,6 +263,29 @@ validation gate, with main unchanged, so the queue's refusal works, and the run 
 database. What a rebase's own `author` parameter applies to was not observed, because no commit was created
 by the rebase itself, and apply, which squashes, was not tried.
 
+## Apply as a three-way merge
+
+A live test gave apply an explicit merge base: a snapshot of the common ancestor as `before`, the editor's
+branch as `after`, run against the branch that had since moved. Both a bare branch name and a bare commit ID
+worked as `before`. The spec asks for bare names or IDs, and full paths are rejected as invalid references.
+
+- **Different fields merge.** Two edits to different fields of one document, one landed first and the other
+  applied on top, both survived.
+- **The same field is a structured 409.** The response is `api:ApplyError` with `api:status` of
+  `api:conflict` and a list of witnesses. Each names the document and the field, with the expected and
+  found values, which is much easier to translate than the schema-validation errors a conflicting rebase
+  produces. The first edit's value stayed on the target.
+- **The base has to be known.** The server does not supply one. The application would record the commit a
+  branch was cut from when it creates the branch, or keep a snapshot branch at that point, as the test did.
+  A successful rebase does report a common commit, but only after it has already landed.
+- **It squashes.** Apply makes one commit, and the SDK stamps it with the login user as author. Whether the
+  author can be overridden through the request's commit information was not tried.
+- **`match_final_state` defaults to true.** A conflict is waved through when both sides produce the same
+  final state, which matches how identical concurrent edits already converge under rebase.
+
+This does not change the position that the merge operation is rebase. Whether apply should replace it is
+open below.
+
 ## Where real conflicts still happen, and how they resolve
 
 Fine granularity does not eliminate conflicts, it narrows what counts as one. Two editors changing the
@@ -318,10 +342,12 @@ natural place for that gate to sit.
 
 ## Open questions
 
-- **Whether apply can be a real three-way merge.** Its conflict responses are documented and structured,
-  which rebase's are not, but its examples contradict its description, it squashes commits, and there is
-  no documented way to obtain a merge base. If a merge base can be found, apply might give a cleaner
-  conflict contract than rebase's schema-validation errors. Untested.
+- **Whether apply should replace rebase as the merge.** Apply gives a structured conflict contract and
+  merges at field level with a recorded base, which rebase's schema-validation errors do not. Against that,
+  it squashes the branch into one commit, stamps the SDK's user on it unless the author can be overridden,
+  needs the base recorded at branch creation, and has not been tried under the conditions that produce
+  rebase's intermittent server errors, so it is not known whether it shares them. A repeat of the pause
+  measurement with apply, and a check of the author override, would answer both.
 - **The cause of the intermittent server errors.** Unknown, and absent from the documentation. The
   pattern is characterized and the workaround is spacing and retrying, but a report to the maintainers
   should include the minimal reproduction (a replay landed immediately after another landing on main) and
@@ -343,7 +369,7 @@ natural place for that gate to sit.
 
 The full list is tracked as [repository issues](https://github.com/DiscantX/HumanTechTree/issues), and the
 settled results are in the [tech index](tech-index.md#prototype-test-backlog). The ones that bear on
-this essay are a test of apply with an explicit merge base, a check of what a conflicting rebase returns
+this essay are a repeat of the server-error measurement with apply, a check of what a conflicting rebase returns
 through the client in full, the staged-landing queue against the live database (the live runs covered
 concurrent landings, conflicts, the missing-branch check, duplicate claims, and the refusal of a dangling edge
 and of a cycle, while forced server failures and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of

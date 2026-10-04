@@ -230,6 +230,9 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
   closed a cycle were each refused by the gate, with the first change landed and no staging branch left.
 - **Reading at a past commit.** A document read against an older commit returned the older version. The
   per-document history endpoint listed the commits for one document on a small database.
+- **Apply as a three-way merge.** With a snapshot of the common ancestor as `before`, apply merged edits to
+  different fields and returned a structured 409 for the same field. A bare branch name and a bare commit ID
+  both work as `before`. Whether it should replace rebase is open in Editing Model.
 - **Nested collections.** Different fields of one sub-document merge across branches and the same field
   conflicts. Reviews nested in a grounding's `Set` merge, and a `List` of sub-documents conflicts on any
   concurrent edit.

@@ -71,16 +71,16 @@ Argument Page Format, and Can an Achievement Become a Genuine Prerequisite.
 
 - **Architecture Overview.** Four layers (data and version control, wiki mechanics, presentation, delivery),
   with a tool chosen per layer.
-- **Database Choice.** TerminusDB for the graph and, conditional on application-level prose merging, for
-  talk, policy, and argument pages. A small side-store handles accounts and later search. MediaWiki,
+- **Database Choice.** TerminusDB for the graph, talk-page comments, and argument pages. Long-form prose
+  lives in PostgreSQL, and accounts in a separate PostgreSQL database. MediaWiki,
   Wikibase, Blazegraph, QLever, Gollum, and Wiki.js were each rejected, with reasons recorded.
 - **Editing Model.** Branch-and-merge, using rebase through the official client, one claim per document, and
   an application-side merge queue that serializes and spaces landings, translates errors, and retries.
 - **Data Model.** Node, edge/claim, grounding, review, and objection schema. Reviews bind to a content hash,
   not a commit ID. Edges use a composite key, groundings are Sets, and clusters are never stored, apart from
   a thin pinned-cluster record.
-- **Prose Merging.** The store does not merge text inside a field. Build an application-level three-way merge
-  first, and defer block storage.
+- **Prose Merging.** The graph store does not merge text inside a field. Prose is kept as immutable full-text
+  revisions in PostgreSQL and merged in the application with a three-way merge, and block storage is deferred.
 
 Open, not written: Computed Values, The Validation Gate, Versioning and Reviews, Accounts and Permissions,
 Talk Pages and Argument Pages, Content Sourcing, Search, Graph Rendering, Node and Edge Pages, Text Editor,
@@ -88,6 +88,9 @@ Achievements and Spotlight, Cluster Rendering, Application Framework, Bot Infras
 Hosting and Operations, The Essays Themselves.
 
 ## Current state and open gates
+
+The stress test (variants A to D, TerminusDB 12.0.7) found that prose volume, not placement, drives memory and
+disk cost, so long-form prose is held in PostgreSQL instead of the graph store. Details are in Database Choice.
 
 The prototype's suite (50 scenarios) has run in several rounds against TerminusDB 12.0.7, including
 repeated runs with and without the sync step. The database questions are answered:

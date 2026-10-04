@@ -24,8 +24,9 @@ Editing Model depends on: that a claim is its own document, not a nested entry i
 | `subject` | required string/text | [What Constitutes a Discovery?](../policy/what-constitutes-a-discovery.md) |
 | `stage` | optional enum: Observation, Exploitation, Production, Explanation | What Constitutes a Discovery? |
 | `category` | Discovery, Invention, Achievement, or computed Disambiguation for an undivided multi-category subject | [Achievement vs. Discovery vs. Invention](../policy/achievement-discovery-invention.md) |
-| `description` | short text, often a borrowed encyclopedia lede with attribution | [About the Project](../policy/about-the-project.md) |
+| `description` | short text, often a borrowed encyclopedia lede with attribution; kept short, since long-form text goes through `prose_page` | [About the Project](../policy/about-the-project.md) |
 | `dates` | node content, e.g. an inception date | not edge-reviewed; see Sourcing policy's node-facts-out-of-scope note below |
+| `prose_page` | optional stable identifier of the node's long-form article in the prose store | Prose Merging |
 | `redirect_target` | nullable reference to another node's `id` | Governance and Moderation |
 
 Display title and slug are **derived** from `subject` and `stage`, never stored as the field of record,
@@ -37,6 +38,11 @@ computed from the live graph, never stored as a node field a write could leave s
 often it is computed is a question for the tech index's Computed Values essay, not this one. The
 prototype found that computing every node's blast radius in the client over a 300-node, 600-edge graph
 takes about 15 to 17 milliseconds, so computing on read is viable at that scale.
+
+A node's article, when it has one beyond the short description, is not stored in the node document. It lives
+in the prose store (see [Prose Merging](prose-merging.md)), and the node holds only `prose_page`, an
+identifier assigned when the page is created and never changed. Which revision is current is recorded in the
+prose store, not on the node, so a prose edit never changes the node document.
 
 ## Edge, as a claim
 
@@ -222,13 +228,16 @@ fact itself, and it carries no edges of its own.
 
 ## Wiki-mechanic content
 
-Under the direction recorded in [Architecture Overview](architecture-overview.md), talk pages, policy
-pages, and argument pages are documents in the same store, sharing the same commit history as nodes and
-edges. Their own field-level schema is deliberately out of scope here and belongs to the tech index's
-Talk Pages and Argument Pages essay, which has not yet been drafted. Two constraints from the prose
-findings do reach this essay. Talk-page comments should be stored one document per comment, so that new
-comments never collide. And any long-form text field is a single value to the store and cannot be merged
-inside it, which [Prose Merging](prose-merging.md) addresses in the application.
+Under the direction recorded in [Architecture Overview](architecture-overview.md), talk-page comments and
+argument pages are documents in the same store, sharing the same commit history as nodes and edges. Their
+own field-level schema is deliberately out of scope here and belongs to the tech index's Talk Pages and
+Argument Pages essay, which has not yet been drafted. One constraint from the prose findings reaches this
+essay: talk-page comments should be stored one document per comment, so that new comments never collide.
+
+Long-form text is not stored here. A text field is a single value to this store and cannot be merged
+inside it, and holding prose on every node costs memory in proportion to its volume (see
+[Database Choice](database-choice.md)). It lives in the prose store as immutable revisions, whose fields
+are specified in Prose Merging, and is reached from the graph only through a node's `prose_page`.
 
 ## What this essay does not decide
 
@@ -262,8 +271,10 @@ inside it, which [Prose Merging](prose-merging.md) addresses in the application.
   inside a grounding, and a `List` of sub-documents for premises have not been tested.
 - **Whether one-claim-per-document holds up under real editing load.** Supported in the prototype's
   small simulated tests. Shared with Editing Model's own open questions.
-- **Block storage for long-form content.** If [Prose Merging](prose-merging.md)'s deferred option is
-  ever adopted, blocks become a new document type with a position key and a page reference. Not modeled
-  here.
+- **Block storage for long-form content.** If Prose Merging's deferred option is ever adopted, blocks
+  become rows in the prose store with a position key and a page reference. Not modeled here.
+- **Whether the graph records prose edits.** The node holds only `prose_page`, so the graph's commit log
+  does not show prose edits. Whether it should, to keep one history for recent changes, is open in Prose
+  Merging.
 - **The stored `status` field.** Whether to remove it from the stored schema or keep it as a computed
   cache. See the note under Edge above.

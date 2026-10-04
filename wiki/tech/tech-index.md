@@ -30,10 +30,12 @@ ones.
 
 - **[Architecture Overview](architecture-overview.md)** (Proposed). What the system is, what it must
   support, and how the problem divides into four layers: data and version control, wiki mechanics,
-  presentation, and delivery. Wiki mechanics fold into the data layer under the current direction, with
-  long-form prose as the exception; presentation stays a separate, still-open concern.
-- **[Database Choice](database-choice.md)** (Proposed). TerminusDB for the graph and, conditional on
-  application-level prose merging, for talk pages, policy pages, and argument pages as well. Records the
+  presentation, and delivery. Structured wiki mechanics fold into the data layer under the current direction, with
+  long-form prose and accounts as the exceptions, each in its own PostgreSQL database; presentation stays
+  a separate, still-open concern.
+- **[Database Choice](database-choice.md)** (Proposed). TerminusDB for the graph, talk-page comments, and
+  argument pages. Long-form prose lives in PostgreSQL, and accounts in a separate PostgreSQL database.
+  Records the stress test that decided this, and the
   rejection of MediaWiki alongside TerminusDB, Wikibase alone, Blazegraph, QLever, and two git-backed
   wiki engines (Gollum, Wiki.js), each for a distinct reason, and what the prototype has shown about the
   store. The prose-merge test has been run and native merging failed. The remaining gates are a working
@@ -84,19 +86,21 @@ ones.
 
 ## Wiki mechanics
 
-- **[Prose Merging](prose-merging.md)** (Proposed). How long-form prose is merged, given that the store
-  does not merge text inside a field. Build an application-level three-way merge first, with explicit
-  conflict regions; defer block-level storage until real editing patterns justify it. The documentation
-  describes reading a document as of a past commit, which would supply the base text; that is untested.
+- **[Prose Merging](prose-merging.md)** (Proposed). How long-form prose is stored and merged, given that the graph store
+  does not merge text inside a field and charges memory in proportion to prose volume. Prose is kept as
+  immutable full-text revisions in PostgreSQL, merged in the application with a three-way merge that
+  reports explicit conflict regions; block-level storage is deferred until real editing patterns justify
+  it.
 - **Accounts, Permissions, and Bots** (Open). How the permission tiers described in Governance and
   Moderation are enforced, how bot accounts and their declared operator of record are modeled, and how
-  far the API is exposed to other operators.
+  far the API is exposed to other operators. Accounts live in their own PostgreSQL database.
 - **Talk Pages and Argument Pages** (Open). Where open-ended discussion and the planned structured
-  Argument Page Format live, and whether they share a store with the graph or sit in the conventional
-  side of the split. Constraint already fixed: one document per talk-page comment.
+  Argument Page Format live, and whether they stay in the graph store, which is the current expectation.
+  Constraint already fixed: one document per talk-page comment.
 - **Content Sourcing** (Open). How node descriptions borrowed from an existing encyclopedia (with
   attribution) are pulled in, snapshotted, and kept compliant with the source's license.
-- **Search** (Open). Full-text search across node and claim content.
+- **Search** (Open). Full-text search across node and claim content. Search over long-form prose comes with
+  the PostgreSQL prose database.
 
 ## Presentation
 
@@ -140,7 +144,7 @@ getting a prototype running:
 2. ~~Editing Model~~ — drafted and revised; tested under repeated runs, still to be tested against a real merge queue and concurrent editors
 3. ~~Database Choice~~ — drafted and revised; the server-error cause is the one remaining question
 4. ~~Data Model~~ — drafted and revised; reviews bind to a content hash, edges use a composite key, groundings are Sets
-5. ~~Prose Merging~~ — drafted, pending a working application-level merge
+5. ~~Prose Merging~~ — drafted, revised for the PostgreSQL prose store; pending a working application-level merge
 6. The Validation Gate
 7. Computed Values
 8. Graph Rendering

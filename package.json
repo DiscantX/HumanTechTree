@@ -22,6 +22,7 @@
     "repro-apply": "ts-node src/scripts/tests/repro-apply.ts",
     "repro-sequential": "ts-node src/scripts/tests/repro-sequential.ts",
     "repro-final-step": "ts-node src/scripts/tests/repro-final-step.ts",
+    "repro-author-replay": "ts-node src/scripts/tests/repro-author-replay.ts",
     "stress-suite": "ts-node src/scripts/tests/stress-suite.ts",
     "stress-run": "ts-node src/scripts/tests/stress-run.ts"
   },

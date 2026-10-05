@@ -148,6 +148,10 @@ tools/            run-experiments.js, gen_openapi_md.py
 Housekeeping to fix: `README.md` is stale (it describes scripts that no longer exist and says rebase bypasses
 the JS client), and `.env` is tracked even though it is a template, so it should be renamed `.env.example`.
 
+This repository is a dev/test repo. When real application building starts, a fresh production repo is planned (issue
+#61), with history cleaned once at the cutover rather than rewritten here. Until then, commits are made as
+DiscantX with no co-author trailer.
+
 ## Working conventions
 
 - **Debate first, essay second.** Each essay is worked out in back-and-forth discussion before it is written.

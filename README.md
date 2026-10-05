@@ -37,6 +37,7 @@ src/
       backlog-features-live.ts # branchExists, log pagination, WOQL path queries (live)
       mcp-test.ts              # smoke test of the MCP tool handlers (live)
       repro-rebase.ts          # repros for the upstream rebase/HTTP 500 behavior (live)
+      repro-apply.ts           # the apply and string-size repros for the upstream report (live)
 ```
 
 This shape is meant to survive into the real codebase: `config`, the
@@ -64,7 +65,7 @@ To start over: `npm run reset-db`, then `npm run init-db` again.
 
 `npm run merge-queue-test`, `npm run validation-gate-test` and
 `npm run backlog-features-test` run without a TerminusDB instance. The
-`*-live` scripts, `concurrent-suite`, `repro-rebase` and the MCP smoke test
+`*-live` scripts, `concurrent-suite`, `repro-rebase`, `repro-apply` and the MCP smoke test
 need the server from the steps above.
 
 ## TerminusDB MCP server

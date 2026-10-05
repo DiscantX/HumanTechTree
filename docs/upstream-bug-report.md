@@ -1,9 +1,9 @@
 # TerminusDB 12.0.7: Rebase Landing Failures and Status-Code Mismatches
 
-Draft upstream report. Not yet submitted. Every reproduction below must be re-run against the live
-server before filing, and the counts marked "recorded" come from the prototype's own test log, not from
-the minimal scripts. The apply figures come from the prototype's apply-experiments run (2026-10-04) and are
-recorded the same way.
+Draft upstream report. Not yet submitted. The minimal reproductions (`npm run repro-rebase` and
+`npm run repro-apply`) were run live on 2026-10-05, and each section below says what they showed. Counts
+marked "recorded" come from earlier prototype runs, not from the minimal scripts. Section 4 has not been
+re-run.
 
 ## Environment
 
@@ -13,28 +13,36 @@ recorded the same way.
 
 ## Summary
 
-Five issues, in rough order of impact. The cleanest reproduction is that one sequence of back-to-back
-landings fails intermittently with `rebase` and never fails with `apply`, which points at the replay that
-rebase performs.
+What the minimal reproductions showed:
 
-1. `POST /api/rebase/{path}` returns an HTTP 500 with no error detail when it runs shortly after another
-   landing on the same branch. The same sequence through `POST /api/apply/{path}` did not fail.
-2. Concurrent landings onto one branch mostly fail with HTTP 500 rather than a retryable or conflict status,
-   with both rebase and apply.
-3. A request naming a branch that does not exist returns HTTP 500.
-4. Rebase replays an edge addition onto a state where its target document was deleted, and succeeds. The
-   reverse order is rejected, and so is the same edge when it is applied.
-5. A limit on the size of a string value, reported by a maintainer in the project's Discord and not yet
-   reproduced by us.
+1. **Back-to-back rebase 500: not reproduced by the minimal script.** The recorded rate was about 1 in 7
+   with rebase and 0 of 180 with apply. The minimal script saw 0 errors in 40 rebases and 0 in 40 applies.
+2. **Concurrent landings onto one branch fail with HTTP 500: reproduced, for both rebase and apply.** Apply's
+   body names the cause (transaction retry count exceeded), and the target was left consistent.
+3. **A missing branch returns 500 only for rebase: reproduced and narrowed.** Apply and log return a
+   structured 400 for the same condition.
+4. **Rebase replays an edge addition onto a state where its target was deleted, and succeeds: not
+   re-run.** The reverse order is rejected, and so is the same edge when it is applied.
+5. **A string size limit: not reproduced** up to 2,000,000 characters.
 
 ## 1. HTTP 500 on a rebase right after another landing
 
-**Observed.** About one in seven sequential replays that landed immediately after another landing returned
-HTTP 500 (recorded). With a one-second wait before each landing the count was zero. Fast-forwards never
-failed. Retrying after a pause always succeeded. The response carries only the status code and the server
-log adds nothing.
+**Observed (recorded).** About one in seven sequential rebases that landed immediately after another landing
+returned HTTP 500. With a one-second wait before each landing the count was zero. Fast-forwards never failed.
+Retrying after a pause always succeeded. The response carries only the status code and the server log adds
+nothing.
 
-**Minimal reproduction (to be confirmed).**
+**Minimal reproduction, run 2026-10-05: not reproduced.** Twenty cycles of two back-to-back landings gave 40
+rebases and no server errors, and none among the 20 that landed directly after another. At the recorded rate
+about three of those 20 would have failed, so a clean run would be expected about one time in twenty. Two
+things differ from the recorded runs and should be checked before this item is filed:
+
+- The recorded runs landed many one-node branches one after another onto a target that kept moving. The
+  minimal script lands two per cycle, with branch creation in between, on a small database.
+- The script creates `b2` while its client is checked out on `b1`. If the client creates a branch from its
+  current branch, `b2` was cut from `b1` and not from `main`, which is not the setup described below.
+
+**Setup the report intends.**
 
 1. Create a database with the document class used by the prototype.
 2. Create branches `b1` and `b2` from `main`, and add one unrelated document on each.
@@ -58,41 +66,61 @@ common ancestor as `before`, so every apply landed on a target that had already 
 | 500 ms | 0 of 30 | 1 of 30 |
 | 1 second | 0 of 30 | 0 of 30 |
 
-All 180 applies landed on the first attempt. The measurement used one-commit branches and a small database,
-the same conditions as the rebase counts. The difference suggests the failure is specific to rebase's replay,
-not to landing twice in quick succession.
+All 180 applies landed on the first attempt (recorded). The measurement used one-commit branches and a small
+database. The minimal apply script added 40 more applies with no errors. The difference suggests the failure
+is specific to rebase's replay, not to landing twice in quick succession, but only the recorded sequence
+shows it.
 
 ## 2. Parallel landings onto one branch
 
-**Observed.** With five rebases issued at once onto `main`, four failed with HTTP 500 in every run
-(recorded). The failure rate falls to zero when the calls are serialized.
+**Observed (recorded).** With five rebases issued at once onto `main`, four failed with HTTP 500 in every
+run. The failure rate falls to zero when the calls are serialized.
 
-Apply fails the same way. In ten rounds of five simultaneous applies onto one target, 25 of 50 succeeded
-and 25 returned server errors (recorded). The bodies of the failed applies were not sampled, and whether the
-failures left the target consistent was not checked.
+**Minimal reproduction, run 2026-10-05: reproduced.**
 
-**Minimal reproduction (to be confirmed).** Create five branches with one unrelated commit each. Fire five
-`rebase` calls onto `main` together (`Promise.all`), one per branch. Count statuses. Repeat with `apply`.
+- Rebase, one round of five: one landed and four returned HTTP 500. The script prints statuses only, so the
+  rebase bodies were not sampled.
+- Apply, ten rounds of five: 26 of 50 landed and 24 returned HTTP 500, with this body each time:
 
-**Expected.** One landing wins and the others either queue or return a conflict-type status the client can
-retry on.
+  ```json
+  {"api:message":"Transaction retry count exceeded in internal operation","api:status":"api:server_error"}
+  ```
 
-## 3. Missing branch returns 500
+- Consistency after the ten apply rounds: main held exactly 26 of the section's nodes, one for each apply
+  that reported success. The failed applies left nothing behind.
 
-**Observed.** A request that names a nonexistent branch returns HTTP 500 with a generic error body
-(recorded).
+The apply failures are transaction retries running out under contention, reported as a server error.
+
+**Setup.** Create five branches with one unrelated commit each. Fire five landing calls onto `main` together
+(`Promise.all`), one per branch, and count statuses. Repeat with `apply`.
+
+**Expected.** One landing wins and the others either queue or return a conflict-type or retryable status the
+client can act on.
+
+## 3. Missing branch returns 500 from rebase
+
+**Observed, run 2026-10-05.**
+
+| Request | Status | Body |
+| --- | --- | --- |
+| `GET /api/log/.../branch/<missing>` | 400 | Structured `api:LogErrorResponse` with `api:UnresolvableAbsoluteDescriptor`, saying the branch does not exist |
+| `POST /api/apply/...` with a missing source branch | 400 | Structured `api:ApplyErrorResponse` with `api:NotValidRefError` naming the reference |
+| `POST /api/rebase/...` with `rebase_from` set to a missing branch | 500 | Not captured |
+
+The earlier recorded finding, that a request naming a nonexistent branch returns 500, was too broad. Log and
+apply handle the same condition with a structured 400. Only rebase returns a 500.
 
 **What the spec says.** The wording matters here and an earlier draft overstated it.
 
 - `DELETE /branch/{path}` documents 404 "Branch not found".
 - `POST /rebase/{path}` and `GET /log/{path}` document 404 only as "Database not found".
 
-So the spec does not promise 404 for a missing branch on rebase or log. The report should ask for a
-documented 404 (or 400) rather than claim the spec is violated.
+So the spec does not promise 404 for a missing branch on rebase or log, and the 400 that log returns is not
+in the spec either. The report should ask for rebase to match apply and log, and for the status to be
+documented, rather than claim the spec is violated.
 
-**Minimal reproduction (to be confirmed).** `GET /api/log/admin/<db>/local/branch/does-not-exist`, and a
-`rebase` call with `rebase_from` pointing at a missing branch. Record the status and body for each. Apply
-with a missing branch has not been checked.
+**Setup.** `rebase` with `rebase_from` pointing at a missing branch. Record the status and the body, which
+the script does not yet print.
 
 ## 4. Rebase does not check replayed edits against the target's state
 
@@ -121,21 +149,22 @@ integrity is not checked during replay.
 
 ## 5. String value size limit
 
-**Reported, not reproduced.** A developer in the project's Discord said string values are limited to roughly
-100 KB. We have not tested it, and we do not know the exact limit, the status code, or whether the failure
-is a clean rejection. The prototype keeps long-form prose out of the graph store partly for other reasons,
-so this has not been hit in practice.
+**Not reproduced.** A developer in the project's Discord said string values are limited to roughly 100 KB.
+The minimal script wrote one `Node` document per size, with the string in its `subject` field, to a
+throwaway branch through the document API. Every size from 10,000 to 2,000,000 characters (10,000, 50,000,
+90,000, 100,000, 110,000, 150,000, 500,000, 2,000,000) returned HTTP 200, and a read-back found the document
+each time. The script checked that the document was stored, not that its length survived the round trip.
 
-**Minimal reproduction (to be written).** Add a document with one string field at increasing sizes (for
-example 50 KB, 100 KB, 500 KB, 2 MB) and record the status and body of each write, and whether a write that
-fails leaves anything behind.
-
-**Expected.** A documented maximum, and a distinct, structured error when it is exceeded.
+The limit the Discord remark describes may apply to another field type, another endpoint, or another
+version. Unless the condition is found, this item is dropped from the report. The prototype's own 2 MB
+article limit is an application setting and does not depend on it.
 
 ## What we would like
 
-- A structured error body and a retryable status for concurrent or back-to-back rebases, and for
-  concurrent applies.
-- A documented status for a missing branch.
+- A retryable or conflict-type status, with a structured body, for contended landings. Apply already names the
+  cause in its body; the status code should say it too.
+- For rebase from a missing branch, the structured 400 that apply and log already return, and a documented
+  status for the case.
+- If a minimal reproduction is found for the back-to-back rebase 500: a structured error body and a
+  retryable status.
 - A statement, or a fix, for how replayed commits are validated against the target state.
-- A documented maximum string size, with a distinct status when it is exceeded.

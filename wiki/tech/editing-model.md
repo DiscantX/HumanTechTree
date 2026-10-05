@@ -340,9 +340,10 @@ between landings is off. The live queue scenarios were rerun through it.
 The application records the base when it creates a branch and passes it to the queue as `baseCommit`. The
 log-derived finder stays as the fallback for a branch that has no record, so a branch made by any other route
 still lands. The record avoids reading two commit logs on every landing, which should matter more the further a
-branch has drifted from the target. A live run on a small database showed no measurable difference: the
-landings took between 0.8 and 4.9 seconds, with a recorded base at 2.6 seconds against 1.9 for a derived one in
-one sample, and the staging, apply and gate steps dominate. The saving is unmeasured on a large database. The
+branch has drifted from the target. Two live runs on a small database showed no measurable difference: the
+landings took between 0.8 and 4.9 seconds, and the recorded base was slower in one run (2.6 seconds against 1.9
+for a derived one) and faster in the other (0.9 against 1.4). The staging, apply and gate steps dominate. The
+saving is unmeasured on a large database. The
 recorded and derived bases gave the same merged result, with the editor's field and the other landing's field
 both surviving.
 
@@ -356,7 +357,8 @@ both surviving.
   is kept, belong to the Versioning and Reviews essay: the natural home is the application's own database,
   next to the proposal, with retention following the proposal's.
 - **A wrong base is refused.** A recorded base that is not one of the source branch's own commits halts the
-  landing before the staging branch is created. The outcome is `invalid_base`, nothing is changed, and the
+  landing before the staging branch is created. The outcome is `invalid_base`, nothing is changed (live run:
+  the target kept the other landing's field, and no staging branch was left behind), and the
   result says why and how to proceed: create a fresh branch from the current target and replay the edit on
   it, or, if the record is known to be wrong, land again with no recorded base so one is derived. The queue
   does not fall back to the derived base on its own, because that would hide a recording bug. The refusal is
@@ -462,6 +464,5 @@ this essay are a check of what a conflicting rebase returns
 through the client in full, the staged-landing queue against the live database (the live runs covered
 concurrent landings, conflicts, the missing-branch check, duplicate claims, and the refusal of a dangling edge
 and of a cycle, while forced server failures and retry caps have only been exercised with fake landings), and, if the server-error pattern matters after the queue exists, a repeat of
-the pause measurement and a timing run of apply against rebase, both under a realistically sized database. The refusal of a
-wrong recorded base has passed its offline tests, and its live check (B3 in `npm run base-record-live`) has not
-been run.
+the pause measurement and a timing run of apply against rebase, both under a realistically sized database. The
+recorded merge base and the refusal of a wrong one have passed live (`npm run base-record-live`).

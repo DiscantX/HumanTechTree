@@ -247,6 +247,7 @@ as [GitHub issues](https://github.com/DiscantX/HumanTechTree/issues) in the repo
   too noisy on a small database to show a speed difference. A too-new recorded base, the target's head,
   landed without an error and silently reverted another landing's field. The check that a recorded base is on
   the source branch caught it, and the queue now refuses such a landing with a reason and the steps to proceed.
+  The refusal passed live: one attempt, the target unchanged, and no staging branch left behind.
 - **Nested collections.** Different fields of one sub-document merge across branches and the same field
   conflicts. Reviews nested in a grounding's `Set` merge, and a `List` of sub-documents conflicts on any
   concurrent edit.

@@ -15,8 +15,9 @@ re-run.
 
 What the minimal reproductions showed:
 
-1. **Back-to-back rebase 500: not reproduced by the minimal script.** The recorded rate was about 1 in 7
-   with rebase and 0 of 180 with apply. The minimal script saw 0 errors in 40 rebases and 0 in 40 applies.
+1. **Back-to-back rebase 500: reproduced, at a rate that varies.** Rebase returned 500 for 3 of 20 landings
+   made directly after another landing, and 1 of 180 in a longer sequence. Apply returned none in 400 landings
+   across the same kinds of setup. The body is a generic "Unexpected failure in request handler".
 2. **Concurrent landings onto one branch fail with HTTP 500: reproduced, for both rebase and apply.** Apply's
    body names the cause (transaction retry count exceeded), and the target was left consistent.
 3. **A missing branch returns 500 only for rebase: reproduced and narrowed.** Apply and log return a
@@ -29,18 +30,26 @@ What the minimal reproductions showed:
 
 **Observed (recorded).** About one in seven sequential rebases that landed immediately after another landing
 returned HTTP 500. With a one-second wait before each landing the count was zero. Fast-forwards never failed.
-Retrying after a pause always succeeded. The response carries only the status code and the server log adds
-nothing.
+Retrying after a pause always succeeded. The server log adds nothing.
 
-**Minimal reproduction, run 2026-10-05: not reproduced.** Twenty cycles of two back-to-back landings gave 40
-rebases and no server errors, and none among the 20 that landed directly after another. At the recorded rate
-about three of those 20 would have failed, so a clean run would be expected about one time in twenty. Two
-things differ from the recorded runs and should be checked before this item is filed:
+**Minimal reproductions, run 2026-10-05: reproduced, with a lower and unstable rate.**
 
-- The recorded runs landed many one-node branches one after another onto a target that kept moving. The
-  minimal script lands two per cycle, with branch creation in between, on a small database.
-- The script creates `b2` while its client is checked out on `b1`. If the client creates a branch from its
-  current branch, `b2` was cut from `b1` and not from `main`, which is not the setup described below.
+- **Pairs onto `main`.** Twenty cycles of two back-to-back rebases, with both branches cut from `main`: 3 of
+  the 40 returned 500. All three were the second landing of a pair, so 3 of 20 landings made directly after
+  another and 0 of 20 first landings. The same sequence through apply returned no errors in 40.
+- **A longer sequence onto a throwaway branch.** Thirty one-node branches cut from one snapshot and landed one
+  after another, at pauses of 0, 0, 100, 250, 500 and 1000 ms, 30 landings each: rebase had 1 first-attempt 500
+  in 180 (at 0 ms, so 1 of 60 there) and it landed on retry. Apply had 0 of 180. The one failure returned this
+  body:
+
+  ```json
+  {"api:message":"Unexpected failure in request handler","api:status":"api:failure"}
+  ```
+
+The rate is not stable. The recorded run of the same sequence had 7 of 50 at 0 ms, and this one had 1 of 60.
+One failure cannot show whether the pause matters, so the pause table below rests on the recorded run alone.
+The cause is unknown. The pair runs land onto a large `main` and the sequential runs onto a branch cut from
+a snapshot, which may matter. The numbers are small.
 
 **Setup the report intends.**
 
@@ -67,9 +76,22 @@ common ancestor as `before`, so every apply landed on a target that had already 
 | 1 second | 0 of 30 | 0 of 30 |
 
 All 180 applies landed on the first attempt (recorded). The measurement used one-commit branches and a small
-database. The minimal apply script added 40 more applies with no errors. The difference suggests the failure
-is specific to rebase's replay, not to landing twice in quick succession, but only the recorded sequence
-shows it.
+database. The minimal scripts added 220 more applies with no errors (40 in the pair setup, 180 in the
+sequential one). Apply has now landed 400 branches across these setups without a server error, while rebase
+returned one in the same sequence and three in the pair runs. The difference suggests the failure is specific
+to rebase's replay, not to landing twice in quick succession.
+
+### Landing time
+
+In the sequential runs a rebase of one one-node branch took 6.2 to 8.1 seconds on average (about 7.3 s across
+the six pause settings), and an apply of the same branch took 0.16 to 0.25 seconds (about 0.21 s), roughly 34
+times faster. The database was small and the server ran in an Alpine VM under VirtualBox, so the absolute
+times are not meaningful, but the ratio was consistent across all six runs.
+
+The pair runs were far quicker. Whole cycles of two rebases plus branch creation took roughly one second,
+judging by the timestamps in the branch names (the script does not time them). In the pair runs a branch is
+at most one commit behind its target. In the sequential runs a source can be up to 29 commits behind, so
+the replay may scale with the distance. That was not tested.
 
 ## 2. Parallel landings onto one branch
 
@@ -78,8 +100,10 @@ run. The failure rate falls to zero when the calls are serialized.
 
 **Minimal reproduction, run 2026-10-05: reproduced.**
 
-- Rebase, one round of five: one landed and four returned HTTP 500. The script prints statuses only, so the
-  rebase bodies were not sampled.
+- Rebase, one round of five: one landed and four returned HTTP 500. The first run cut the five branches in a
+  chain, since the script created each from the previous one. After the script was fixed to cut every branch
+  from `main`, the result was the same, one landed and four returned 500. The script prints statuses only, so
+  the rebase bodies were not sampled.
 - Apply, ten rounds of five: 26 of 50 landed and 24 returned HTTP 500, with this body each time:
 
   ```json
@@ -165,6 +189,6 @@ article limit is an application setting and does not depend on it.
   cause in its body; the status code should say it too.
 - For rebase from a missing branch, the structured 400 that apply and log already return, and a documented
   status for the case.
-- If a minimal reproduction is found for the back-to-back rebase 500: a structured error body and a
-  retryable status.
+- For the back-to-back rebase 500: a structured error body and a retryable status, or a fix, since apply
+  does not show it.
 - A statement, or a fix, for how replayed commits are validated against the target state.

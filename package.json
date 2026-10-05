@@ -20,6 +20,7 @@
     "backlog-features-live": "ts-node src/scripts/tests/backlog-features-live.ts",
     "repro-rebase": "ts-node src/scripts/tests/repro-rebase.ts",
     "repro-apply": "ts-node src/scripts/tests/repro-apply.ts",
+    "repro-sequential": "ts-node src/scripts/tests/repro-sequential.ts",
     "stress-suite": "ts-node src/scripts/tests/stress-suite.ts",
     "stress-run": "ts-node src/scripts/tests/stress-run.ts"
   },

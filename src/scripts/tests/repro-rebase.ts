@@ -25,10 +25,12 @@ async function runRepros() {
     const b1 = `repro_1_b1_${Date.now()}_${i}`;
     const b2 = `repro_1_b2_${Date.now()}_${i}`;
     try {
+      client.checkout('main');
       await client.branch(b1);
       client.checkout(b1);
       await client.addDocument({ '@type': 'Node', subject: `S1 B1 ${i}`, category: 'Invention' });
 
+      client.checkout('main');
       await client.branch(b2);
       client.checkout(b2);
       await client.addDocument({ '@type': 'Node', subject: `S1 B2 ${i}`, category: 'Invention' });
@@ -65,6 +67,7 @@ async function runRepros() {
   
   try {
     for (const b of bList) {
+      client.checkout('main');
       await client.branch(b);
       client.checkout(b);
       await client.addDocument({ '@type': 'Node', subject: `S2 ${b}`, category: 'Invention' });

@@ -318,7 +318,7 @@ rebase table.
 The queue's apply mode is its default. Running the live scripts with `--rebase`, or setting
 `LANDING_MODE=rebase`, selects the old rebase landing for comparison runs. The staging step
 replays the source onto the staging branch with apply and the merge base, which is recorded when the branch is
-created or, when there is no record, derived from the two branches' logs (see "Where the merge base comes from" below). The final step from staging to the target stays a rebase fast-forward, and the spacing
+created or, when there is no record, derived from the two branches' logs (see "Where the merge base comes from" below). The final step from staging to the target stays a rebase fast-forward (see "The last step" below), and the spacing
 between landings is off. The live queue scenarios were rerun through it.
 
 - **Concurrent landings.** Six simultaneous landings all landed with no retries and no spacing, in 6.5
@@ -334,6 +334,47 @@ between landings is off. The live queue scenarios were rerun through it.
   same replay succeeded and only the gate caught it. The queue reads that body as a deleted reference. The
   gate's dangling-edge check stays as a backstop, since the refusal was seen in one direction only.
 - **Every landing took one attempt,** about a dozen across the scenarios.
+
+### The last step: fast-forward or apply
+
+The last step, moving the target to a staged state that has already passed the gate, stays a rebase
+fast-forward. Apply can do the same job, so the choice was measured, not assumed. Nothing in the results
+argues for changing it, and the fast-forward keeps the staged commit, its author and its history as they are.
+
+The comparison ran the step three ways on identical setups, with staging built as the queue builds it: cut
+from the target, with the edit applied onto it by the editor. The three were a rebase fast-forward, an apply
+from staging to the target using the base recorded when staging was cut, and the same apply with the editor
+passed as the commit's author. The target was a throwaway branch.
+
+- **None of them failed.** There were no server errors or conflicts in 120 runs across the three modes, on an
+  unmoved target, with a three-commit staging branch, and with a target moved by a foreign write.
+- **Time was not the deciding factor.** On an unmoved target, 30 runs per mode, the fast-forward averaged 416
+  milliseconds (fastest 71, slowest 2,285), apply 751 (125 to 3,607) and apply with the editor 685 (107 to
+  3,151). Every mode had occasional runs of two to four seconds, so the typical difference is under a second
+  and is small against a landing that also includes the staging merge and the gate. The runs used one-node edits
+  on a small database in a virtual machine, and medians were not computed.
+- **The fast-forward lands the staged commit itself.** The target's head was the staged commit in 30 of 30
+  runs. Apply never did, because it writes a new commit, but the content of the target equalled the staging
+  branch's in every run of every mode. What the gate checked is what lands either way. Reviews bind to a
+  content hash (see Data Model), so the commit identity matters for audit and not for review
+  binding.
+- **The editor survives the fast-forward.** The head commit kept the editor as author in 30 of 30 runs. Apply
+  recorded the service account unless the author was passed in the request, in which case it recorded the editor.
+  The queue already carries the author in apply mode, so apply would need no new input.
+- **History collapses under apply.** A staging branch holding three commits stayed three commits on the target
+  under the fast-forward and became one under apply, in 5 of 5 runs each. The queue normally lands one edit per
+  staging branch, so the single-commit case was identical in all three modes.
+- **A moved target landed correctly in all three modes.** With a foreign write on the target after staging was
+  cut, all 15 runs landed with both the foreign and the staged change present, and a rebase replay raised no
+  server errors in these five runs. The replayed commit was recorded under the service account in 5 of 5 runs,
+  where apply with the author recorded the editor. This differs from what "Who made an edit" reports for a
+  replay, and the two have not been reconciled (see the open questions). The queue is the only writer to main,
+  so this case is not expected at the final step.
+
+Apply with the author passed is a proven fallback. It was reliable in every run, produced the same content,
+and cost about 300 milliseconds more on average. If rebase had to be removed from the path, the last step
+would change to an apply from staging using the recorded staging base, with the editor as author, and the
+staged history would collapse to one commit.
 
 ### Where the merge base comes from
 
@@ -437,6 +478,11 @@ natural place for that gate to sit.
 - **What apply's squash costs.** Apply turns a branch of several commits into one. Whether that history
   matters to reviewers, and how it interacts with reviews bound to a content hash, is not settled. A
   side-by-side timing comparison with rebase on a larger database has not been run either.
+- **Whether a rebase replay keeps the editor as author.** "Who made an edit" reports that a commit replayed
+  onto a moved main kept its editor. A later run replayed a staged commit, whose author had been set through
+  apply's commit information, onto a moved target, and the head was the service account in 5 of 5 runs. The
+  difference may lie in how the commit got its author, and it has not been checked. Until it is, the queue
+  should not rely on a replay preserving the author. The final fast-forward does preserve it.
 - **The cause of the intermittent server errors.** Unknown, and absent from the documentation. A new lead is
   that apply did not show the sequential errors at all, which points at the replay that rebase performs
   and not at landing onto a branch that has just moved. The pattern is characterized and the workaround is

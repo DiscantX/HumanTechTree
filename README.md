@@ -39,6 +39,7 @@ src/
       repro-rebase.ts          # repros for the upstream rebase/HTTP 500 behavior (live)
       repro-apply.ts           # the apply and string-size repros for the upstream report (live)
       repro-sequential.ts      # rebase and apply landed one after another, by pause (live)
+      repro-final-step.ts      # the queue's last step: rebase fast-forward vs apply (live)
 ```
 
 This shape is meant to survive into the real codebase: `config`, the
@@ -66,7 +67,7 @@ To start over: `npm run reset-db`, then `npm run init-db` again.
 
 `npm run merge-queue-test`, `npm run validation-gate-test` and
 `npm run backlog-features-test` run without a TerminusDB instance. The
-`*-live` scripts, `concurrent-suite`, `repro-rebase`, `repro-apply`, `repro-sequential` and the MCP smoke test
+`*-live` scripts, `concurrent-suite`, `repro-rebase`, `repro-apply`, `repro-sequential`, `repro-final-step` and the MCP smoke test
 need the server from the steps above.
 
 ## TerminusDB MCP server
